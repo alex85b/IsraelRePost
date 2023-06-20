@@ -67,15 +67,6 @@ router.post('/api/scrape/all-branches', async (req, res) => {
 	);
 
 	// Filter out the all th kiosks and shops that only offer mail pickup services.
-	// const filteredBranches: IBranch[] = branchesList.branches.filter(
-	// 	(branch: IBranch) => {
-	// 		if (branch.qnomycode !== 0) {
-	// 			return true;
-	// 		}
-	// 		return false;
-	// 	}
-	// );
-
 	const filteredBranches: IBranchDocument[] = branchesList.branches.reduce(
 		(accumulator: IBranchDocument[], branch: IBranch) => {
 			if (branch.qnomycode !== 0) {
@@ -93,7 +84,9 @@ router.post('/api/scrape/all-branches', async (req, res) => {
 		},
 		[]
 	);
-	+console.log(
+	console.log('### Filter and transform branch-list : Done ###');
+
+	console.log(
 		'### Dataset after filtering ### : ',
 		Object.keys(filteredBranches).length
 	);
@@ -109,6 +102,7 @@ router.post('/api/scrape/all-branches', async (req, res) => {
 
 	// Fetch certificates from local file.
 	const certificateContents = fs.readFileSync(certificatePath, 'utf8');
+	console.log('### Fetch certificates : Done ###');
 
 	// Create a client.
 	const client = new ElasticClient(
@@ -120,12 +114,15 @@ router.post('/api/scrape/all-branches', async (req, res) => {
 	);
 
 	await client.deleteAllIndices();
+	console.log('### deleteAllIndices : Done ###');
 
 	await client.createAllBranchesIndex();
+	console.log('### createAllBranchesIndex : Done ###');
 
-	await client.bulkAddBranches(filteredBranches);
+	const branches = await client.bulkAddBranches(filteredBranches);
+	console.log('### bulkAddBranches : Done ###');
 
-	res.status(200).send({ message: 'Done' });
+	res.status(200).send({ message: 'Done', data: branches });
 });
 
 export { router as ScrapeAllBranches };

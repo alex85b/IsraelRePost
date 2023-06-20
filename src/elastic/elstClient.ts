@@ -4,6 +4,7 @@ import {
 	IndicesIndexSettings,
 	MappingTypeMapping,
 } from '@elastic/elasticsearch/lib/api/types';
+import { BulkAddError, IBulkError } from '../errors/bulk-edit-error';
 
 interface IBranchDocument {
 	id: number;
@@ -323,15 +324,23 @@ export class ElasticClient {
 
 		try {
 			const response = await this.client?.bulk({ body });
-			console.log(response);
-			if (response?.items) {
-				for (const obj of response?.items) {
-					if (obj.index?.error) {
-						console.log(obj);
-						console.log(obj.index.error.caused_by);
-					}
-				}
+			console.log('### bulkAddBranches has error ### : ', response?.errors);
+			if (!response) {
+				throw new ElasticMalfunctionError('Bulk add has failed');
 			}
+
+			if (response.errors) {
+				const errors: IBulkError[] = [];
+				for (const item of response.items) {
+					errors.push({
+						message: String(item.index?.error?.reason || ''),
+						source: String(item.index?.error?.caused_by || ''),
+					});
+				}
+				throw new BulkAddError(errors);
+			}
+
+			return response?.items;
 		} catch (error) {
 			console.error(error);
 			throw new ElasticMalfunctionError((error as Error).message);
