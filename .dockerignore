@@ -1,2 +1,4 @@
 instructions
 node_modules
+elastic-cert
+.env

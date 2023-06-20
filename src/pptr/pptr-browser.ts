@@ -4,8 +4,9 @@ import { Page, Browser, Protocol } from 'puppeteer';
 import cheerio from 'cheerio'; // ? parse5 has better benchmark score. maybe switch to parse5.
 import { CookieBank } from '../common/cookie-bank';
 import { CookiesObject } from '../common/cookies-object-interface';
+import { URLs } from '../common/urls';
 
-puppeteer.use(StealthPlugin());
+// puppeteer.use(StealthPlugin());
 
 // This represents the puppeteer automation that needed to scrape Israel-post.
 export class PuppeteerBrowser {
@@ -36,15 +37,17 @@ export class PuppeteerBrowser {
 		return false;
 	}
 
-	async generatePage(): Promise<boolean> {
+	async generatePage(navigationTimeout: number): Promise<boolean> {
 		if (this.browser && !this.page) {
 			this.page = await this.browser.newPage();
+			this.page.setDefaultNavigationTimeout(navigationTimeout);
+			console.log(`### setDefaultNavigationTimeout: ${navigationTimeout} ###`);
 			return true;
 		}
 		return false;
 	}
 
-	async navigateToURL(url: string): Promise<boolean> {
+	async navigateToURL(url: URLs): Promise<boolean> {
 		if (this.page) {
 			await this.page.goto(url);
 			return true;
@@ -72,6 +75,10 @@ export class PuppeteerBrowser {
 		return false;
 	}
 
+	getSavedCookies(): CookiesObject {
+		return this.cookies.getCookies();
+	}
+
 	async extractAllCookies(): Promise<CookiesObject | false> {
 		if (this.page) {
 			const cookies = await this.page.cookies();
@@ -80,7 +87,7 @@ export class PuppeteerBrowser {
 		return false;
 	}
 
-	async waitThenSearchCookies(
+	async waitThenSearchCookie(
 		cookieName: string,
 		msBeforeSearch: number
 	): Promise<Protocol.Network.Cookie[] | false> {
@@ -96,5 +103,20 @@ export class PuppeteerBrowser {
 				}, msBeforeSearch);
 			});
 		} else return false;
+	}
+
+	closePageAndBrowser() {
+		if (this.page) this.page.close();
+		if (this.browser) this.browser.close();
+	}
+
+	resetCookiesAndToken() {
+		this.cookies = new CookieBank();
+		this.RequestVerificationToken = '';
+	}
+
+	end() {
+		this.closePageAndBrowser();
+		this.resetCookiesAndToken();
 	}
 }

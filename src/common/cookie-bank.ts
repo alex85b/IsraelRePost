@@ -5,14 +5,6 @@ import { CookiesObject } from './cookies-object-interface';
 export class CookieBank {
 	private cookies: CookiesObject = {};
 
-	static reformatForAxios(cookies: CookiesObject) {
-		const responseArray: string[] = [];
-		for (const key in cookies) {
-			responseArray.push(`${key}=${cookies[key]}`);
-		}
-		return responseArray;
-	}
-
 	addCookies(cookies: CookiesObject) {
 		for (const key in cookies) {
 			this.cookies[key] = cookies[key];
@@ -47,6 +39,15 @@ export class CookieBank {
 	getCookieValue(cookieName: string): string {
 		if (!this.cookies[cookieName]) throw new CookieAbsentError();
 		return this.cookies[cookieName];
+	}
+
+	findCookies(keys: string[]): CookiesObject {
+		const returnCookies: CookiesObject = {};
+		for (const key of keys) {
+			if (!this.cookies[key]) throw new CookieAbsentError();
+			returnCookies[key] = this.cookies[key];
+		}
+		return returnCookies;
 	}
 
 	toString(): string {
