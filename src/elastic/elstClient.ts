@@ -1,8 +1,12 @@
 import { Client, NodeOptions } from '@elastic/elasticsearch';
 import { ElasticMalfunctionError } from '../errors/elst-malfunction-error';
 import {
+	BulkResponse,
+	IndicesCreateResponse,
 	IndicesIndexSettings,
 	MappingTypeMapping,
+	QueryDslQueryContainer,
+	SearchRequest,
 } from '@elastic/elasticsearch/lib/api/types';
 import { BulkAddError, IBulkError } from '../errors/bulk-edit-error';
 
@@ -11,75 +15,20 @@ interface IBranchDocument {
 	branchnumber: number;
 	branchname: string;
 	branchnameEN: string;
-	openstatus: number;
-	displaystatus: number;
-	branchtype: number;
-	telephone: string;
-	fax: string;
-	manager: string;
-	qnomycode: number;
-	haszimuntor: number;
-	qnomyWaitTimeCode: number;
-	region: number;
-	area: number;
-	sector: number;
 	city: string;
 	cityEN: string;
-	citycode: string;
 	street: string;
 	streetEN: string;
 	streetcode: string;
-	house: number;
 	zip: string;
-	addressdesc: string;
-	addressdescEN: string;
-	geocode_latitude: number;
-	geocode_longitude: number;
+	qnomycode: number;
+	qnomyWaitTimeCode: number;
+	haszimuntor: number;
+	isMakeAppointment: number;
 	location: {
 		lat: number;
 		lon: number;
 	};
-	createdDate: Date;
-	closedDate: Date;
-	Services: {
-		serviceid: number;
-	}[];
-	ExtraServices: {
-		extraserviceid: number;
-	}[];
-	accessibility: {
-		accessiblitytypeid: number;
-		value: number;
-	}[];
-	hours: {
-		dayofweek: number;
-		openhour1: string;
-		closehour1: string;
-		openhour2: string;
-		closehour2: string;
-	}[];
-	temphours: {
-		messageid: number;
-		dayofweek: number;
-		openhour1: string;
-		closehour1: string;
-		openhour2: string;
-		closehour2: string;
-		validdate: Date;
-		description: string;
-	}[];
-	messages: {
-		id: number;
-		title: string;
-		text: string;
-		validfromdate: Date;
-		validtodate: Date;
-		displayfromdate: Date;
-		displaytodate: Date;
-	}[];
-	showProductInventories: boolean;
-	isMakeAppointment: boolean;
-	generalMessage: string;
 }
 
 /*
@@ -96,6 +45,7 @@ export class ElasticClient {
 	private slotsIndex: string = 'open-slots';
 
 	// Hardcoded mapping.
+
 	private branchesMapping: MappingTypeMapping = {
 		dynamic: 'strict',
 		properties: {
@@ -103,107 +53,17 @@ export class ElasticClient {
 			branchnumber: { type: 'integer' },
 			branchname: { type: 'text' },
 			branchnameEN: { type: 'text' },
-			openstatus: { type: 'integer' },
-			displaystatus: { type: 'integer' },
-			branchtype: { type: 'integer' },
-			telephone: { type: 'text' },
-			fax: { type: 'text' },
-			manager: { type: 'text' },
-			qnomycode: { type: 'integer' },
-			haszimuntor: { type: 'integer' },
-			qnomyWaitTimeCode: { type: 'integer' },
-			region: { type: 'integer' },
-			area: { type: 'integer' },
-			sector: { type: 'integer' },
 			city: { type: 'text' },
 			cityEN: { type: 'text' },
-			citycode: { type: 'text' },
 			street: { type: 'text' },
 			streetEN: { type: 'text' },
-			streetcode: { type: 'text' },
-			house: { type: 'integer' },
-			zip: { type: 'text' },
-			addressdesc: { type: 'text' },
-			addressdescEN: { type: 'text' },
-			geocode_latitude: { type: 'float' },
-			geocode_longitude: { type: 'float' },
-			location: {
-				type: 'geo_point',
-			},
-			createdDate: { type: 'date' },
-			closedDate: { type: 'date' },
-			Services: {
-				type: 'nested',
-				properties: {
-					serviceid: { type: 'integer' },
-				},
-			},
-			ExtraServices: {
-				type: 'nested',
-				properties: {
-					extraserviceid: { type: 'integer' },
-				},
-			},
-			accessibility: {
-				type: 'nested',
-				properties: {
-					accessiblitytypeid: { type: 'integer' },
-					value: { type: 'integer' },
-				},
-			},
-			hours: {
-				type: 'nested',
-				properties: {
-					dayofweek: { type: 'integer' },
-					openhour1: { type: 'text' },
-					closehour1: { type: 'text' },
-					openhour2: { type: 'text' },
-					closehour2: { type: 'text' },
-				},
-			},
-			temphours: {
-				type: 'nested',
-				properties: {
-					messageid: { type: 'integer' },
-					dayofweek: { type: 'integer' },
-					openhour1: { type: 'text' },
-					closehour1: { type: 'text' },
-					openhour2: { type: 'text' },
-					closehour2: { type: 'text' },
-					validdate: {
-						type: 'date',
-						format: 'strict_date_optional_time||epoch_millis',
-					},
-					description: { type: 'text' },
-				},
-			},
-			messages: {
-				type: 'nested',
-				properties: {
-					id: { type: 'integer' },
-					title: { type: 'text' },
-					text: { type: 'text' },
-					validfromdate: {
-						type: 'date',
-						format: 'strict_date_optional_time||epoch_millis',
-					},
-					validtodate: {
-						type: 'date',
-						format: 'strict_date_optional_time||epoch_millis',
-					},
-					displayfromdate: {
-						type: 'date',
-						format: 'strict_date_optional_time||epoch_millis',
-					},
-					displaytodate: {
-						type: 'date',
-						format: 'strict_date_optional_time||epoch_millis',
-					},
-				},
-			},
-			showProductInventories: { type: 'boolean' },
-			isMakeAppointment: { type: 'boolean' },
-			generalMessage: { type: 'text' },
+			streetcode: { type: 'keyword' },
+			zip: { type: 'keyword' },
+			qnomycode: { type: 'integer' },
+			qnomyWaitTimeCode: { type: 'integer' },
+			haszimuntor: { type: 'integer' },
+			isMakeAppointment: { type: 'integer' },
+			location: { type: 'geo_point' },
 		},
 	};
 
@@ -232,12 +92,6 @@ export class ElasticClient {
 				rejectUnauthorized: rejectUnauthorized,
 			},
 		});
-
-		/*
-            Test connection using defined client.
-            If connection fails, Throws an error.
-        */
-		this.sendPing();
 	}
 
 	async sendPing() {
@@ -245,7 +99,8 @@ export class ElasticClient {
 			await this.client?.ping();
 			console.log('### Elasticsearch is up ###');
 		} catch (error) {
-			throw new ElasticMalfunctionError((error as Error).message);
+			console.error((error as Error).message);
+			throw new ElasticMalfunctionError('Cannot connect to Elastic');
 		}
 	}
 
@@ -254,49 +109,73 @@ export class ElasticClient {
 		settings: IndicesIndexSettings,
 		mappings: MappingTypeMapping
 	) {
-		const result = await this.client?.indices.create({
-			index: indexName,
-			body: {
-				settings,
-				mappings,
-			},
-		});
+		try {
+			const result = await this.client?.indices.create({
+				index: indexName,
+				body: {
+					settings,
+					mappings,
+				},
+			});
+			return result || false;
+		} catch (error) {
+			console.error((error as Error).message);
+			throw new ElasticMalfunctionError(`Cannot create the index ${indexName}`);
+		}
+	}
 
-		return result;
+	private async indexExists(index: string) {
+		try {
+			const response = await this.client?.indices.exists({ index: index });
+			return response || false;
+		} catch (error) {
+			throw new ElasticMalfunctionError('Bad request to Elastic');
+		}
+	}
+
+	async allBranchesExists() {
+		return await this.indexExists(this.branchesIndex);
 	}
 
 	async createAllBranchesIndex() {
-		if (await this.checkIndexExists(this.branchesIndex)) {
+		if (await this.allBranchesExists()) {
 			return false;
 		}
 
-		const response = await this.createIndex(
-			this.branchesIndex,
-			this.settings,
-			this.branchesMapping
-		);
-		console.log(response);
-		if (!response?.acknowledged) {
+		let response: IndicesCreateResponse | false;
+		try {
+			response = await this.createIndex(
+				this.branchesIndex,
+				this.settings,
+				this.branchesMapping
+			);
+		} catch (error) {
+			console.error((error as Error).message);
 			throw new ElasticMalfunctionError('Could not create Index');
 		}
-		return true;
-	}
 
-	private async checkIndexExists(indexName: string) {
-		const response = await this.client?.indices.exists({ index: indexName });
-		return response;
+		if (!response || !response.acknowledged) {
+			throw new ElasticMalfunctionError('Could not create Index');
+		}
+
+		return true;
 	}
 
 	async deleteAllIndices() {
-		const response = await this.client?.indices.getAlias({ index: '*' });
-		if (!response) return false;
-		for (const ind in response) {
-			if (ind !== '.security-7') {
-				const response = await this.client?.indices.delete({ index: ind });
-				console.log(`Index '${ind}' has been deleted: `, response);
+		try {
+			const response = await this.client?.indices.getAlias({ index: '*' });
+			if (!response) return false;
+			for (const ind in response) {
+				if (ind !== '.security-7') {
+					const response = await this.client?.indices.delete({ index: ind });
+					console.log(`Index '${ind}' has been deleted: `, response);
+				}
 			}
+			return true;
+		} catch (error) {
+			console.error((error as Error).message);
+			throw new ElasticMalfunctionError('Could not delete all indices');
 		}
-		return true;
 	}
 
 	async addBranch(document: IBranchDocument) {
@@ -308,12 +187,14 @@ export class ElasticClient {
 		return response;
 	}
 
-	private async getDocument() {
-		const result = await this.client?.get({
-			index: 'myindex',
-			id: '1',
+	async getAllBranches() {
+		const response = await this.client?.search({
+			index: this.branchesIndex,
+			query: {
+				match_all: {},
+			},
 		});
-		console.log(result);
+		return response;
 	}
 
 	async bulkAddBranches(addBranches: IBranchDocument[]) {
@@ -322,28 +203,121 @@ export class ElasticClient {
 			object,
 		]);
 
+		let response: BulkResponse | undefined;
+
 		try {
-			const response = await this.client?.bulk({ body });
+			response = await this.client?.bulk({ body });
 			console.log('### bulkAddBranches has error ### : ', response?.errors);
 			if (!response) {
 				throw new ElasticMalfunctionError('Bulk add has failed');
 			}
-
-			if (response.errors) {
-				const errors: IBulkError[] = [];
-				for (const item of response.items) {
-					errors.push({
-						message: String(item.index?.error?.reason || ''),
-						source: String(item.index?.error?.caused_by || ''),
-					});
-				}
-				throw new BulkAddError(errors);
-			}
-
-			return response?.items;
 		} catch (error) {
 			console.error(error);
 			throw new ElasticMalfunctionError((error as Error).message);
+		}
+
+		if (response.errors) {
+			const errors: IBulkError[] = [];
+			for (const item of response.items) {
+				errors.push({
+					message: String(item.index?.error?.reason || ''),
+					source: String(item.index?.error?.caused_by || ''),
+				});
+			}
+			throw new BulkAddError(errors);
+		}
+
+		return response?.items;
+	}
+
+	async TEST_BranchSpatialIndexing(latitude: number, longitude: number) {
+		const distance = '1km'; // Distance in kilometers
+
+		/* ############################################################ */
+		/* ### Queries ################################################ */
+		/* ############################################################ */
+
+		const spatialQuery: QueryDslQueryContainer = {
+			geo_distance: {
+				distance: distance,
+				location: {
+					lat: latitude,
+					lon: longitude,
+				},
+			},
+		};
+
+		const flatQuery: QueryDslQueryContainer = {
+			match: {
+				cityEN: 'Zohar',
+			},
+		};
+
+		/*
+		//* 'Complex' strings.
+		const queryStringQuery: QueryDslQueryContainer = {
+			query_string: {
+				default_field: 'cityEN',
+				query: 'Zohar',
+			},
+		};
+
+		//* Strings.
+		const matchQuery: QueryDslQueryContainer = {
+			match: {
+				cityEN: 'Zohar',
+			},
+		};
+
+		//* Exact match or bust, good foe keyword type and numbers.
+		const termQuery: QueryDslQueryContainer = {
+			term: {
+				cityEN: 'Zohar',
+			},
+		};
+		*/
+
+		try {
+			/* ############################################################ */
+			/* ### Make Queries ########################################### */
+			/* ############################################################ */
+
+			const spatialResponse = await this.client?.search({
+				index: this.branchesIndex,
+				query: spatialQuery,
+				size: 330,
+				explain: true,
+			});
+
+			const flatResponse = await this.client?.search({
+				index: this.branchesIndex,
+				query: flatQuery,
+				size: 330,
+				explain: true,
+			});
+
+			/* ############################################################ */
+			/* ### Log Query Result ####################################### */
+			/* ############################################################ */
+
+			console.log('spatialResponse?.hits : ', spatialResponse?.hits);
+			console.log('flatResponse?.hits : ', flatResponse?.hits);
+
+			spatialResponse?.hits.hits.forEach((hit) =>
+				console.log('spatialResponse hit: ', hit)
+			);
+
+			flatResponse?.hits.hits.forEach((hit) =>
+				console.log('flatResponse hit: ', hit)
+			);
+
+			const spatialExecutionTime = spatialResponse?.took;
+			const flatExecutionTime = flatResponse?.took;
+
+			console.log('Spatial Query Execution Time:', spatialExecutionTime, 'ms');
+			console.log('Flat Query Execution Time:', flatExecutionTime, 'ms');
+		} catch (error) {
+			console.error('Error:', error);
 		}
 	}
 }

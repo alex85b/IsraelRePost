@@ -4,7 +4,7 @@ import { ScrapeAllBranches } from './routes/all-branches';
 import { NotFoundError } from './errors/not-found-error';
 import { errorHandler } from './middlewares/error-handler';
 import { elasticTest } from './routes/elastic-test';
-
+import { AllTimeSlots } from './routes/all-time-slots';
 
 // ? Do i need to lock this service behind authentication and or authorization ?
 
@@ -17,7 +17,8 @@ const onListen = () => {
 const app = express();
 
 app.use(ScrapeAllBranches);
-app.use(elasticTest)
+app.use(AllTimeSlots);
+app.use(elasticTest);
 app.all('*', () => {
 	throw new NotFoundError();
 });

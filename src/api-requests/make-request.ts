@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { IApiRequest } from './api-request-interface';
 import { BaseApiRequestBuilder } from './base-build-request';
 
 interface IServerResponse {

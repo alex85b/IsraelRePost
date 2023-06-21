@@ -70,14 +70,29 @@ router.post('/api/scrape/all-branches', async (req, res) => {
 	const filteredBranches: IBranchDocument[] = branchesList.branches.reduce(
 		(accumulator: IBranchDocument[], branch: IBranch) => {
 			if (branch.qnomycode !== 0) {
-				const newBranch: IBranchDocument = {
-					...branch,
+
+				const newBranch = {
+					id: branch.id,
+					branchnumber: branch.branchnumber,
+					branchname: branch.branchname,
+					branchnameEN: branch.branchnameEN,
+					city: branch.city,
+					cityEN: branch.cityEN,
+					street: branch.street,
+					streetEN: branch.streetEN,
+					streetcode: branch.streetcode,
+					zip: branch.zip,
+					qnomycode: branch.qnomycode,
+					qnomyWaitTimeCode: branch.qnomyWaitTimeCode,
+					haszimuntor: branch.haszimuntor,
+					isMakeAppointment: branch.haszimuntor,
 					location: {
 						// This conforms to elastic's { type: 'geo_point' } mapping upon 'location'.
 						lat: branch.geocode_latitude,
 						lon: branch.geocode_longitude,
 					},
 				};
+
 				accumulator.push(newBranch);
 			}
 			return accumulator;
