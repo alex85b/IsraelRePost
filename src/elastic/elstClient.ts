@@ -1,5 +1,5 @@
-import { Client, NodeOptions } from '@elastic/elasticsearch';
-import { ElasticMalfunctionError } from '../errors/elst-malfunction-error';
+import { Client, NodeOptions } from "@elastic/elasticsearch";
+import { ElasticMalfunctionError } from "../errors/elst-malfunction-error";
 import {
 	BulkResponse,
 	IndicesCreateResponse,
@@ -7,8 +7,8 @@ import {
 	MappingTypeMapping,
 	QueryDslQueryContainer,
 	SearchRequest,
-} from '@elastic/elasticsearch/lib/api/types';
-import { BulkAddError, IBulkError } from '../errors/bulk-edit-error';
+} from "@elastic/elasticsearch/lib/api/types";
+import { BulkAddError, IBulkError } from "../errors/bulk-edit-error";
 
 interface IBranchDocument {
 	id: number;
@@ -41,29 +41,28 @@ export class ElasticClient {
 	private client: Client | null = null;
 
 	// Hardcoded indices.
-	private branchesIndex: string = 'all-post-branches';
-	private slotsIndex: string = 'open-slots';
+	private branchesIndex: string = "all-post-branches";
+	private slotsIndex: string = "open-slots";
 
 	// Hardcoded mapping.
-
 	private branchesMapping: MappingTypeMapping = {
-		dynamic: 'strict',
+		dynamic: "strict",
 		properties: {
-			id: { type: 'integer' },
-			branchnumber: { type: 'integer' },
-			branchname: { type: 'text' },
-			branchnameEN: { type: 'text' },
-			city: { type: 'text' },
-			cityEN: { type: 'text' },
-			street: { type: 'text' },
-			streetEN: { type: 'text' },
-			streetcode: { type: 'keyword' },
-			zip: { type: 'keyword' },
-			qnomycode: { type: 'integer' },
-			qnomyWaitTimeCode: { type: 'integer' },
-			haszimuntor: { type: 'integer' },
-			isMakeAppointment: { type: 'integer' },
-			location: { type: 'geo_point' },
+			id: { type: "integer" },
+			branchnumber: { type: "integer" },
+			branchname: { type: "text" },
+			branchnameEN: { type: "text" },
+			city: { type: "text" },
+			cityEN: { type: "text" },
+			street: { type: "text" },
+			streetEN: { type: "text" },
+			streetcode: { type: "keyword" },
+			zip: { type: "keyword" },
+			qnomycode: { type: "integer" },
+			qnomyWaitTimeCode: { type: "integer" },
+			haszimuntor: { type: "integer" },
+			isMakeAppointment: { type: "integer" },
+			location: { type: "geo_point" },
 		},
 	};
 
@@ -84,7 +83,7 @@ export class ElasticClient {
 		this.client = new Client({
 			node: node,
 			auth: {
-				username: username || 'elastic',
+				username: username || "elastic",
 				password: password,
 			},
 			tls: {
@@ -97,10 +96,10 @@ export class ElasticClient {
 	async sendPing() {
 		try {
 			await this.client?.ping();
-			console.log('### Elasticsearch is up ###');
+			console.log("### Elasticsearch is up ###");
 		} catch (error) {
 			console.error((error as Error).message);
-			throw new ElasticMalfunctionError('Cannot connect to Elastic');
+			throw new ElasticMalfunctionError("sendPing failed");
 		}
 	}
 
@@ -120,7 +119,7 @@ export class ElasticClient {
 			return result || false;
 		} catch (error) {
 			console.error((error as Error).message);
-			throw new ElasticMalfunctionError(`Cannot create the index ${indexName}`);
+			throw new ElasticMalfunctionError(`createIndex failed: ${indexName}`);
 		}
 	}
 
@@ -129,7 +128,7 @@ export class ElasticClient {
 			const response = await this.client?.indices.exists({ index: index });
 			return response || false;
 		} catch (error) {
-			throw new ElasticMalfunctionError('Bad request to Elastic');
+			throw new ElasticMalfunctionError(`indexExists failed: ${index}`);
 		}
 	}
 
@@ -151,11 +150,11 @@ export class ElasticClient {
 			);
 		} catch (error) {
 			console.error((error as Error).message);
-			throw new ElasticMalfunctionError('Could not create Index');
+			throw new ElasticMalfunctionError("createAllBranchesIndex failed creation");
 		}
 
 		if (!response || !response.acknowledged) {
-			throw new ElasticMalfunctionError('Could not create Index');
+			throw new ElasticMalfunctionError("createAllBranchesIndex response failure");
 		}
 
 		return true;
@@ -163,10 +162,10 @@ export class ElasticClient {
 
 	async deleteAllIndices() {
 		try {
-			const response = await this.client?.indices.getAlias({ index: '*' });
+			const response = await this.client?.indices.getAlias({ index: "*" });
 			if (!response) return false;
 			for (const ind in response) {
-				if (ind !== '.security-7') {
+				if (ind !== ".security-7") {
 					const response = await this.client?.indices.delete({ index: ind });
 					console.log(`Index '${ind}' has been deleted: `, response);
 				}
@@ -174,27 +173,35 @@ export class ElasticClient {
 			return true;
 		} catch (error) {
 			console.error((error as Error).message);
-			throw new ElasticMalfunctionError('Could not delete all indices');
+			throw new ElasticMalfunctionError("deleteAllIndices failed deletion");
 		}
 	}
 
 	async addBranch(document: IBranchDocument) {
-		const response = await this.client?.index({
-			index: this.branchesIndex,
-			document: document,
-		});
-
-		return response;
+		try {
+			await this.client?.index({
+				index: this.branchesIndex,
+				document: document,
+			});
+		} catch (error) {
+			console.error((error as Error).message);
+			throw new ElasticMalfunctionError(`addBranch failed: ${document}`);
+		}
 	}
 
 	async getAllBranches() {
-		const response = await this.client?.search({
-			index: this.branchesIndex,
-			query: {
-				match_all: {},
-			},
-		});
-		return response;
+		try {
+			const response = await this.client?.search({
+				index: this.branchesIndex,
+				query: {
+					match_all: {},
+				},
+			});
+			return response || false;
+		} catch (error) {
+			console.error((error as Error).message);
+			throw new ElasticMalfunctionError("getAllBranches failed fetch");
+		}
 	}
 
 	async bulkAddBranches(addBranches: IBranchDocument[]) {
@@ -207,9 +214,9 @@ export class ElasticClient {
 
 		try {
 			response = await this.client?.bulk({ body });
-			console.log('### bulkAddBranches has error ### : ', response?.errors);
+			console.log("### bulkAddBranches has error ### : ", response?.errors);
 			if (!response) {
-				throw new ElasticMalfunctionError('Bulk add has failed');
+				throw new ElasticMalfunctionError("Bulk add has failed");
 			}
 		} catch (error) {
 			console.error(error);
@@ -220,8 +227,8 @@ export class ElasticClient {
 			const errors: IBulkError[] = [];
 			for (const item of response.items) {
 				errors.push({
-					message: String(item.index?.error?.reason || ''),
-					source: String(item.index?.error?.caused_by || ''),
+					message: String(item.index?.error?.reason || ""),
+					source: String(item.index?.error?.caused_by || ""),
 				});
 			}
 			throw new BulkAddError(errors);
@@ -231,7 +238,7 @@ export class ElasticClient {
 	}
 
 	async TEST_BranchSpatialIndexing(latitude: number, longitude: number) {
-		const distance = '1km'; // Distance in kilometers
+		const distance = "1km"; // Distance in kilometers
 
 		/* ############################################################ */
 		/* ### Queries ################################################ */
@@ -249,7 +256,7 @@ export class ElasticClient {
 
 		const flatQuery: QueryDslQueryContainer = {
 			match: {
-				cityEN: 'Zohar',
+				cityEN: "Zohar",
 			},
 		};
 
@@ -300,24 +307,24 @@ export class ElasticClient {
 			/* ### Log Query Result ####################################### */
 			/* ############################################################ */
 
-			console.log('spatialResponse?.hits : ', spatialResponse?.hits);
-			console.log('flatResponse?.hits : ', flatResponse?.hits);
+			console.log("spatialResponse?.hits : ", spatialResponse?.hits);
+			console.log("flatResponse?.hits : ", flatResponse?.hits);
 
 			spatialResponse?.hits.hits.forEach((hit) =>
-				console.log('spatialResponse hit: ', hit)
+				console.log("spatialResponse hit: ", hit)
 			);
 
 			flatResponse?.hits.hits.forEach((hit) =>
-				console.log('flatResponse hit: ', hit)
+				console.log("flatResponse hit: ", hit)
 			);
 
 			const spatialExecutionTime = spatialResponse?.took;
 			const flatExecutionTime = flatResponse?.took;
 
-			console.log('Spatial Query Execution Time:', spatialExecutionTime, 'ms');
-			console.log('Flat Query Execution Time:', flatExecutionTime, 'ms');
+			console.log("Spatial Query Execution Time:", spatialExecutionTime, "ms");
+			console.log("Flat Query Execution Time:", flatExecutionTime, "ms");
 		} catch (error) {
-			console.error('Error:', error);
+			console.error("Error:", error);
 		}
 	}
 }
