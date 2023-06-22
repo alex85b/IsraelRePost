@@ -5,8 +5,14 @@ import cheerio from 'cheerio'; // ? parse5 has better benchmark score. maybe swi
 import { CookieBank } from '../common/cookie-bank';
 import { CookiesObject } from '../common/cookies-object-interface';
 import { URLs } from '../common/urls';
+import { integer } from '@elastic/elasticsearch/lib/api/types';
 
 // puppeteer.use(StealthPlugin());
+
+export interface SpecificBranchObject {
+	PartialBranchUrl: URLs.PartialBranchUrl;
+	branchNumber: number;
+}
 
 // This represents the puppeteer automation that needed to scrape Israel-post.
 export class PuppeteerBrowser {
@@ -47,10 +53,15 @@ export class PuppeteerBrowser {
 		return false;
 	}
 
-	async navigateToURL(url: URLs): Promise<boolean> {
+	async navigateToURL(url: URLs | SpecificBranchObject): Promise<boolean> {
 		if (this.page) {
-			await this.page.goto(url);
-			return true;
+			if (typeof url === 'string') {
+				await this.page.goto(url);
+				return true;
+			} else {
+				await this.page.goto(url.PartialBranchUrl + String(url.branchNumber));
+				return true;
+			}
 		}
 		return false;
 	}
@@ -106,8 +117,14 @@ export class PuppeteerBrowser {
 	}
 
 	closePageAndBrowser() {
-		if (this.page) this.page.close();
-		if (this.browser) this.browser.close();
+		if (this.page) {
+			this.page.close();
+			this.page = null;
+		}
+		if (this.browser) {
+			this.browser.close();
+			this.browser = null;
+		}
 	}
 
 	resetCookiesAndToken() {

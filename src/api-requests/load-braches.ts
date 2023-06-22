@@ -56,7 +56,6 @@
 
 // export { buildLoadBranchesConfig };
 
-import { CookieBank } from '../common/cookie-bank';
 import { IApiRequest } from './api-request-interface';
 import { BaseApiRequestBuilder } from './base-build-request';
 

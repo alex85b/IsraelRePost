@@ -9,7 +9,7 @@ export class PuppeteerMalfunctionError extends CustomError {
 		this.errorMessage = errorMessage;
 	}
 
-	serializeErrors(): { message: string; source?: string | undefined }[] {
+	serializeErrors() {
 		return [{ message: this.errorMessage }];
 	}
 }

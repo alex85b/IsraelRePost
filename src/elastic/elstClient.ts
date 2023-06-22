@@ -132,12 +132,12 @@ export class ElasticClient {
 		}
 	}
 
-	async allBranchesExists() {
+	async allBranchesIndexExists() {
 		return await this.indexExists(this.branchesIndex);
 	}
 
 	async createAllBranchesIndex() {
-		if (await this.allBranchesExists()) {
+		if (await this.allBranchesIndexExists()) {
 			return false;
 		}
 
@@ -197,7 +197,8 @@ export class ElasticClient {
 					match_all: {},
 				},
 			});
-			return response || false;
+			if (response) return response;
+			throw new ElasticMalfunctionError("getAllBranches failed fetch");
 		} catch (error) {
 			console.error((error as Error).message);
 			throw new ElasticMalfunctionError("getAllBranches failed fetch");
