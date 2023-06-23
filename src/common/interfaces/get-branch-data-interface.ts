@@ -1,0 +1,47 @@
+// export interface IGetBranchData {
+// 	id: number;
+// 	branchnumber: number;
+// 	branchname: string;
+// 	branchnameEN: string;
+// 	openstatus: number;
+// 	displaystatus: number;
+// 	branchtype: number;
+// 	telephone: string;
+// 	fax: string;
+// 	manager: any;
+// 	qnomycode: number;
+// 	haszimuntor: number;
+// 	qnomyWaitTimeCode: number;
+// 	region: number;
+// 	area: number;
+// 	sector: number;
+// 	city: string;
+// 	cityEN: string;
+// 	citycode: string;
+// 	street: string;
+// 	streetEN: string;
+// 	streetcode: string;
+// 	house: number;
+// 	zip: string;
+// 	addressdesc: string;
+// 	addressdescEN: string;
+// 	geocode_latitude: number;
+// 	geocode_longitude: number;
+// 	createdDate: any;
+// 	closedDate: any;
+// 	Services: { serviceid: number }[];
+// 	ExtraServices: { extraserviceid: number }[];
+// 	accessibility: { accessiblitytypeid: number; value: number }[];
+// 	hours: {
+// 		dayofweek: number;
+// 		openhour1: string;
+// 		closehour1: string;
+// 		openhour2: string | null;
+// 		closehour2: string | null;
+// 	}[];
+// 	temphours: { [key: string]: string }[];
+// 	messages: any;
+// 	showProductInventories: true;
+// 	isMakeAppointment: true;
+// 	generalMessage: any;
+// }

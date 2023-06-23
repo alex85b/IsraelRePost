@@ -7,6 +7,7 @@ export class ElasticMalfunctionError extends CustomError {
 	constructor(errorMessage: string) {
 		super(errorMessage);
 		this.errorMessage = errorMessage;
+		Object.setPrototypeOf(this, ElasticMalfunctionError.prototype);
 	}
 
 	serializeErrors() {

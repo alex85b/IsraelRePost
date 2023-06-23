@@ -4,11 +4,13 @@ import { URLs } from '../common/urls';
 import { PuppeteerMalfunctionError } from '../errors/pptr-malfunction-error';
 import { MakeRequest } from '../api-requests/make-request';
 import { LoadBranchesBuilder } from '../api-requests/load-braches';
-import { ElasticClient, IBranchDocument } from '../elastic/elstClient';
+import { ElasticClient } from '../elastic/elstClient';
 import * as path from 'path';
 import fs from 'fs';
 import dotenv from 'dotenv';
-import { IBranch } from '../elastic/interfaces/branch-interface';
+import { IBranch } from '../common/interfaces/api-branch-interface';
+import { IDocumentBranch } from '../common/interfaces/document-branch-interface';
+
 dotenv.config();
 
 const router = express.Router();
@@ -43,7 +45,9 @@ router.post(
 			}
 
 			server_response = await MakeRequest(
-				new LoadBranchesBuilder(cookieObj, requestVerificationTokenHtml, '')
+				new LoadBranchesBuilder(cookieObj, undefined, undefined, {
+					__RequestVerificationToken: requestVerificationTokenHtml,
+				})
 			);
 			console.log('### Bring all branches : Done ###');
 
@@ -61,19 +65,19 @@ router.post(
 			);
 
 			// Filter out the all th kiosks and shops that only offer mail pickup services.
-			const filteredBranches: IBranchDocument[] = branchesList.branches.reduce(
-				(accumulator: IBranchDocument[], branch: IBranch) => {
+			const filteredBranches: IDocumentBranch[] = branchesList.branches.reduce(
+				(accumulator: IDocumentBranch[], branch: IBranch) => {
 					if (branch.qnomycode !== 0) {
-						const newBranch = {
+						const newBranch: IDocumentBranch = {
 							id: branch.id,
 							branchnumber: branch.branchnumber,
 							branchname: branch.branchname,
-							branchnameEN: branch.branchnameEN,
+							branchnameEN: branch.branchnameEN || '',
 							city: branch.city,
-							cityEN: branch.cityEN,
+							cityEN: branch.cityEN || '',
 							street: branch.street,
-							streetEN: branch.streetEN,
-							streetcode: branch.streetcode,
+							streetEN: branch.streetEN || '',
+							streetcode: branch.streetcode || '',
 							zip: branch.zip,
 							qnomycode: branch.qnomycode,
 							qnomyWaitTimeCode: branch.qnomyWaitTimeCode,

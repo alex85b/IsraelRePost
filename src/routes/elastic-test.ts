@@ -2,9 +2,8 @@ import express from 'express';
 import * as path from 'path';
 import fs from 'fs';
 import dotenv from 'dotenv';
+import { ElasticClient } from '../elastic/elstClient';
 dotenv.config();
-
-import { ElasticClient, IBranchDocument } from '../elastic/elstClient';
 
 const router = express.Router();
 

@@ -3,9 +3,10 @@ import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import { Page, Browser, Protocol } from 'puppeteer';
 import cheerio from 'cheerio'; // ? parse5 has better benchmark score. maybe switch to parse5.
 import { CookieBank } from '../common/cookie-bank';
-import { CookiesObject } from '../common/cookies-object-interface';
+import { CookiesObject } from '../common/interfaces/cookies-object-interface';
 import { URLs } from '../common/urls';
 import { integer } from '@elastic/elasticsearch/lib/api/types';
+import { PuppeteerMalfunctionError } from '../errors/pptr-malfunction-error';
 
 // puppeteer.use(StealthPlugin());
 
@@ -90,12 +91,14 @@ export class PuppeteerBrowser {
 		return this.cookies.getCookies();
 	}
 
-	async extractAllCookies(): Promise<CookiesObject | false> {
+	async extractAllCookies(): Promise<CookiesObject> {
 		if (this.page) {
 			const cookies = await this.page.cookies();
 			return this.cookies.importPuppeteerCookies(cookies);
 		}
-		return false;
+		throw new PuppeteerMalfunctionError(
+			'Page is not initialized, cannot extract cookies'
+		);
 	}
 
 	async waitThenSearchCookie(

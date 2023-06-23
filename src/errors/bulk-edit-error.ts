@@ -10,6 +10,7 @@ export class BulkAddError extends CustomError {
 
 	constructor(private errors: IBulkError[]) {
 		super('Bulk add error');
+		Object.setPrototypeOf(this, BulkAddError.prototype);
 	}
 
 	serializeErrors() {

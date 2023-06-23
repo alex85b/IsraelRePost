@@ -7,6 +7,7 @@ export class PuppeteerMalfunctionError extends CustomError {
 	constructor(errorMessage: string) {
 		super(errorMessage);
 		this.errorMessage = errorMessage;
+		Object.setPrototypeOf(this, PuppeteerMalfunctionError.prototype);
 	}
 
 	serializeErrors() {

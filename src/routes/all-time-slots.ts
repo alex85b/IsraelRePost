@@ -1,21 +1,32 @@
 import express, { Request, Response, NextFunction } from 'express';
 import { PuppeteerBrowser } from '../pptr/pptr-browser';
 import { URLs } from '../common/urls';
-import { PuppeteerMalfunctionError } from '../errors/pptr-malfunction-error';
 import { MakeRequest } from '../api-requests/make-request';
-import { LoadBranchesBuilder } from '../api-requests/load-braches';
-import { ElasticClient, IBranchDocument } from '../elastic/elstClient';
+import { ElasticClient } from '../elastic/elstClient';
 import * as path from 'path';
 import fs from 'fs';
 import dotenv from 'dotenv';
-import { IBranch } from '../elastic/interfaces/branch-interface';
 import { ElasticMalfunctionError } from '../errors/elst-malfunction-error';
 import {
 	SearchResponseBody,
 	SearchTotalHits,
 } from '@elastic/elasticsearch/lib/api/types';
-import { CookiesObject } from '../common/cookies-object-interface';
 import { UserCreateAnonymous } from '../api-requests/user-create-anonymouse';
+import { CookieBank } from '../common/cookie-bank';
+import { LocationGetServices } from '../api-requests/location-get-services';
+import { IDocumentBranch } from '../common/interfaces/document-branch-interface';
+import { IUserCreateAnonymousData } from '../common/interfaces/user-create-data-interface';
+import { ILocationGetServices } from '../common/interfaces/get-services-interface';
+import { SearchAvailableDates } from '../api-requests/search-avaliable-dates';
+import { getTodayDateObject } from '../common/todays-date';
+import { ISearchAvailableDatesData } from '../common/interfaces/search-dates-data-interface';
+import { SearchAvailableSlots } from '../api-requests/search-available-slots';
+import { ISearchDatesData } from '../common/interfaces/search-slots-data-interface';
+import {
+	ISODateTimeString,
+	ITimeSlotsDocument,
+} from '../common/interfaces/timeslots-document-interface';
+
 dotenv.config();
 
 const router = express.Router();
@@ -24,7 +35,7 @@ router.post(
 	'/api/scrape/all-time-slots',
 	async (req: Request, res: Response, next: NextFunction) => {
 		const puppeteerClient = new PuppeteerBrowser('new');
-		let cookieObj: CookiesObject;
+		const cookieBank = new CookieBank();
 		let requestVerificationTokenHtml: string;
 		try {
 			/*//* ########################################################### */
@@ -64,7 +75,6 @@ router.post(
 			console.log('### Result amount ### : ', resultsAmount);
 
 			const results = branches.hits.hits;
-			// console.log("### all branches ### : ", results);
 
 			/*//* ########################################################### */
 			/*//* Iterate branches list, for each branch do ################# */
@@ -72,7 +82,7 @@ router.post(
 
 			// as a test - pick one branch from the results array.
 			console.log('### Chosen result ### : ', results[0]);
-			const testBranch = results[0]._source as IBranch;
+			const testBranch = results[0]._source as IDocumentBranch;
 
 			/*//* ########################################################### */
 			/*//* Get Dates of time slots ################################### */
@@ -94,37 +104,115 @@ router.post(
 				(await puppeteerClient.extractHtmlToken()) || '';
 			console.log("### Extract a 'Token' that hidden in the HTML: Done ###");
 
-			cookieObj = (await puppeteerClient.extractAllCookies()) || {};
+			cookieBank.addCookies(await puppeteerClient.extractAllCookies());
 			console.log('### Extract cookies from the browser: Done ###');
 
-			if (!cookieObj || !requestVerificationTokenHtml) {
-				throw new PuppeteerMalfunctionError('Token or cookies extraction failed');
-			} else {
-				console.log('Cookies: ', cookieObj);
-				console.log('Token : ', requestVerificationTokenHtml);
-			}
-
-			// Generate a 'User' using api request.
-			const server_response = await MakeRequest(
-				new UserCreateAnonymous(cookieObj, requestVerificationTokenHtml, '')
+			// Generate a 'User' using UserCreateAnonymous api request.
+			const UserCreateAnonymousResponse = await MakeRequest(
+				new UserCreateAnonymous(
+					cookieBank.getCookies(),
+					requestVerificationTokenHtml
+				)
 			);
+			console.log('### UserCreateAnonymous API request: Done ###');
 
-			console.log(server_response);
+			// Retrieve a JWT token from the data of User Create Anonymous request.
+			const userDataToken = (
+				UserCreateAnonymousResponse.data as IUserCreateAnonymousData
+			).Results.token;
+			console.log('### Retrieve a JWT token: Done ###');
 
-			console.log('### Bring all branches : Done ###');
+			// Save new Cookies.
+			cookieBank.importAxiosCookies(UserCreateAnonymousResponse.axiosCookies);
+
+			// Get Branches services using the LocationGetServices API.
+			const LocationGetServicesResponse = await MakeRequest(
+				new LocationGetServices(cookieBank.getCookies(), userDataToken, {
+					locationId: String(testBranch.qnomycode),
+					serviceTypeId: '0',
+				})
+			);
+			console.log('### LocationGetServices: Done ###');
+
+			const LocationGetServicesResults = (
+				LocationGetServicesResponse.data as ILocationGetServices
+			).Results;
+
+			/*//* ########################################################### */
+			/*//* Iterate branch services, for each service do ############## */
+			/*//* ########################################################### */
+
+			const testServiceId = LocationGetServicesResults[0].serviceId;
+
+			// Get branch-service's available Appointment-dates.
+			const todaysDate = getTodayDateObject();
+			const SearchAvailableDatesResponse = await MakeRequest(
+				new SearchAvailableDates(cookieBank.getCookies(), userDataToken, {
+					serviceId: String(testServiceId),
+					startDate: {
+						yyyy: todaysDate.year,
+						mm: todaysDate.month,
+						dd: todaysDate.day,
+					},
+				})
+			);
+			console.log('### SearchAvailableDates: Done ###');
+
+			const SearchAvailableDatesResults = (
+				SearchAvailableDatesResponse.data as ISearchAvailableDatesData
+			).Results;
+			console.log('SearchAvailableDates Data : ', SearchAvailableDatesResults);
+
+			/*//* ########################################################### */
+			/*//* Iterate branch service's dates, for each date do ########## */
+			/*//* ########################################################### */
+
+			const testCalendarDate = SearchAvailableDatesResults[0].calendarDate;
+
 			/*//* ########################################################### */
 			/*//* Get time slots ############################################ */
 			/*//* ########################################################### */
+
+			// Get time slots of a specific branch's service and date.
+			const SearchAvailableSlotsResponse = await MakeRequest(
+				new SearchAvailableSlots(cookieBank.getCookies(), userDataToken, {
+					dayPart: '1',
+					serviceId: String(testServiceId),
+				})
+			);
+
+			const SearchAvailableSlotsResults = (
+				SearchAvailableSlotsResponse.data as ISearchDatesData
+			).Results;
+
+			console.log('SearchAvailableSlots Results : ', SearchAvailableSlotsResults);
 
 			/*//* ########################################################### */
 			/*//* Write to DB ############################################### */
 			/*//* ########################################################### */
 
+			// test if Elasticsearch is up and running
+			elasticClient.sendPing();
+
+			// If time slots index doesn't exist ? create it.
+			if (!elasticClient.timeSlotsIndexExists()) {
+				elasticClient.createTimeSlotsIndex();
+			}
+
+			const addDocument: ITimeSlotsDocument = {
+				branchKey: results[0]._id,
+				BranchDate: testCalendarDate as ISODateTimeString,
+				timeSlots: SearchAvailableSlotsResults,
+			};
+
+			const bulkAddSlotsResponse = await elasticClient.bulkAddSlots([addDocument]);
+			console.log('### Done ###');
+
 			/*//* ########################################################### */
 			/*//* Return an indication of completion ######################## */
 			/*//* ########################################################### */
 
-			res.status(200).send('All time slots works!');
+			res.status(200).send(bulkAddSlotsResponse);
 		} catch (error) {
 			console.error('### Error! ###');
 			next(error);

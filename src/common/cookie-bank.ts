@@ -1,6 +1,6 @@
 import { Protocol } from 'puppeteer';
 import { CookieAbsentError } from '../errors/cookie-absent-error';
-import { CookiesObject } from './cookies-object-interface';
+import { CookiesObject } from './interfaces/cookies-object-interface';
 
 export class CookieBank {
 	private cookies: CookiesObject = {};
@@ -37,14 +37,22 @@ export class CookieBank {
 	}
 
 	getCookieValue(cookieName: string): string {
-		if (!this.cookies[cookieName]) throw new CookieAbsentError();
+		if (!this.cookies[cookieName])
+			throw new CookieAbsentError({
+				message: `Cookie ${cookieName} is missing`,
+				source: 'getCookieValue',
+			});
 		return this.cookies[cookieName];
 	}
 
 	findCookies(keys: string[]): CookiesObject {
 		const returnCookies: CookiesObject = {};
 		for (const key of keys) {
-			if (!this.cookies[key]) throw new CookieAbsentError();
+			if (!this.cookies[key])
+				throw new CookieAbsentError({
+					message: `Cookie ${keys} is missing`,
+					source: 'getCookieValue',
+				});
 			returnCookies[key] = this.cookies[key];
 		}
 		return returnCookies;
