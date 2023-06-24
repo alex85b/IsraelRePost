@@ -1,6 +1,6 @@
-import { CookiesObject } from '../common/interfaces/cookies-object-interface';
-import { IApiRequest } from '../common/interfaces/api-request-interface';
-import { BaseApiRequestBuilder, IRequestData } from './base-build-request';
+import { IApiRequest } from '../common/interfaces/IApiRequest';
+import { ICookiesObject } from '../common/interfaces/ICookiesObject';
+import { BaseApiRequestBuilder } from './base-build-request';
 
 class LoadBranchesBuilder extends BaseApiRequestBuilder {
 	readonly cookiesToFInd = [
@@ -16,7 +16,7 @@ class LoadBranchesBuilder extends BaseApiRequestBuilder {
 	];
 
 	constructor(
-		cookies: CookiesObject,
+		cookies: ICookiesObject,
 		authorization: any,
 		urlAttributes: any,
 		data: { __RequestVerificationToken: string }

@@ -1,12 +1,12 @@
-import { CookiesObject } from '../common/interfaces/cookies-object-interface';
-import { IApiRequest } from '../common/interfaces/api-request-interface';
+import { ICookiesObject } from '../common/interfaces/ICookiesObject';
+import { IApiRequest } from '../common/interfaces/IApiRequest';
 import { BaseApiRequestBuilder, IRequestDate } from './base-build-request';
 
 class SearchAvailableDates extends BaseApiRequestBuilder {
 	readonly cookiesToFInd = ['ARRAffinity', 'ARRAffinitySameSite', 'GCLB'];
 
 	constructor(
-		cookies: CookiesObject,
+		cookies: ICookiesObject,
 		authorization: string,
 		urlAttributes: { serviceId: string; startDate: IRequestDate }
 	) {

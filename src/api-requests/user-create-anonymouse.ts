@@ -1,4 +1,4 @@
-import { IApiRequest } from '../common/interfaces/api-request-interface';
+import { IApiRequest } from '../common/interfaces/IApiRequest';
 import { BaseApiRequestBuilder } from './base-build-request';
 
 class UserCreateAnonymous extends BaseApiRequestBuilder {

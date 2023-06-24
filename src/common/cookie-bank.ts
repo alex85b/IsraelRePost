@@ -1,11 +1,11 @@
 import { Protocol } from 'puppeteer';
 import { CookieAbsentError } from '../errors/cookie-absent-error';
-import { CookiesObject } from './interfaces/cookies-object-interface';
+import { ICookiesObject } from './interfaces/ICookiesObject';
 
 export class CookieBank {
-	private cookies: CookiesObject = {};
+	private cookies: ICookiesObject = {};
 
-	addCookies(cookies: CookiesObject) {
+	addCookies(cookies: ICookiesObject) {
 		for (const key in cookies) {
 			this.cookies[key] = cookies[key];
 		}
@@ -18,7 +18,7 @@ export class CookieBank {
 		return this.getCookies();
 	}
 
-	importAxiosCookies(axiosCookies: string[]): CookiesObject {
+	importAxiosCookies(axiosCookies: string[]): ICookiesObject {
 		axiosCookies.forEach((cell) => {
 			if (cell.includes('=')) {
 				const delimiter = ';';
@@ -45,8 +45,8 @@ export class CookieBank {
 		return this.cookies[cookieName];
 	}
 
-	findCookies(keys: string[]): CookiesObject {
-		const returnCookies: CookiesObject = {};
+	findCookies(keys: string[]): ICookiesObject {
+		const returnCookies: ICookiesObject = {};
 		for (const key of keys) {
 			if (!this.cookies[key])
 				throw new CookieAbsentError({
@@ -63,7 +63,7 @@ export class CookieBank {
 	}
 
 	// shallow copy.
-	getCookies(): CookiesObject {
+	getCookies(): ICookiesObject {
 		return Object.assign({}, this.cookies);
 	}
 }

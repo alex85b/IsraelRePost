@@ -1,5 +1,5 @@
-import { CookiesObject } from '../common/interfaces/cookies-object-interface';
-import { IApiRequest } from '../common/interfaces/api-request-interface';
+import { IApiRequest } from '../common/interfaces/IApiRequest';
+import { ICookiesObject } from '../common/interfaces/ICookiesObject';
 import { BaseApiRequestBuilder } from './base-build-request';
 
 class GetBranch extends BaseApiRequestBuilder {
@@ -14,7 +14,7 @@ class GetBranch extends BaseApiRequestBuilder {
 	];
 
 	constructor(
-		cookies: CookiesObject,
+		cookies: ICookiesObject,
 		authorization: string | undefined,
 		data: { branchnumber: string; __RequestVerificationToken: string }
 	) {

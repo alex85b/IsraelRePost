@@ -1,5 +1,4 @@
 export interface ILocationGetServices {
-	Success: boolean;
 	Results: {
 		serviceId: number;
 		serviceName: string;
@@ -15,10 +14,4 @@ export interface ILocationGetServices {
 		ExtRef: string;
 		LocationId: number;
 	}[];
-	Page: number;
-	ResultsPerPage: number;
-	TotalResults: number;
-	ErrorMessage: any;
-	ErrorNumber: number;
-	Messages: any;
 }

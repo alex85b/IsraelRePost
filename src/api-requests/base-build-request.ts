@@ -1,5 +1,5 @@
-import { IApiRequest } from '../common/interfaces/api-request-interface';
-import { CookiesObject } from '../common/interfaces/cookies-object-interface';
+import { IApiRequest } from '../common/interfaces/IApiRequest';
+import { ICookiesObject } from '../common/interfaces/ICookiesObject';
 import { BadRequestError } from '../errors/bad-request-error';
 import { CookieAbsentError } from '../errors/cookie-absent-error';
 
@@ -27,7 +27,7 @@ export abstract class BaseApiRequestBuilder {
 	abstract readonly cookiesToFInd: string[];
 
 	constructor(
-		protected cookies: CookiesObject,
+		protected cookies?: ICookiesObject,
 		protected authorization?: string,
 		protected urlAttributes?: IRequestUrlAttributes,
 		protected data?: IRequestData
@@ -47,7 +47,7 @@ export abstract class BaseApiRequestBuilder {
 
 	abstract buildApiRequest(): IApiRequest;
 
-	reformatForAxios<T extends CookiesObject, K extends keyof T>(
+	reformatForAxios<T extends ICookiesObject, K extends keyof T>(
 		cookies: T,
 		keysToSearch: K[]
 	) {

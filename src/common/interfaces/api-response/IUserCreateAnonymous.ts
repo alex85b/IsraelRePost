@@ -1,4 +1,4 @@
-export interface IUserCreateAnonymousData {
+export interface IUserCreateAnonymous {
 	Success: boolean;
 	Results: {
 		token: string;

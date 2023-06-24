@@ -1,9 +1,9 @@
-import { CookiesObject } from '../common/interfaces/cookies-object-interface';
-import { IApiRequest } from '../common/interfaces/api-request-interface';
+import { ICookiesObject } from '../common/interfaces/ICookiesObject';
+import { IApiRequest } from '../common/interfaces/IApiRequest';
 import { BaseApiRequestBuilder } from './base-build-request';
 
 class UserGetInfo extends BaseApiRequestBuilder {
-	constructor(cookies: CookiesObject, authorization: string) {
+	constructor(cookies: ICookiesObject, authorization: string) {
 		super(cookies, authorization);
 	}
 

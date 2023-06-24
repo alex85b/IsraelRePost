@@ -8,8 +8,8 @@ import {
 	QueryDslQueryContainer,
 } from '@elastic/elasticsearch/lib/api/types';
 import { BulkAddError, IBulkError } from '../errors/bulk-edit-error';
-import { IDocumentBranch } from '../common/interfaces/document-branch-interface';
-import { ITimeSlotsDocument } from '../common/interfaces/timeslots-document-interface';
+import { IDocumentBranch } from '../common/interfaces/IDocumentBranch';
+import { ITimeSlotsDocument } from '../common/interfaces/ITimeSlotsDocument';
 
 /*
 	This encapsulates all the logic that connected to Elasticsearch requests,
@@ -208,19 +208,14 @@ export class ElasticClient {
 	}
 
 	async getAllBranches() {
-		try {
-			const response = await this.client?.search({
-				index: this.branchesIndex,
-				query: {
-					match_all: {},
-				},
-			});
-			if (response) return response;
-			throw new ElasticMalfunctionError('getAllBranches failed fetch');
-		} catch (error) {
-			console.error((error as Error).message);
-			throw new ElasticMalfunctionError('getAllBranches failed fetch');
-		}
+		const response = await this.client?.search({
+			index: this.branchesIndex,
+			query: {
+				match_all: {},
+			},
+		});
+		if (response) return response;
+		throw new ElasticMalfunctionError('getAllBranches failed fetch');
 	}
 
 	async bulkAddBranches(addBranches: IDocumentBranch[]) {
