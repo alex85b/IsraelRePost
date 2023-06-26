@@ -21,6 +21,7 @@ export interface IRequestUrlAttributes {
 	locationId?: string; //* <== qnomy.
 	serviceTypeId?: string;
 	dayPart?: string;
+	calendarId?: string;
 }
 
 export abstract class BaseApiRequestBuilder {

@@ -8,14 +8,14 @@ class SearchAvailableSlots extends BaseApiRequestBuilder {
 	constructor(
 		cookies: ICookiesObject,
 		authorization: string,
-		urlAttributes: { serviceId: string; dayPart: string }
+		urlAttributes: { serviceId: string; dayPart: string; calendarId: string }
 	) {
 		super(cookies, authorization, urlAttributes);
 	}
 
 	public buildApiRequest(): IApiRequest {
 		const reformatCookies = this.reformatForAxios(
-			this.cookies,
+			this.cookies || {},
 			this.cookiesToFInd
 		);
 
@@ -24,7 +24,9 @@ class SearchAvailableSlots extends BaseApiRequestBuilder {
 				method: 'get',
 				maxBodyLength: Infinity,
 				url:
-					'https://central.qnomy.com/CentralAPI/SearchAvailableSlots?CalendarId=1927882&ServiceId=' +
+					'https://central.qnomy.com/CentralAPI/SearchAvailableSlots?CalendarId=' +
+					this.urlAttributes?.calendarId +
+					'&ServiceId=' +
 					this.urlAttributes?.serviceId +
 					'&dayPart=' +
 					this.urlAttributes?.dayPart,
@@ -49,7 +51,6 @@ class SearchAvailableSlots extends BaseApiRequestBuilder {
 				},
 			},
 		};
-
 		return returnApiRequest;
 	}
 }

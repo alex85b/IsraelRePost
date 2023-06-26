@@ -20,7 +20,7 @@ class LocationGetServices extends BaseApiRequestBuilder {
 
 	public buildApiRequest(): IApiRequest {
 		const reformatCookies = this.reformatForAxios(
-			this.cookies,
+			this.cookies || {},
 			this.cookiesToFInd
 		);
 

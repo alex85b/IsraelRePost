@@ -1,6 +1,9 @@
 import express, { Request, Response, NextFunction } from 'express';
 import { requestBranches } from '../scrape/RequestBranches';
-import { loadBranchesSetup } from '../scrape/LoadBranchesSetup';
+import { extractPageData } from '../scrape/ExtractPageData';
+import { URLs } from '../common/urls';
+import { persistBranches } from '../scrape/PersistBranches';
+import { CookieBank } from '../common/cookie-bank';
 
 const router = express.Router();
 
@@ -10,17 +13,25 @@ router.post(
 	'/api/scrape/all-branches',
 	async (req: Request, res: Response, next: NextFunction) => {
 		try {
-			const { cookieObj, elasticClient, htmlToken } = await loadBranchesSetup();
-			const { filteredBranches } = await requestBranches({ cookieObj, htmlToken });
+			const { cookies, htmlToken } = await extractPageData(
+				URLs.IsraelPostBranches,
+				60000,
+				true,
+				true,
+				true
+			);
 
-			await elasticClient.deleteAllIndices();
-			console.log('### deleteAllIndices : Done ###');
+			const cookieBank = new CookieBank();
+			cookieBank.addCookies(cookies);
+			const { filteredBranches } = await requestBranches({
+				cookieBank,
+				htmlToken,
+			});
 
-			await elasticClient.createAllBranchesIndex();
-			console.log('### createAllBranchesIndex : Done ###');
+			const { branches } = await persistBranches(true, filteredBranches);
 
-			const branches = await elasticClient.bulkAddBranches(filteredBranches);
 			console.log('### bulkAddBranches : Done ###');
+
 			res.status(200).send({ message: 'Done', data: branches });
 		} catch (error) {
 			console.error('### Error! ###');

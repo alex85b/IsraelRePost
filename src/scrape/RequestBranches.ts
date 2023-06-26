@@ -1,7 +1,7 @@
 import { LoadBranchesBuilder } from '../api-requests/load-braches';
 import { MakeRequest } from '../api-requests/make-request';
+import { CookieBank } from '../common/cookie-bank';
 import { IBranch } from '../common/interfaces/IBranch';
-import { ICookiesObject } from '../common/interfaces/ICookiesObject';
 import { IDocumentBranch } from '../common/interfaces/IDocumentBranch';
 
 // Define the response to the LoadBranches server request.
@@ -14,13 +14,13 @@ export interface IRequestBranchesResponse {
 }
 
 export const requestBranches = async (requestSetup: {
-	cookieObj: ICookiesObject;
+	cookieBank: CookieBank;
 	htmlToken: string;
 }) => {
-	const { cookieObj, htmlToken } = requestSetup;
+	const { cookieBank, htmlToken } = requestSetup;
 	const branchesList = (
 		await MakeRequest(
-			new LoadBranchesBuilder(cookieObj, undefined, undefined, {
+			new LoadBranchesBuilder(cookieBank.getCookies(), undefined, undefined, {
 				__RequestVerificationToken: htmlToken,
 			})
 		)

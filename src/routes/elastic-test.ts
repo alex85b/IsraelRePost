@@ -3,41 +3,67 @@ import * as path from 'path';
 import fs from 'fs';
 import dotenv from 'dotenv';
 import { ElasticClient } from '../elastic/elstClient';
+import { PuppeteerBrowser } from '../pptr/pptr-browser';
+import { Browser } from 'puppeteer';
+import { URLs } from '../common/urls';
+import { UserCreateAnonymous } from '../api-requests/new/UserCreateAnonymous';
+import { UserGetInfo } from '../api-requests/new/UserGetInfo';
+import { CookieBank } from '../common/cookie-bank';
+import { LocationGetServices } from '../api-requests/new/LocationGetServices';
 dotenv.config();
 
 const router = express.Router();
 
 router.get('/api/scrape/elastic', async (req, res) => {
-	// Calculate path to certificates.
-	const certificatePath = path.join(
-		__dirname,
-		'..',
-		'..',
-		'elastic-cert',
-		'http_ca.crt'
-	);
+	//? how can israel post know i'm me ?
+	// Launch a browser.
 
-	// Fetch certificates from local file.
-	const certificateContents = fs.readFileSync(certificatePath, 'utf8');
+	const browser = new PuppeteerBrowser('new', 60000);
+	await browser.navigateToURL({
+		PartialBranchUrl: URLs.PartialBranchUrl,
+		branchNumber: 678,
+	});
 
-	// Create a client.
-	const client = new ElasticClient(
-		'https://127.0.0.1:9200',
-		'elastic',
-		process.env.ELS_PSS || '',
-		certificateContents,
-		false
-	);
+	const cookieBank = new CookieBank();
 
-	// Find my location.
-	const myLat = 32.02155;
-	const myLong = 34.74766;
+	cookieBank.addCookies(await browser.extractAllCookies());
+	const bHtmlToken = await browser.extractHtmlToken();
+	// browser.getSavedCookies();
+	// browser.getSavedHtmlToken();
 
-	// Find all branches within 5km from my location,
-	// Using the special transport query that shows how many records were checked.
-	client.TEST_BranchSpatialIndexing(myLat, myLong);
+	try {
+		const userCreateAnonymous = new UserCreateAnonymous();
+		const userGetInfo = new UserGetInfo();
+		const locationGetServices = new LocationGetServices();
 
-	res.send('Done');
+		const anonymousResponse = await userCreateAnonymous.makeRequest();
+		cookieBank.addCookies(anonymousResponse.cookies);
+
+		const infoResponse = await userGetInfo.makeRequest(
+			cookieBank.getCookies(),
+			undefined,
+			{ token: anonymousResponse.data['token'] }
+		);
+
+		const servicesResponse = await locationGetServices.makeRequest(
+			cookieBank.getCookies(),
+			{ locationId: '278', serviceTypeId: '0' },
+			{ token: anonymousResponse.data['token'] }
+		);
+
+		const servicesResults = locationGetServices.getResponseArray();
+
+		res
+			.status(200)
+			.send({
+				infoResponse,
+				anonymousResponse,
+				servicesResponse,
+				servicesResults,
+			});
+	} catch (error) {
+		res.status(500).send(error);
+	}
 });
 
 export { router as elasticTest };

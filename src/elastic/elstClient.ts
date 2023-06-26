@@ -86,7 +86,6 @@ export class ElasticClient {
 	async sendPing() {
 		try {
 			await this.client?.ping();
-			console.log('### Elasticsearch is up ###');
 		} catch (error) {
 			console.error((error as Error).message);
 			throw new ElasticMalfunctionError('sendPing failed');
@@ -113,28 +112,28 @@ export class ElasticClient {
 		}
 	}
 
-	private async indexExists(index: string) {
+	async setupIndex(index: 'branches' | 'slots' | 'all') {
+		if (index === 'all') {
+			if (!(await this.indexExists('branches'))) this.createAllBranchesIndex;
+			if (!(await this.indexExists('slots'))) this.createTimeSlotsIndex;
+		} else if (index === 'slots') {
+			if (!(await this.indexExists('slots'))) this.createTimeSlotsIndex;
+		} else {
+			if (!(await this.indexExists('branches'))) this.createAllBranchesIndex;
+		}
+	}
+
+	async indexExists(index: 'branches' | 'slots') {
+		const checkThis = index === 'branches' ? this.branchesIndex : this.slotsIndex;
 		try {
-			const response = await this.client?.indices.exists({ index: index });
+			const response = await this.client?.indices.exists({ index: checkThis });
 			return response || false;
 		} catch (error) {
 			throw new ElasticMalfunctionError(`indexExists failed: ${index}`);
 		}
 	}
 
-	async allBranchesIndexExists() {
-		return await this.indexExists(this.branchesIndex);
-	}
-
-	async timeSlotsIndexExists() {
-		return await this.indexExists(this.branchesIndex);
-	}
-
-	async createAllBranchesIndex() {
-		if (await this.allBranchesIndexExists()) {
-			return false;
-		}
-
+	private async createAllBranchesIndex() {
 		let response: IndicesCreateResponse | false;
 		try {
 			response = await this.createIndex(
@@ -154,11 +153,7 @@ export class ElasticClient {
 		return true;
 	}
 
-	async createTimeSlotsIndex() {
-		if (await this.timeSlotsIndexExists()) {
-			return false;
-		}
-
+	private async createTimeSlotsIndex() {
 		let response: IndicesCreateResponse | false;
 		try {
 			response = await this.createIndex(
@@ -178,9 +173,15 @@ export class ElasticClient {
 		return true;
 	}
 
-	async deleteAllIndices() {
+	async deleteIndices(index: 'branches' | 'slots' | 'all') {
+		const deleteThis =
+			index === 'branches'
+				? this.branchesIndex
+				: index === 'slots'
+				? this.slotsIndex
+				: '*';
 		try {
-			const response = await this.client?.indices.getAlias({ index: '*' });
+			const response = await this.client?.indices.getAlias({ index: deleteThis });
 			if (!response) return false;
 			for (const ind in response) {
 				if (ind !== '.security-7') {
@@ -191,7 +192,7 @@ export class ElasticClient {
 			return true;
 		} catch (error) {
 			console.error((error as Error).message);
-			throw new ElasticMalfunctionError('deleteAllIndices failed deletion');
+			throw new ElasticMalfunctionError(`deleteIndices ${index} failed deletion`);
 		}
 	}
 
@@ -213,6 +214,7 @@ export class ElasticClient {
 			query: {
 				match_all: {},
 			},
+			size: 2000,
 		});
 		if (response) return response;
 		throw new ElasticMalfunctionError('getAllBranches failed fetch');
@@ -228,7 +230,7 @@ export class ElasticClient {
 
 		try {
 			response = await this.client?.bulk({ body });
-			console.log('### bulkAddBranches has error ### : ', response?.errors);
+			console.log('### [bulkAddBranches] has error ### : ', response?.errors);
 			if (!response) {
 				throw new ElasticMalfunctionError('Bulk add has failed');
 			}
@@ -251,8 +253,6 @@ export class ElasticClient {
 		return response?.items;
 	}
 
-	// { index: { _index: this.slotsIndex } }
-
 	async bulkAddSlots(addTimeSlots: ITimeSlotsDocument[]) {
 		const body = addTimeSlots.flatMap((document) =>
 			document.timeSlots.map((timeSlot) => ({
@@ -267,7 +267,7 @@ export class ElasticClient {
 
 		try {
 			response = await this.client?.bulk({ body });
-			console.log('### bulkAddBranches has error ### : ', response?.errors);
+			console.log('### [bulkAddSlots] has error ### : ', response?.errors);
 			if (!response) {
 				throw new ElasticMalfunctionError('Bulk add has failed');
 			}
