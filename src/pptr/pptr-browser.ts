@@ -55,34 +55,34 @@ export class PuppeteerBrowser {
 		if (this.browser && !this.page) {
 			this.page = await this.browser.newPage();
 			this.page.setDefaultNavigationTimeout(navigationTimeout);
-			await this.page.setRequestInterception(true);
+			// await this.page.setRequestInterception(true);
 
-			this.page.on('request', (interceptedRequest) => {
-				if (interceptedRequest.resourceType() === 'xhr') {
-					this.xhrRequests.push({
-						url: interceptedRequest.url(),
-						method: interceptedRequest.method(),
-						headers: interceptedRequest.headers(),
-						postData: interceptedRequest.postData(),
-					});
-				}
+			// this.page.on('request', (interceptedRequest) => {
+			// 	if (interceptedRequest.resourceType() === 'xhr') {
+			// 		this.xhrRequests.push({
+			// 			url: interceptedRequest.url(),
+			// 			method: interceptedRequest.method(),
+			// 			headers: interceptedRequest.headers(),
+			// 			postData: interceptedRequest.postData(),
+			// 		});
+			// 	}
 
-				interceptedRequest.continue();
-			});
+			// 	interceptedRequest.continue();
+			// });
 
-			this.page.on('response', async (response: HTTPResponse) => {
-				if (response.request().resourceType() === 'xhr') {
-					// Transform the XHR response into an object
-					this.xhrResponse.push({
-						url: response.url(),
-						status: response.status(),
-						headers: response.headers(),
-						body: await response.text(),
-					});
-				}
-			});
+			// this.page.on('response', async (response: HTTPResponse) => {
+			// 	if (response.request().resourceType() === 'xhr') {
+			// 		// Transform the XHR response into an object
+			// 		this.xhrResponse.push({
+			// 			url: response.url(),
+			// 			status: response.status(),
+			// 			headers: response.headers(),
+			// 			body: await response.text(),
+			// 		});
+			// 	}
+			// });
 
-			console.log(`### setDefaultNavigationTimeout: ${navigationTimeout} ###`);
+			// console.log(`### setDefaultNavigationTimeout: ${navigationTimeout} ###`);
 		}
 	}
 
@@ -137,13 +137,13 @@ export class PuppeteerBrowser {
 		return this.cookies.importPuppeteerCookies(cookies);
 	}
 
-	closePageAndBrowser() {
+	async closePageAndBrowser() {
 		if (this.page) {
-			this.page.close();
+			await this.page.close();
 			this.page = null;
 		}
 		if (this.browser) {
-			this.browser.close();
+			await this.browser.close();
 			this.browser = null;
 		}
 	}
@@ -153,8 +153,8 @@ export class PuppeteerBrowser {
 		this.RequestVerificationToken = '';
 	}
 
-	end() {
-		this.closePageAndBrowser();
+	async end() {
+		await this.closePageAndBrowser();
 		this.resetCookiesAndToken();
 	}
 }

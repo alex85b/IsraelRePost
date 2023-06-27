@@ -32,13 +32,50 @@ export class UserGetInfo extends BaseApiRequest {
 			'ErrorNumber',
 			'Messages',
 		];
+
+		this.nameOfThis = 'UserGetInfo';
+	}
+
+	makeRequest(
+		cookies: {
+			ARRAffinity: string;
+			ARRAffinitySameSite: string;
+			CentralJWTCookie: string;
+			GCLB: string;
+		},
+		headers: { token: string }
+	): Promise<{
+		data: {
+			Success: string;
+			username: string;
+			isAnonymous: string;
+			visitsCount: string;
+			token: string;
+		};
+		cookies: {};
+		nested: {}[];
+	}> {
+		return super.makeRequest(cookies, undefined, headers) as Promise<{
+			data: {
+				Success: string;
+				username: string;
+				isAnonymous: string;
+				visitsCount: string;
+				token: string;
+			};
+			cookies: {};
+			nested: {}[];
+		}>;
 	}
 
 	protected buildRequest(
-		cookies: { [key: string]: string },
-		urlAttribute: { [key: string]: string },
-		headers: { [key: string]: string },
-		data: { [key: string]: string }
+		cookies: {
+			ARRAffinity: string;
+			ARRAffinitySameSite: string;
+			CentralJWTCookie: string;
+			GCLB: string;
+		},
+		headers: { token: string }
 	): AxiosRequestConfig<any> {
 		const request = {
 			method: 'get',

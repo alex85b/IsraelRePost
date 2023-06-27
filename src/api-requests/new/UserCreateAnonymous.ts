@@ -1,6 +1,7 @@
 import { AxiosRequestConfig } from 'axios';
 import { BaseApiRequest } from './BaseRequest';
 import { BadApiResponse } from '../../errors/BadApiResponse';
+import { data } from 'cheerio/lib/api/attributes';
 
 export class UserCreateAnonymous extends BaseApiRequest {
 	constructor() {
@@ -20,6 +21,30 @@ export class UserCreateAnonymous extends BaseApiRequest {
 			'ErrorMessage',
 			'Messages',
 		];
+
+		this.nameOfThis = 'UserCreateAnonymous';
+	}
+
+	makeRequest(): Promise<{
+		data: { Success: string; token: string; username: string };
+		cookies: {
+			CentralJWTCookie: string;
+			ARRAffinity: string;
+			ARRAffinitySameSite: string;
+			GCLB: string;
+		};
+		nested: { [key: string]: string }[];
+	}> {
+		return super.makeRequest() as Promise<{
+			data: { Success: string; token: string; username: string };
+			cookies: {
+				CentralJWTCookie: string;
+				ARRAffinity: string;
+				ARRAffinitySameSite: string;
+				GCLB: string;
+			};
+			nested: { [key: string]: string }[];
+		}>;
 	}
 
 	protected buildRequest(): AxiosRequestConfig<any> {

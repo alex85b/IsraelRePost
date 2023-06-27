@@ -20,7 +20,7 @@ export const queryAllBranches = async () => {
 	);
 
 	const certificateContents = fs.readFileSync(certificatePath, 'utf8');
-	console.log('### [queryAllBranches] Fetch certificates : Done ###');
+	console.log('[queryAllBranches] Fetch certificates : Done');
 
 	// Create a client.
 	const elasticClient = new ElasticClient(
@@ -32,13 +32,13 @@ export const queryAllBranches = async () => {
 	);
 
 	elasticClient.sendPing();
-	console.log('### [queryAllBranches] Elastic is up and running ###');
+	console.log('[queryAllBranches] Elastic is up and running');
 
 	if (!(await elasticClient.indexExists('branches')))
 		throw new ElasticMalfunctionError('all-post-branches index does not exist');
 
 	const branches: SearchResponseBody = await elasticClient.getAllBranches();
-	console.log('### [queryAllBranches] search all branches : Done ###');
+	console.log('[queryAllBranches] search all branches : Done');
 
 	const resultsAmount = (branches.hits.total as SearchTotalHits).value;
 	if (resultsAmount === 0)

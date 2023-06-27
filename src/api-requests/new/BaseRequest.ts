@@ -11,6 +11,7 @@ export abstract class BaseApiRequest {
 	protected responseCookieHeaders: string[] = [];
 	protected responseDataKeys: string[] = [];
 	protected nestedResponse: { [key: string]: any }[] = [];
+	protected nameOfThis = 'BaseApiRequest';
 
 	protected abstract buildRequest(
 		cookies: { [key: string]: string },
@@ -25,15 +26,10 @@ export abstract class BaseApiRequest {
 		headers: { [key: string]: string } = {},
 		data: { [key: string]: string } = {}
 	) {
-		this.checkProvidedData('cookies', cookies, this.requestCookieHeaders, true);
-		this.checkProvidedData(
-			'urlAttribute',
-			urlAttribute,
-			this.requestUrlAttributes,
-			true
-		);
-		this.checkProvidedData('headers', headers, this.requestHeadersKeys, true);
-		this.checkProvidedData('data', data, this.requestDataKeys, true);
+		this.checkProvidedData('Cookie', cookies, this.requestCookieHeaders, true);
+		this.checkProvidedData('Url', urlAttribute, this.requestUrlAttributes, true);
+		this.checkProvidedData('Headers', headers, this.requestHeadersKeys, true);
+		this.checkProvidedData('Data', data, this.requestDataKeys, true);
 
 		const server_response = await axios.request(
 			this.buildRequest(cookies, urlAttribute, headers, data)
@@ -48,22 +44,21 @@ export abstract class BaseApiRequest {
 		const parsed_cookies = this.parseResponseCookies(response_cookies);
 
 		this.checkProvidedData(
-			'parsed_cookies',
+			'RHeaders',
 			parsed_cookies,
 			this.responseCookieHeaders,
 			false
 		);
 
-		this.checkProvidedData(
-			'parsed_data',
-			parsed_data,
-			this.responseDataKeys,
-			false
-		);
+		this.checkProvidedData('RData', parsed_data, this.responseDataKeys, false);
 
 		this.producedData = parsed_data;
 		this.producedCookies = parsed_cookies;
-		return { data: this.producedData, cookies: this.producedCookies };
+		return {
+			data: this.producedData,
+			cookies: this.producedCookies,
+			nested: this.nestedResponse,
+		};
 	}
 
 	protected checkProvidedData(
@@ -81,7 +76,7 @@ export abstract class BaseApiRequest {
 					message: `${
 						beforeRequest ? 'provided' : 'produced'
 					} data does not contain expected: ${expectedKey} `,
-					source: 'checkProvidedData',
+					source: `[${this.nameOfThis}] checkProvidedData`,
 				});
 			}
 		}
@@ -117,6 +112,8 @@ export abstract class BaseApiRequest {
 		return responseArray.join(' ');
 	}
 
+	//! Only two levels of depth !
+	// This done to fit the predefined class data members.
 	protected transformResponse(data: any) {
 		const transformed: { [key: string]: string } = {};
 
@@ -138,5 +135,41 @@ export abstract class BaseApiRequest {
 		}
 
 		return transformed;
+	}
+
+	protected getRequiredAndProvided() {
+		return {
+			requestCookieHeaders: this.requestCookieHeaders,
+			requestDataKeys: this.requestDataKeys,
+			requestHeadersKeys: this.requestHeadersKeys,
+			requestUrlAttributes: this.requestUrlAttributes,
+			responseCookieHeaders: this.responseCookieHeaders,
+			responseDataKeys: this.responseDataKeys,
+		};
+	}
+
+	getTodayDateObject() {
+		const today = new Date();
+		const year = today.getFullYear();
+		// 'getMonth' returns a zero-based value: January == 0.
+		// padStart ensures that i have 2 'digits', it pads with 0 in case i have 1 digit.
+		const month = String(today.getMonth() + 1).padStart(2, '0');
+		// same procedure as month.
+		const day = String(today.getDate()).padStart(2, '0');
+		const dateString = `${year}-${month}-${day}`;
+		return {
+			date: dateString,
+			year: String(year),
+			month: String(month),
+			day: String(day),
+		};
+	}
+
+	validateDateFormat(dateString: string) {
+		// Regular expression pattern for yyyy-mm-dd format
+		const pattern = /^\d{4}-\d{2}-\d{2}$/;
+
+		// Check if the string matches the pattern
+		return pattern.test(dateString);
 	}
 }

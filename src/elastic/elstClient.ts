@@ -258,7 +258,7 @@ export class ElasticClient {
 			document.timeSlots.map((timeSlot) => ({
 				index: { _index: this.slotsIndex },
 				branchKey: document.branchKey,
-				BranchDate: document.BranchDate,
+				BranchDate: document.branchDate,
 				Time: timeSlot.Time,
 			}))
 		);
