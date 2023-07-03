@@ -9,12 +9,16 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.processBranch = void 0;
 const GetDatesOfServiceOfBranch_1 = require("./GetDatesOfServiceOfBranch");
 const GetServicesOfBranch_1 = require("./GetServicesOfBranch");
 const GetTimesOfDateServiceBranch_1 = require("./GetTimesOfDateServiceBranch");
 const SpinNewUser_1 = require("./SpinNewUser");
-const processBranch = ({ branch, }) => __awaiter(void 0, void 0, void 0, function* () {
+const worker_threads_1 = require("worker_threads");
+const SharedData_1 = require("./SharedData");
+// branch: ISingleBranchQueryResponse
+const processBranch = () => __awaiter(void 0, void 0, void 0, function* () {
+    const { branch, proxyAuth, proxyUrl, useProxy } = worker_threads_1.workerData;
+    (0, SharedData_1.setSharedData)(Math.floor(Math.random() * 301));
     const branchNumber = branch._source.branchnumber;
     const branchKey = branch._id;
     const qnomy = branch._source.qnomycode;
@@ -59,6 +63,7 @@ const processBranch = ({ branch, }) => __awaiter(void 0, void 0, void 0, functio
             });
         }
     }
-    return branchServicesDatesTimes;
+    worker_threads_1.parentPort === null || worker_threads_1.parentPort === void 0 ? void 0 : worker_threads_1.parentPort.postMessage(branchServicesDatesTimes);
 });
-exports.processBranch = processBranch;
+processBranch();
+// module.exports = processBranch;

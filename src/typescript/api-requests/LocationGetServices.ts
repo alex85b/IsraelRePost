@@ -102,6 +102,7 @@ export class LocationGetServices extends BaseApiRequest {
 			},
 		};
 	}
+
 	protected parseResponseData(data: any): { [key: string]: string } {
 		if (!this.isApiResponse(data)) {
 			console.error('[LocationGetServices] [parseResponseData] Error: ', {

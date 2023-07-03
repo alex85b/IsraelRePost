@@ -4,7 +4,7 @@ const ScrapeAllBranches = require('./routes/all-branches');
 
 const NotFoundError = require('./js-build/typescript/errors/not-found-error');
 const errorHandler = require('./js-build/typescript/middlewares/error-handler');
-const elasticTest = require('./routes/elastic-test');
+const testing = require('./routes/testing');
 const AllTimeSlots = require('./routes/all-time-slots');
 
 // ? Do i need to lock this service behind authentication and or authorization ?
@@ -19,7 +19,7 @@ const app = express();
 
 app.use(ScrapeAllBranches);
 app.use(AllTimeSlots);
-app.use(elasticTest);
+app.use(testing);
 app.all('*', () => {
 	throw new NotFoundError();
 });

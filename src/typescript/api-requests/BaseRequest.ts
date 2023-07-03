@@ -1,5 +1,6 @@
 import axios, { AxiosRequestConfig } from 'axios';
 import { NotProvided } from '../errors/NotProvided';
+import {} from 'worker_threads';
 
 export abstract class BaseApiRequest {
 	protected producedData: { [key: string]: string } = {};
@@ -12,6 +13,8 @@ export abstract class BaseApiRequest {
 	protected responseDataKeys: string[] = [];
 	protected nestedResponse: { [key: string]: any }[] = [];
 	protected nameOfThis = 'BaseApiRequest';
+
+	// constructor() {}
 
 	protected abstract buildRequest(
 		cookies: { [key: string]: string },

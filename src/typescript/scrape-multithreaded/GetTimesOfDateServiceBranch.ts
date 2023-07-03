@@ -1,5 +1,6 @@
 import { SearchAvailableSlots } from '../api-requests/SearchAvailableSlots';
 import { BadApiResponse } from '../errors/BadApiResponse';
+import { getSharedData } from './SharedData';
 
 export const getTimesOfDateOfServiceOfBranch = async (
 	cookies: {
@@ -10,6 +11,10 @@ export const getTimesOfDateOfServiceOfBranch = async (
 	urlAttributes: { CalendarId: string; dayPart: string; ServiceId: string },
 	headers: { token: string }
 ) => {
+	console.log(
+		'[getTimesOfDateOfServiceOfBranch] Shared data Test:',
+		getSharedData()
+	);
 	const searchAvailableSlots = new SearchAvailableSlots();
 	try {
 		const hoursResponse = await searchAvailableSlots.makeRequest(

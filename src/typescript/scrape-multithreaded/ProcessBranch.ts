@@ -4,12 +4,20 @@ import { getDatesOfServiceOfBranch } from './GetDatesOfServiceOfBranch';
 import { getServicesOfBranch } from './GetServicesOfBranch';
 import { getTimesOfDateOfServiceOfBranch } from './GetTimesOfDateServiceBranch';
 import { spinNewUser } from './SpinNewUser';
+import { Worker, workerData, parentPort } from 'worker_threads';
+import { getSharedData, setSharedData } from './SharedData';
 
-export const processBranch = async ({
-	branch,
-}: {
-	branch: ISingleBranchQueryResponse;
-}) => {
+// branch: ISingleBranchQueryResponse
+const processBranch = async () => {
+	const { branch, proxyAuth, proxyUrl, useProxy } = workerData as {
+		branch: ISingleBranchQueryResponse;
+		useProxy: boolean;
+		proxyUrl: string;
+		proxyAuth: { username: string; password: string };
+	};
+
+	setSharedData(Math.floor(Math.random() * 301));
+
 	const branchNumber = branch._source.branchnumber;
 	const branchKey = branch._id;
 	const qnomy = branch._source.qnomycode;
@@ -70,5 +78,9 @@ export const processBranch = async ({
 			});
 		}
 	}
-	return branchServicesDatesTimes;
+	parentPort?.postMessage(branchServicesDatesTimes);
 };
+
+processBranch();
+
+// module.exports = processBranch;
