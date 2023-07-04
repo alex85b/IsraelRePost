@@ -28,13 +28,16 @@ class BaseApiRequest {
         this.nestedResponse = [];
         this.nameOfThis = 'BaseApiRequest';
     }
-    makeRequest(cookies = {}, urlAttribute = {}, headers = {}, data = {}) {
+    makeRequest(useProxy, proxyUrl, proxyAuth, cookies = {}, urlAttribute = {}, headers = {}, data = {}) {
         return __awaiter(this, void 0, void 0, function* () {
             this.checkProvidedData('Cookie', cookies, this.requestCookieHeaders, true);
             this.checkProvidedData('Url', urlAttribute, this.requestUrlAttributes, true);
             this.checkProvidedData('Headers', headers, this.requestHeadersKeys, true);
             this.checkProvidedData('Data', data, this.requestDataKeys, true);
-            const server_response = yield axios_1.default.request(this.buildRequest(cookies, urlAttribute, headers, data));
+            const costomAxios = axios_1.default.create({
+                timeout: 35000,
+            });
+            const server_response = yield costomAxios.request(this.buildRequest(useProxy, proxyUrl, proxyAuth, cookies, urlAttribute, headers, data));
             let response_cookies = [];
             if (server_response.headers) {
                 response_cookies = server_response.headers['set-cookie'] || [];

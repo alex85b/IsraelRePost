@@ -1,4 +1,8 @@
-import axios, { AxiosRequestConfig } from 'axios';
+import axios, {
+	AxiosInstance,
+	AxiosRequestConfig,
+	CancelTokenSource,
+} from 'axios';
 import { NotProvided } from '../errors/NotProvided';
 import {} from 'worker_threads';
 
@@ -17,6 +21,9 @@ export abstract class BaseApiRequest {
 	// constructor() {}
 
 	protected abstract buildRequest(
+		useProxy: boolean,
+		proxyUrl: string,
+		proxyAuth: { username: string; password: string },
 		cookies: { [key: string]: string },
 		urlAttribute: { [key: string]: string },
 		headers: { [key: string]: string },
@@ -24,6 +31,9 @@ export abstract class BaseApiRequest {
 	): AxiosRequestConfig<any>;
 
 	async makeRequest(
+		useProxy: boolean,
+		proxyUrl: string,
+		proxyAuth: { username: string; password: string },
 		cookies: { [key: string]: string } = {},
 		urlAttribute: { [key: string]: string } = {},
 		headers: { [key: string]: string } = {},
@@ -34,8 +44,20 @@ export abstract class BaseApiRequest {
 		this.checkProvidedData('Headers', headers, this.requestHeadersKeys, true);
 		this.checkProvidedData('Data', data, this.requestDataKeys, true);
 
-		const server_response = await axios.request(
-			this.buildRequest(cookies, urlAttribute, headers, data)
+		const costomAxios: AxiosInstance = axios.create({
+			timeout: 35000,
+		});
+
+		const server_response = await costomAxios.request(
+			this.buildRequest(
+				useProxy,
+				proxyUrl,
+				proxyAuth,
+				cookies,
+				urlAttribute,
+				headers,
+				data
+			)
 		);
 
 		let response_cookies: string[] = [];

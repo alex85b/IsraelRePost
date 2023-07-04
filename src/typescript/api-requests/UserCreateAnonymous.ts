@@ -1,7 +1,7 @@
 import { AxiosRequestConfig } from 'axios';
 import { BaseApiRequest } from './BaseRequest';
 import { BadApiResponse } from '../errors/BadApiResponse';
-import { data } from 'cheerio/lib/api/attributes';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 
 export class UserCreateAnonymous extends BaseApiRequest {
 	constructor() {
@@ -25,7 +25,11 @@ export class UserCreateAnonymous extends BaseApiRequest {
 		this.nameOfThis = 'UserCreateAnonymous';
 	}
 
-	makeRequest(): Promise<{
+	makeRequest(
+		useProxy: boolean,
+		proxyUrl: string,
+		proxyAuth: { username: string; password: string }
+	): Promise<{
 		data: { Success: string; token: string; username: string };
 		cookies: {
 			CentralJWTCookie: string;
@@ -35,7 +39,7 @@ export class UserCreateAnonymous extends BaseApiRequest {
 		};
 		nested: { [key: string]: string }[];
 	}> {
-		return super.makeRequest() as Promise<{
+		return super.makeRequest(useProxy, proxyUrl, proxyAuth) as Promise<{
 			data: { Success: string; token: string; username: string };
 			cookies: {
 				CentralJWTCookie: string;
@@ -47,8 +51,12 @@ export class UserCreateAnonymous extends BaseApiRequest {
 		}>;
 	}
 
-	protected buildRequest(): AxiosRequestConfig<any> {
-		const request: AxiosRequestConfig<any> = {
+	protected buildRequest(
+		useProxy: boolean,
+		proxyUrl: string,
+		proxyAuth: { username: string; password: string }
+	): AxiosRequestConfig<any> {
+		const requestConfig: AxiosRequestConfig<any> = {
 			method: 'get',
 			maxBodyLength: Infinity,
 			url: 'https://central.qnomy.com/CentralAPI/UserCreateAnonymous',
@@ -71,7 +79,23 @@ export class UserCreateAnonymous extends BaseApiRequest {
 					'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
 			},
 		};
-		return request;
+		if (useProxy) {
+			// console.log('[UserCreateAnonymous] [buildRequest] useProxy: ', useProxy);
+			const proxyURL = new URL(proxyUrl);
+			if (proxyAuth) {
+				proxyURL.username = proxyAuth.username;
+				proxyURL.password = proxyAuth.password;
+			}
+
+			const proxyAgent = new HttpsProxyAgent(proxyURL.toString());
+			requestConfig.httpsAgent = proxyAgent;
+			// console.log(
+			// 	'[UserCreateAnonymous] [buildRequest] request config: ',
+			// 	requestConfig
+			// );
+		}
+
+		return requestConfig;
 	}
 
 	protected parseResponseData(data: any): { [key: string]: string } {

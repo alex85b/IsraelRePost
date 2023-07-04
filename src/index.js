@@ -2,8 +2,8 @@ const express = require('express');
 
 const ScrapeAllBranches = require('./routes/all-branches');
 
-const NotFoundError = require('./js-build/typescript/errors/not-found-error');
-const errorHandler = require('./js-build/typescript/middlewares/error-handler');
+const NotFoundError = require('./js-build/errors/not-found-error');
+const errorHandler = require('./js-build/middlewares/error-handler');
 const testing = require('./routes/testing');
 const AllTimeSlots = require('./routes/all-time-slots');
 

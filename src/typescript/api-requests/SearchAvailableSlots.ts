@@ -1,6 +1,7 @@
 import { AxiosRequestConfig } from 'axios';
 import { BaseApiRequest } from './BaseRequest';
 import { BadApiResponse } from '../errors/BadApiResponse';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 
 export class SearchAvailableSlots extends BaseApiRequest {
 	constructor() {
@@ -19,6 +20,9 @@ export class SearchAvailableSlots extends BaseApiRequest {
 	}
 
 	makeRequest(
+		useProxy: boolean,
+		proxyUrl: string,
+		proxyAuth: { username: string; password: string },
 		cookies: { ARRAffinity: string; ARRAffinitySameSite: string; GCLB: string },
 		urlAttribute: { CalendarId: string; ServiceId: string; dayPart: string },
 		headers: { token: string }
@@ -33,7 +37,14 @@ export class SearchAvailableSlots extends BaseApiRequest {
 		cookies: { [key: string]: string };
 		nested: { Time: string }[];
 	}> {
-		return super.makeRequest(cookies, urlAttribute, headers) as Promise<{
+		return super.makeRequest(
+			useProxy,
+			proxyUrl,
+			proxyAuth,
+			cookies,
+			urlAttribute,
+			headers
+		) as Promise<{
 			data: {
 				Success: string;
 				Results: string;
@@ -47,11 +58,14 @@ export class SearchAvailableSlots extends BaseApiRequest {
 	}
 
 	protected buildRequest(
+		useProxy: boolean,
+		proxyUrl: string,
+		proxyAuth: { username: string; password: string },
 		cookies: { ARRAffinity: string; ARRAffinitySameSite: string; GCLB: string },
 		urlAttribute: { CalendarId: string; ServiceId: string; dayPart: string },
 		headers: { token: string }
 	): AxiosRequestConfig<any> {
-		const apiRequest = {
+		const requestConfig: AxiosRequestConfig<any> = {
 			method: 'get',
 			maxBodyLength: Infinity,
 			url:
@@ -81,7 +95,19 @@ export class SearchAvailableSlots extends BaseApiRequest {
 				Cookie: this.reformatForAxios(cookies),
 			},
 		};
-		return apiRequest;
+		if (useProxy) {
+			// console.log('[SearchAvailableSlots] [buildRequest] useProxy: ', useProxy);
+			const proxyURL = new URL(proxyUrl);
+			if (proxyAuth) {
+				proxyURL.username = proxyAuth.username;
+				proxyURL.password = proxyAuth.password;
+			}
+
+			const proxyAgent = new HttpsProxyAgent(proxyURL.toString());
+			requestConfig.httpsAgent = proxyAgent;
+		}
+
+		return requestConfig;
 	}
 
 	protected parseResponseData(data: any): { [key: string]: string } {

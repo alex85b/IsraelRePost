@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserGetInfo = void 0;
 const BaseRequest_1 = require("./BaseRequest");
 const BadApiResponse_1 = require("../errors/BadApiResponse");
+const https_proxy_agent_1 = require("https-proxy-agent");
 class UserGetInfo extends BaseRequest_1.BaseApiRequest {
     constructor() {
         super();
@@ -32,11 +33,11 @@ class UserGetInfo extends BaseRequest_1.BaseApiRequest {
         ];
         this.nameOfThis = 'UserGetInfo';
     }
-    makeRequest(cookies, headers) {
-        return super.makeRequest(cookies, undefined, headers);
+    makeRequest(useProxy, proxyUrl, proxyAuth, cookies, headers) {
+        return super.makeRequest(useProxy, proxyUrl, proxyAuth, cookies, undefined, headers);
     }
-    buildRequest(cookies, headers) {
-        const request = {
+    buildRequest(useProxy, proxyUrl, proxyAuth, cookies, headers) {
+        const requestConfig = {
             method: 'get',
             maxBodyLength: Infinity,
             url: 'https://central.qnomy.com/CentralAPI/UserGetInfo',
@@ -58,7 +59,17 @@ class UserGetInfo extends BaseRequest_1.BaseApiRequest {
                 Cookie: this.reformatForAxios(cookies),
             },
         };
-        return request;
+        if (useProxy) {
+            // console.log('[UserGetInfo] [buildRequest] useProxy: ', useProxy);
+            const proxyURL = new URL(proxyUrl);
+            if (proxyAuth) {
+                proxyURL.username = proxyAuth.username;
+                proxyURL.password = proxyAuth.password;
+            }
+            const proxyAgent = new https_proxy_agent_1.HttpsProxyAgent(proxyURL.toString());
+            requestConfig.httpsAgent = proxyAgent;
+        }
+        return requestConfig;
     }
     parseResponseData(data) {
         if (!this.isApiResponse(data)) {

@@ -12,12 +12,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getTimesOfDateOfServiceOfBranch = void 0;
 const SearchAvailableSlots_1 = require("../api-requests/SearchAvailableSlots");
 const BadApiResponse_1 = require("../errors/BadApiResponse");
-const SharedData_1 = require("./SharedData");
-const getTimesOfDateOfServiceOfBranch = (cookies, urlAttributes, headers) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log('[getTimesOfDateOfServiceOfBranch] Shared data Test:', (0, SharedData_1.getSharedData)());
+const getTimesOfDateOfServiceOfBranch = (cookies, urlAttributes, headers, useProxy, proxyUrl, proxyAuth) => __awaiter(void 0, void 0, void 0, function* () {
     const searchAvailableSlots = new SearchAvailableSlots_1.SearchAvailableSlots();
     try {
-        const hoursResponse = yield searchAvailableSlots.makeRequest({
+        const hoursResponse = yield searchAvailableSlots.makeRequest(useProxy, proxyUrl, proxyAuth, {
             ARRAffinity: cookies.ARRAffinity,
             ARRAffinitySameSite: cookies.ARRAffinitySameSite,
             GCLB: cookies.GCLB,
@@ -40,7 +38,6 @@ const getTimesOfDateOfServiceOfBranch = (cookies, urlAttributes, headers) => __a
     }
     catch (error) {
         console.error('[getTimesOfDateOfServiceOfBranch] Failed!');
-        console.log(error);
         throw error;
     }
 });

@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.LocationGetServices = void 0;
 const BaseRequest_1 = require("./BaseRequest");
 const BadApiResponse_1 = require("../errors/BadApiResponse");
+const https_proxy_agent_1 = require("https-proxy-agent");
 class LocationGetServices extends BaseRequest_1.BaseApiRequest {
     constructor() {
         super();
@@ -22,11 +23,11 @@ class LocationGetServices extends BaseRequest_1.BaseApiRequest {
         ];
         this.nameOfThis = 'LocationGetServices';
     }
-    makeRequest(cookies, urlAttribute, headers) {
-        return super.makeRequest(cookies, urlAttribute, headers);
+    makeRequest(useProxy, proxyUrl, proxyAuth, cookies, urlAttribute, headers) {
+        return super.makeRequest(useProxy, proxyUrl, proxyAuth, cookies, urlAttribute, headers);
     }
-    buildRequest(cookies, urlAttribute, headers) {
-        return {
+    buildRequest(useProxy, proxyUrl, proxyAuth, cookies, urlAttribute, headers) {
+        const requestConfig = {
             method: 'get',
             maxBodyLength: Infinity,
             url: 'https://central.qnomy.com/CentralAPI/LocationGetServices?locationId=' +
@@ -51,6 +52,17 @@ class LocationGetServices extends BaseRequest_1.BaseApiRequest {
                 Cookie: this.reformatForAxios(cookies),
             },
         };
+        if (useProxy) {
+            // console.log('[LocationGetServices] [buildRequest] useProxy: ', useProxy);
+            const proxyURL = new URL(proxyUrl);
+            if (proxyAuth) {
+                proxyURL.username = proxyAuth.username;
+                proxyURL.password = proxyAuth.password;
+            }
+            const proxyAgent = new https_proxy_agent_1.HttpsProxyAgent(proxyURL.toString());
+            requestConfig.httpsAgent = proxyAgent;
+        }
+        return requestConfig;
     }
     parseResponseData(data) {
         if (!this.isApiResponse(data)) {

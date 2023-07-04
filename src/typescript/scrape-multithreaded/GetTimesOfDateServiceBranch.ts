@@ -9,15 +9,17 @@ export const getTimesOfDateOfServiceOfBranch = async (
 		GCLB: string;
 	},
 	urlAttributes: { CalendarId: string; dayPart: string; ServiceId: string },
-	headers: { token: string }
+	headers: { token: string },
+	useProxy: boolean,
+	proxyUrl: string,
+	proxyAuth: { username: string; password: string }
 ) => {
-	console.log(
-		'[getTimesOfDateOfServiceOfBranch] Shared data Test:',
-		getSharedData()
-	);
 	const searchAvailableSlots = new SearchAvailableSlots();
 	try {
 		const hoursResponse = await searchAvailableSlots.makeRequest(
+			useProxy,
+			proxyUrl,
+			proxyAuth,
 			{
 				ARRAffinity: cookies.ARRAffinity,
 				ARRAffinitySameSite: cookies.ARRAffinitySameSite,
@@ -47,7 +49,6 @@ export const getTimesOfDateOfServiceOfBranch = async (
 		return hoursResponse.nested;
 	} catch (error) {
 		console.error('[getTimesOfDateOfServiceOfBranch] Failed!');
-		console.log(error);
 		throw error;
 	}
 };

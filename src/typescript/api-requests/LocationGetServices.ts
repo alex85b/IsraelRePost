@@ -1,6 +1,7 @@
 import { AxiosRequestConfig } from 'axios';
 import { BaseApiRequest } from './BaseRequest';
 import { BadApiResponse } from '../errors/BadApiResponse';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 
 export class LocationGetServices extends BaseApiRequest {
 	constructor() {
@@ -23,6 +24,9 @@ export class LocationGetServices extends BaseApiRequest {
 	}
 
 	makeRequest(
+		useProxy: boolean,
+		proxyUrl: string,
+		proxyAuth: { username: string; password: string },
 		cookies: {
 			ARRAffinity: string;
 			ARRAffinitySameSite: string;
@@ -46,7 +50,14 @@ export class LocationGetServices extends BaseApiRequest {
 			LocationId: string;
 		}[];
 	}> {
-		return super.makeRequest(cookies, urlAttribute, headers) as Promise<{
+		return super.makeRequest(
+			useProxy,
+			proxyUrl,
+			proxyAuth,
+			cookies,
+			urlAttribute,
+			headers
+		) as Promise<{
 			data: {
 				Success: string;
 				Results: string;
@@ -64,6 +75,9 @@ export class LocationGetServices extends BaseApiRequest {
 	}
 
 	protected buildRequest(
+		useProxy: boolean,
+		proxyUrl: string,
+		proxyAuth: { username: string; password: string },
 		cookies: {
 			ARRAffinity: string;
 			ARRAffinitySameSite: string;
@@ -73,7 +87,7 @@ export class LocationGetServices extends BaseApiRequest {
 		urlAttribute: { locationId: string; serviceTypeId: string },
 		headers: { token: string }
 	): AxiosRequestConfig<any> {
-		return {
+		const requestConfig: AxiosRequestConfig<any> = {
 			method: 'get',
 			maxBodyLength: Infinity,
 			url:
@@ -101,6 +115,20 @@ export class LocationGetServices extends BaseApiRequest {
 				Cookie: this.reformatForAxios(cookies),
 			},
 		};
+
+		if (useProxy) {
+			// console.log('[LocationGetServices] [buildRequest] useProxy: ', useProxy);
+			const proxyURL = new URL(proxyUrl);
+			if (proxyAuth) {
+				proxyURL.username = proxyAuth.username;
+				proxyURL.password = proxyAuth.password;
+			}
+
+			const proxyAgent = new HttpsProxyAgent(proxyURL.toString());
+			requestConfig.httpsAgent = proxyAgent;
+		}
+
+		return requestConfig;
 	}
 
 	protected parseResponseData(data: any): { [key: string]: string } {

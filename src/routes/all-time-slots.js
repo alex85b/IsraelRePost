@@ -2,12 +2,11 @@ const express = require('express');
 const dotenv = require('dotenv');
 const {
 	handleWorkerThreads,
-} = require('../multithreading/handleWorkerThreads');
-const {
-	queryAllBranches,
-} = require('../js-build/typescript/scrape-old/QueryAllBranches');
+} = require('../js-build/scrape-multithreaded/ManageWorkerThreads');
+const { queryAllBranches } = require('../js-build/scrape-old/QueryAllBranches');
 const path = require('path');
 const fs = require('fs');
+const { log } = require('console');
 
 dotenv.config();
 
@@ -32,21 +31,42 @@ router.post('/api/scrape/all-time-slots', async (req, res, next) => {
 		//* Query Elasticsearch to get all the branches.
 		//* ///////////////////////////////////////////
 		const { allBranches } = await queryAllBranches(certificateContents);
+		const rejects = [];
 		console.log(`[Elastic] Branch query result amount: ${allBranches.length}`);
 
 		//* Split branches-array into array of arrays of X branches batch.
 		//* /////////////////////////////////////////////////////////////
-		const branchesBatches = splitArray(allBranches, 5);
+		const branchesBatches = splitArray(allBranches, 40);
 
 		//* Send a batch of branches for multithreaded execution.
 		//* ////////////////////////////////////////////////////
-		const resultBatch = await handleWorkerThreads(branchesBatches[0]);
 
+		// console.log(process.env.PROX_END_P1);
+		// console.log(process.env.PROX_USR);
+		// console.log(process.env.PROX_PAS);
+		const resultBatch = await handleWorkerThreads(
+			branchesBatches[0],
+			true,
+			process.env.PROX_END_P1 || '',
+			process.env.PROX_USR || '',
+			process.env.PROX_PAS || '',
+			30000
+		);
+
+		resultBatch.forEach((result) => {
+			console.log('forEach: ');
+			if (result.status !== 'fulfilled') {
+				rejects.push(result.reason.branch);
+			}
+		});
+
+		console.log('rejects: ', rejects);
 		console.log('Bottom of the code');
 		res.status(200).send(resultBatch);
 	} catch (error) {
-		console.log(error);
-		next(error);
+		// console.log(error);
+		// next(error);
+		res.status(500).send({ Error: error });
 	}
 });
 

@@ -1,20 +1,15 @@
 const express = require('express');
 const dotenv = require('dotenv');
-const {
-	handleWorkerThreads,
-} = require('../multithreading/handleWorkerThreads');
-const {
-	queryAllBranches,
-} = require('../js-build/typescript/scrape-old/QueryAllBranches');
+const { queryAllBranches } = require('../js-build/scrape-old/QueryAllBranches');
 const path = require('path');
 const fs = require('fs');
 const {
 	UserCreateAnonymous,
-} = require('../js-build/typescript/api-requests/UserCreateAnonymous');
+} = require('../js-build/api-requests/UserCreateAnonymous');
 const {
 	buildRequest,
 	makeRequest,
-} = require('../js-build/typescript/api-requests/ProxyTestAnonUser');
+} = require('../js-build/api-requests/ProxyTestAnonUser');
 const { log } = require('console');
 const axios = require('axios');
 

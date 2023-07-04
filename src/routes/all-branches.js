@@ -1,9 +1,9 @@
 const express = require('express');
-const requestBranches = require('../js-build/typescript/scrape-old/RequestBranches');
-const extractPageData = require('../js-build/typescript/scrape-old/ExtractPageData');
-const URLs = require('../js-build/typescript/common/urls');
-const persistBranches = require('../js-build/typescript/scrape-old/PersistBranches');
-const CookieBank = require('../js-build/typescript/common/cookie-bank');
+const requestBranches = require('../js-build/scrape-old/RequestBranches');
+const extractPageData = require('../js-build/scrape-old/ExtractPageData');
+const URLs = require('../js-build/common/urls');
+const persistBranches = require('../js-build/scrape-old/PersistBranches');
+const CookieBank = require('../js-build/common/cookie-bank');
 
 const router = express.Router();
 

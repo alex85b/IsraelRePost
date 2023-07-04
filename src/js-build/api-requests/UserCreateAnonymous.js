@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserCreateAnonymous = void 0;
 const BaseRequest_1 = require("./BaseRequest");
 const BadApiResponse_1 = require("../errors/BadApiResponse");
+const https_proxy_agent_1 = require("https-proxy-agent");
 class UserCreateAnonymous extends BaseRequest_1.BaseApiRequest {
     constructor() {
         super();
@@ -21,11 +22,11 @@ class UserCreateAnonymous extends BaseRequest_1.BaseApiRequest {
         ];
         this.nameOfThis = 'UserCreateAnonymous';
     }
-    makeRequest() {
-        return super.makeRequest();
+    makeRequest(useProxy, proxyUrl, proxyAuth) {
+        return super.makeRequest(useProxy, proxyUrl, proxyAuth);
     }
-    buildRequest() {
-        const request = {
+    buildRequest(useProxy, proxyUrl, proxyAuth) {
+        const requestConfig = {
             method: 'get',
             maxBodyLength: Infinity,
             url: 'https://central.qnomy.com/CentralAPI/UserCreateAnonymous',
@@ -46,7 +47,21 @@ class UserCreateAnonymous extends BaseRequest_1.BaseApiRequest {
                 'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
             },
         };
-        return request;
+        if (useProxy) {
+            // console.log('[UserCreateAnonymous] [buildRequest] useProxy: ', useProxy);
+            const proxyURL = new URL(proxyUrl);
+            if (proxyAuth) {
+                proxyURL.username = proxyAuth.username;
+                proxyURL.password = proxyAuth.password;
+            }
+            const proxyAgent = new https_proxy_agent_1.HttpsProxyAgent(proxyURL.toString());
+            requestConfig.httpsAgent = proxyAgent;
+            // console.log(
+            // 	'[UserCreateAnonymous] [buildRequest] request config: ',
+            // 	requestConfig
+            // );
+        }
+        return requestConfig;
     }
     parseResponseData(data) {
         if (!this.isApiResponse(data))

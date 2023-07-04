@@ -1,6 +1,7 @@
 import { AxiosRequestConfig } from 'axios';
 import { BaseApiRequest } from './BaseRequest';
 import { BadApiResponse } from '../errors/BadApiResponse';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 
 export class UserGetInfo extends BaseApiRequest {
 	constructor() {
@@ -37,6 +38,9 @@ export class UserGetInfo extends BaseApiRequest {
 	}
 
 	makeRequest(
+		useProxy: boolean,
+		proxyUrl: string,
+		proxyAuth: { username: string; password: string },
 		cookies: {
 			ARRAffinity: string;
 			ARRAffinitySameSite: string;
@@ -55,7 +59,14 @@ export class UserGetInfo extends BaseApiRequest {
 		cookies: {};
 		nested: {}[];
 	}> {
-		return super.makeRequest(cookies, undefined, headers) as Promise<{
+		return super.makeRequest(
+			useProxy,
+			proxyUrl,
+			proxyAuth,
+			cookies,
+			undefined,
+			headers
+		) as Promise<{
 			data: {
 				Success: string;
 				username: string;
@@ -69,6 +80,9 @@ export class UserGetInfo extends BaseApiRequest {
 	}
 
 	protected buildRequest(
+		useProxy: boolean,
+		proxyUrl: string,
+		proxyAuth: { username: string; password: string },
 		cookies: {
 			ARRAffinity: string;
 			ARRAffinitySameSite: string;
@@ -77,7 +91,7 @@ export class UserGetInfo extends BaseApiRequest {
 		},
 		headers: { token: string }
 	): AxiosRequestConfig<any> {
-		const request = {
+		const requestConfig: AxiosRequestConfig<any> = {
 			method: 'get',
 			maxBodyLength: Infinity,
 			url: 'https://central.qnomy.com/CentralAPI/UserGetInfo',
@@ -101,7 +115,19 @@ export class UserGetInfo extends BaseApiRequest {
 				Cookie: this.reformatForAxios(cookies),
 			},
 		};
-		return request;
+		if (useProxy) {
+			// console.log('[UserGetInfo] [buildRequest] useProxy: ', useProxy);
+			const proxyURL = new URL(proxyUrl);
+			if (proxyAuth) {
+				proxyURL.username = proxyAuth.username;
+				proxyURL.password = proxyAuth.password;
+			}
+
+			const proxyAgent = new HttpsProxyAgent(proxyURL.toString());
+			requestConfig.httpsAgent = proxyAgent;
+		}
+
+		return requestConfig;
 	}
 
 	protected parseResponseData(data: any): { [key: string]: string } {

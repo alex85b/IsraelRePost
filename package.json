@@ -4,9 +4,8 @@
 	"description": "",
 	"main": "index.js",
 	"scripts": {
-		"clean": "del-cli ./js-build/*",
-		"build": "tsc",
-		"start": "npm run clean build && node src/index.js"
+		"clean": "del-cli ./src/js-build/*",
+		"start": "npm run clean && tsc && node src/index.js"
 	},
 	"keywords": [],
 	"author": "",

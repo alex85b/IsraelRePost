@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.SearchAvailableDates = void 0;
 const BaseRequest_1 = require("./BaseRequest");
 const BadApiResponse_1 = require("../errors/BadApiResponse");
+const https_proxy_agent_1 = require("https-proxy-agent");
 class SearchAvailableDates extends BaseRequest_1.BaseApiRequest {
     constructor() {
         super();
@@ -17,10 +18,10 @@ class SearchAvailableDates extends BaseRequest_1.BaseApiRequest {
         ];
         this.nameOfThis = 'SearchAvailableDates';
     }
-    makeRequest(cookies, urlAttribute, headers) {
-        return super.makeRequest(cookies, urlAttribute, headers, undefined);
+    makeRequest(useProxy, proxyUrl, proxyAuth, cookies, urlAttribute, headers) {
+        return super.makeRequest(useProxy, proxyUrl, proxyAuth, cookies, urlAttribute, headers);
     }
-    buildRequest(cookies, urlAttribute, headers) {
+    buildRequest(useProxy, proxyUrl, proxyAuth, cookies, urlAttribute, headers) {
         let writeDate = '';
         const { date } = this.getTodayDateObject();
         if (this.validateDateFormat(urlAttribute.startDate)) {
@@ -29,7 +30,7 @@ class SearchAvailableDates extends BaseRequest_1.BaseApiRequest {
         else {
             writeDate = date;
         }
-        const apiRequest = {
+        const requestConfig = {
             method: 'get',
             maxBodyLength: Infinity,
             url: 'https://central.qnomy.com/CentralAPI/SearchAvailableDates?maxResults=30&serviceId=' +
@@ -54,7 +55,17 @@ class SearchAvailableDates extends BaseRequest_1.BaseApiRequest {
                 Cookie: this.reformatForAxios(cookies),
             },
         };
-        return apiRequest;
+        if (useProxy) {
+            // console.log('[SearchAvailableDates] [buildRequest] useProxy: ', useProxy);
+            const proxyURL = new URL(proxyUrl);
+            if (proxyAuth) {
+                proxyURL.username = proxyAuth.username;
+                proxyURL.password = proxyAuth.password;
+            }
+            const proxyAgent = new https_proxy_agent_1.HttpsProxyAgent(proxyURL.toString());
+            requestConfig.httpsAgent = proxyAgent;
+        }
+        return requestConfig;
     }
     parseResponseData(data) {
         if (!this.isApiResponse(data)) {
