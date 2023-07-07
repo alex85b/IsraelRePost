@@ -14,7 +14,8 @@ const buildRequest = (
 	const requestConfig: AxiosRequestConfig<any> = {
 		method: 'get',
 		maxBodyLength: Infinity,
-		url: 'https://central.qnomy.com/CentralAPI/UserCreateAnonymous',
+		// url: 'https://central.qnomy.com/CentralAPI/UserCreateAnonymous',
+		url: 'httwerps://central.qnomy.com/CentralrwerAPI/UserCreateAnonymous',
 		headers: {
 			authority: 'central.qnomy.com',
 			accept: 'application/json, text/javascript, */*; q=0.01',

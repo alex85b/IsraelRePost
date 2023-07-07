@@ -2,10 +2,10 @@ const express = require('express');
 
 const ScrapeAllBranches = require('./routes/all-branches');
 
-const NotFoundError = require('./js-build/errors/not-found-error');
+const { NotFoundError } = require('./js-build/errors/not-found-error');
 const errorHandler = require('./js-build/middlewares/error-handler');
-const testing = require('./routes/testing');
-const AllTimeSlots = require('./routes/all-time-slots');
+const { TestLab } = require('./js-build/routes/TestLab');
+const { TimeSlots } = require('./js-build/routes/TimeSlots');
 
 // ? Do i need to lock this service behind authentication and or authorization ?
 
@@ -18,8 +18,8 @@ const onListen = () => {
 const app = express();
 
 app.use(ScrapeAllBranches);
-app.use(AllTimeSlots);
-app.use(testing);
+app.use(TimeSlots);
+app.use(TestLab);
 app.all('*', () => {
 	throw new NotFoundError();
 });

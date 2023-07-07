@@ -6,14 +6,6 @@ export const SetUpElasticClient = async (
 	resetIndex: 'branches' | 'slots' | 'none',
 	certificates: string
 ) => {
-	// const certificatePath = path.join(
-	// 	__dirname,
-	// 	'..',
-	// 	'..',
-	// 	'elastic-cert',
-	// 	'http_ca.crt'
-	// );
-
 	const elasticClient = new ElasticClient(
 		'https://127.0.0.1:9200',
 		'elastic',

@@ -6,6 +6,7 @@ import path from 'path';
 import { IBranchQueryResponse } from '../interfaces/IBranchQueryResponse';
 import { CustomError } from '../errors/custom-error';
 import e from 'express';
+import { AxiosError } from 'axios';
 
 const handleWorkerThreads = (
 	branches: IBranchQueryResponse,
@@ -53,9 +54,9 @@ const handleWorkerThreads = (
 			});
 
 			workerInstance.on('message', (result) => {
-				console.log(
-					`[handleWorkerThreads] [Result] Received result from ${branch._source.branchnameEN}`
-				);
+				// console.log(
+				// 	`[handleWorkerThreads] [Result] Received result from ${branch._source.branchnameEN}`
+				// );
 				workerInstance.terminate();
 				resolve({
 					status: 1,
@@ -72,29 +73,36 @@ const handleWorkerThreads = (
 				);
 
 				if (error instanceof CustomError) {
-					console.log(
-						'[handleWorkerThreads] [Error] message: ',
+					console.error(
+						'[handleWorkerThreads] [CustomError] message: ',
 						(error as CustomError).serializeErrors()
 					);
+				} else if (error instanceof AxiosError) {
+					console.error(
+						'[handleWorkerThreads] [AxiosError] Keys: ',
+						Object.keys(error as AxiosError)
+					);
+					console.log(error);
 				} else {
-					console.log('[handleWorkerThreads] [Error] message: ', error);
+					console.error(`[handleWorkerThreads] [unknown Error]`);
+					console.log(error);
 				}
-				const tError = error as Error;
+
 				workerInstance.terminate();
 				reject({
 					status: 0,
 					branchname: null,
 					branchId: null,
 					branch: branch,
-					error: tError,
+					error: error,
 				});
 			});
 
 			workerInstance.on('exit', (code) => {
-				console.log(
-					`[handleWorkerThreads] [Exit] ${branch._source.branchnameEN} exited with code:`,
-					code
-				);
+				// console.log(
+				// 	`[handleWorkerThreads] [Exit] ${branch._source.branchnameEN} exited with code:`,
+				// 	code
+				// );
 			});
 		});
 

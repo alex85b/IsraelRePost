@@ -64,10 +64,10 @@ const processBranch = async () => {
 		});
 	}
 
-	setTimeout(() => {
-		console.log('Function execution timed out');
-		throw new Error(`Execution timed out after ${timeout}`); // Throw an error to abort execution
-	}, timeout);
+	// setTimeout(() => {
+	// 	console.log('Function execution timed out');
+	// 	throw new Error(`Execution timed out after ${timeout}`); // Throw an error to abort execution
+	// }, timeout);
 
 	//* /////////////////////////////////////////////////////
 	//* Initialization /////////////////////////////////////

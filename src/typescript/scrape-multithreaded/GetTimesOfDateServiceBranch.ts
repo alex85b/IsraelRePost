@@ -1,3 +1,4 @@
+import { AxiosError } from 'axios';
 import { SearchAvailableSlots } from '../api-requests/SearchAvailableSlots';
 import { BadApiResponse } from '../errors/BadApiResponse';
 import { getSharedData } from './SharedData';
@@ -49,6 +50,17 @@ export const getTimesOfDateOfServiceOfBranch = async (
 		return hoursResponse.nested;
 	} catch (error) {
 		console.error('[getTimesOfDateOfServiceOfBranch] Failed!');
+		if (error instanceof AxiosError) {
+			console.log('[getTimesOfDateOfServiceOfBranch] error.response: ');
+			console.log(error.response);
+			console.log('[getTimesOfDateOfServiceOfBranch] error.response?.status: ');
+			console.log(error.response?.status);
+			console.log(
+				'[getTimesOfDateOfServiceOfBranch] error.response?.statusText: '
+			);
+			console.log(error.response?.statusText);
+		}
+		console.error('[getTimesOfDateOfServiceOfBranch] Done handling Failure!');
 		throw error;
 	}
 };
