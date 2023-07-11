@@ -27,7 +27,7 @@ export const parseGetServicesResponse = (
 
 	if (!results) return { Results: [] }; // <-- Data may be null.
 	if (!Array.isArray(results))
-		// Data may not be ![]
+		// Data may not be ![] and !null
 		throw new BadApiResponse({
 			message: 'Result is not an array',
 			source: 'parseGetServicesResponse',
@@ -50,10 +50,7 @@ export const parseGetServicesResponse = (
 			message: 'One or more important keys missing',
 			source: 'parseGetServicesResponse',
 			data: {
-				serviceId,
-				serviceName,
-				ServiceTypeId,
-				LocationId,
+				Results: results,
 				status: data.status,
 				isSuccessful: data.Success,
 				errorMessage: data.ErrorMessage,

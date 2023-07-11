@@ -1,15 +1,14 @@
 import { BadApiResponse } from '../../errors/BadApiResponse';
 import { IRequestResult, IResponse } from '../GenerateResponse';
 
-export interface ISearchDatesResult extends IRequestResult {
+export interface ISearchTimesResult extends IRequestResult {
 	Results: {
-		calendarDate: string;
-		calendarId: number;
+		Time: number;
 	}[];
 }
 
-export const parseSearchDatesResponse = (
-	responseObject: IResponse<ISearchDatesResult>
+export const parseSearchTimesResponse = (
+	responseObject: IResponse<ISearchTimesResult>
 ) => {
 	const { data } = responseObject;
 	const results = data.Results;
@@ -19,7 +18,7 @@ export const parseSearchDatesResponse = (
 		// Data may not be ![] and !null
 		throw new BadApiResponse({
 			message: 'Result is not an array',
-			source: 'parseSearchDatesResponse',
+			source: 'parseSearchTimesResponse',
 			data: {
 				Results: results,
 				status: data.status,
@@ -29,13 +28,12 @@ export const parseSearchDatesResponse = (
 		});
 
 	// Check important keys existence.
-	const calendarDate = results[0].calendarDate;
-	const calendarId = results[0].calendarId;
+	const time = results[0].Time;
 
-	if (!calendarDate || !calendarId)
+	if (!time)
 		throw new BadApiResponse({
-			message: 'One or more important keys missing',
-			source: 'parseSearchDatesResponse',
+			message: 'time keys missing',
+			source: 'parseSearchTimesResponse',
 			data: {
 				Results: results,
 				status: data.status,

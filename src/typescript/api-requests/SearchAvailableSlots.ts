@@ -57,7 +57,7 @@ export class SearchAvailableSlots extends BaseApiRequest {
 		}>;
 	}
 
-	protected buildRequest(
+	buildRequest(
 		useProxy: boolean,
 		proxyUrl: string,
 		proxyAuth: { username: string; password: string },

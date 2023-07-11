@@ -2,4 +2,4 @@ instructions
 node_modules
 elastic-cert
 .env
-# src/js-build
+src/js-build

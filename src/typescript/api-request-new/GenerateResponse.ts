@@ -23,11 +23,19 @@ export interface IResponse<K extends IRequestResult> {
 	status: number;
 }
 
+export type ResponseGenerator = <
+	T extends BaseBuildRequestConfig,
+	K extends IRequestResult
+>(
+	requestBuilder: T,
+	timeout: number
+) => Promise<IResponse<K>>;
+
 /*
 	Defines the basic logic of API request that generates important response.
 	This will perform axios API request.
 */
-export const generateResponse = async <
+export const generateResponse: ResponseGenerator = async <
 	T extends BaseBuildRequestConfig,
 	K extends IRequestResult
 >(
@@ -47,7 +55,6 @@ export const generateResponse = async <
 			number
 		>;
 	} catch (error) {
-		// console.log(error);
 		serverResponse = (error as AxiosError).response;
 	}
 	const responseObject = {
