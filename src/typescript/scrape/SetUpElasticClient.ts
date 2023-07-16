@@ -1,18 +1,16 @@
 import { ElasticClient } from '../elastic/elstClient';
-import * as path from 'path';
-import fs from 'fs';
 
 export const SetUpElasticClient = async (
 	resetIndex: 'branches' | 'slots' | 'none',
 	certificates: string
 ) => {
-	const elasticClient = new ElasticClient(
-		'https://127.0.0.1:9200',
-		'elastic',
-		process.env.ELS_PSS || '',
-		certificates,
-		false
-	);
+	const elasticClient = new ElasticClient({
+		caCertificate: certificates,
+		password: process.env.ELS_PSS || '',
+		rejectUnauthorized: false,
+		username: 'elastic',
+		node: 'https://127.0.0.1:9200',
+	});
 
 	elasticClient.sendPing();
 

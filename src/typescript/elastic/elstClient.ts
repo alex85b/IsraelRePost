@@ -63,13 +63,15 @@ export class ElasticClient {
 	};
 
 	// Construct client.
-	constructor(
-		node: string | string[] | NodeOptions | NodeOptions[],
-		username: string,
-		password: string,
-		caCertificate: string,
-		rejectUnauthorized: boolean
-	) {
+	constructor(setupData: {
+		node: string | string[] | NodeOptions | NodeOptions[];
+		username: string;
+		password: string;
+		caCertificate: string;
+		rejectUnauthorized: boolean;
+	}) {
+		const { node, caCertificate, password, username, rejectUnauthorized } =
+			setupData;
 		this.client = new Client({
 			node: node,
 			auth: {
@@ -230,7 +232,7 @@ export class ElasticClient {
 
 		try {
 			response = await this.client?.bulk({ body });
-			console.log('### [bulkAddBranches] has error ### : ', response?.errors);
+			console.log('[bulkAddBranches] has error : ', response?.errors);
 			if (!response) {
 				throw new ElasticMalfunctionError('Bulk add has failed');
 			}
@@ -267,7 +269,7 @@ export class ElasticClient {
 
 		try {
 			response = await this.client?.bulk({ body });
-			console.log('### [bulkAddSlots] has error ### : ', response?.errors);
+			console.log('[bulkAddSlots] has error: ', response?.errors);
 			if (!response) {
 				throw new ElasticMalfunctionError('Bulk add has failed');
 			}

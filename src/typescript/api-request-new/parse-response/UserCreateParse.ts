@@ -8,11 +8,28 @@ export interface IUserCreateResult extends IRequestResult {
 		username: string;
 	};
 }
+export interface IParseUserResponse {
+	data: { token: string };
+	headers: {
+		Cookie: {
+			CentralJWTCookie: string;
+			ARRAffinity: string;
+			ARRAffinitySameSite: string;
+			GCLB: string;
+		};
+	};
+}
 
 export const parseUserCreateResponse = (
 	responseObject: IResponse<IUserCreateResult>
-) => {
-	const { data, headers } = responseObject;
+): IParseUserResponse => {
+	const { data, headers, status } = responseObject;
+	if (status !== 200)
+		throw new BadApiResponse({
+			message: `request failed ${status}`,
+			source: 'parseUserCreateResponse',
+			data: { wholeResponse: responseObject },
+		});
 
 	const token = data.Results?.token;
 	const rawCookies = headers['set-cookie'];

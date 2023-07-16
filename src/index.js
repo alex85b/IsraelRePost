@@ -1,13 +1,12 @@
 const express = require('express');
 
-const ScrapeAllBranches = require('./routes/all-branches');
-
+const { AllBranches } = require('./js-build/routes/AllBranches');
 const { NotFoundError } = require('./js-build/errors/not-found-error');
 const errorHandler = require('./js-build/middlewares/error-handler');
 const { TestLab } = require('./js-build/routes/TestLab');
 const { TimeSlots } = require('./js-build/routes/TimeSlots');
 
-// ? Do i need to lock this service behind authentication and or authorization ?
+//! Hide this service behind authentication and or authorization.
 
 const port = 3000;
 
@@ -17,7 +16,7 @@ const onListen = () => {
 
 const app = express();
 
-app.use(ScrapeAllBranches);
+app.use(AllBranches);
 app.use(TimeSlots);
 app.use(TestLab);
 app.all('*', () => {

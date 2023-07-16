@@ -47,20 +47,6 @@ export const generateResponse: ResponseGenerator = async <
 		timeout: timeout,
 	});
 
-	let serverResponse;
-	try {
-		const config = requestBuilder['buildAxiosRequestConfig']();
-		serverResponse = (await customAxios.request(config)) as AxiosResponse<
-			T,
-			number
-		>;
-	} catch (error) {
-		serverResponse = (error as AxiosError).response;
-	}
-	const responseObject = {
-		data: serverResponse?.data as K,
-		headers: serverResponse?.headers as AxiosResponseHeaders,
-		status: serverResponse?.status || 0,
-	};
-	return responseObject;
+	const config = requestBuilder['buildAxiosRequestConfig']();
+	return customAxios.request(config);
 };

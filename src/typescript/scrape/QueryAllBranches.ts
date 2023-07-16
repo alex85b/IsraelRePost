@@ -23,13 +23,13 @@ export const queryAllBranches = async (certificateContents: string) => {
 	// console.log('[queryAllBranches] Fetch certificates : Done');
 
 	// Create a client.
-	const elasticClient = new ElasticClient(
-		'https://127.0.0.1:9200',
-		'elastic',
-		process.env.ELS_PSS || '',
-		certificateContents,
-		false
-	);
+	const elasticClient = new ElasticClient({
+		caCertificate: certificateContents,
+		password: process.env.ELS_PSS || '',
+		rejectUnauthorized: false,
+		username: 'elastic',
+		node: 'https://127.0.0.1:9200',
+	});
 
 	elasticClient.sendPing();
 	console.log('[queryAllBranches] Elastic is up and running');

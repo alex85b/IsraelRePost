@@ -14,16 +14,16 @@ const errorHandler = (
 ) => {
 	// Is error is from the expected type.
 	if (err instanceof CustomError) {
-		console.log('### Error handler: known error ###');
+		console.log('Error handler: known error');
 		const errPrintout = (err as CustomError).serializeErrors();
 		return res.status(err.statusCode).send({ errors: errPrintout });
 	}
 
 	// Error isn't from the expected type.
 	// Something unexpected has gone wrong.
-	console.log('### Error handler: unknown error ### : ', err);
+	console.log('Error handler: unknown error: ', err);
 	res.status(500).send({
-		errors: [{ message: 'Something went wrong' }],
+		errors: [{ message: 'Something went wrong', error: err }],
 	});
 };
 

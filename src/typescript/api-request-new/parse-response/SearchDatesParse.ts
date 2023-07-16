@@ -8,15 +8,40 @@ export interface ISearchDatesResult extends IRequestResult {
 	}[];
 }
 
+export interface IParseDatesResponse {
+	Results: IParseDateResponse[];
+}
+
+export interface IParseDateResponse {
+	calendarDate: string;
+	calendarId: number;
+}
+
 export const parseSearchDatesResponse = (
 	responseObject: IResponse<ISearchDatesResult>
-) => {
-	const { data } = responseObject;
-	const results = data.Results;
+): IParseDatesResponse => {
+	const { data, status } = responseObject;
+	if (status !== 200)
+		throw new BadApiResponse({
+			message: `request failed ${status}`,
+			source: 'parseSearchDatesResponse',
+			data: { wholeResponse: responseObject },
+		});
 
-	if (!results) return { Results: [] }; // <-- Data may be null.
+	const results = data.Results;
+	if (!results)
+		throw new BadApiResponse({
+			message: 'Result is null / undefined',
+			source: 'parseSearchDatesResponse',
+			data: {
+				Results: results,
+				status: data.status,
+				isSuccessful: data.Success,
+				errorMessage: data.ErrorMessage,
+			},
+		});
+
 	if (!Array.isArray(results))
-		// Data may not be ![] and !null
 		throw new BadApiResponse({
 			message: 'Result is not an array',
 			source: 'parseSearchDatesResponse',
@@ -29,20 +54,22 @@ export const parseSearchDatesResponse = (
 		});
 
 	// Check important keys existence.
-	const calendarDate = results[0].calendarDate;
-	const calendarId = results[0].calendarId;
+	if (results.length > 0) {
+		const calendarDate = results[0].calendarDate;
+		const calendarId = results[0].calendarId;
 
-	if (!calendarDate || !calendarId)
-		throw new BadApiResponse({
-			message: 'One or more important keys missing',
-			source: 'parseSearchDatesResponse',
-			data: {
-				Results: results,
-				status: data.status,
-				isSuccessful: data.Success,
-				errorMessage: data.ErrorMessage,
-			},
-		});
+		if (!calendarDate || !calendarId)
+			throw new BadApiResponse({
+				message: 'One or more important keys missing',
+				source: 'parseSearchDatesResponse',
+				data: {
+					Results: results,
+					status: data.status,
+					isSuccessful: data.Success,
+					errorMessage: data.ErrorMessage,
+				},
+			});
+	}
 
 	return {
 		Results: results,

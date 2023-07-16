@@ -7,12 +7,26 @@ export interface ISearchTimesResult extends IRequestResult {
 	}[];
 }
 
+export interface IParseTimesResponse {
+	Results: IParseTimeResponse[];
+}
+
+export interface IParseTimeResponse {
+	Time: number;
+}
+
 export const parseSearchTimesResponse = (
 	responseObject: IResponse<ISearchTimesResult>
-) => {
-	const { data } = responseObject;
-	const results = data.Results;
+): IParseTimesResponse => {
+	const { data, status } = responseObject;
+	if (status !== 200)
+		throw new BadApiResponse({
+			message: `request failed ${status}`,
+			source: 'parseSearchTimesResponse',
+			data: { wholeResponse: responseObject },
+		});
 
+	const results = data.Results;
 	if (!results) return { Results: [] }; // <-- Data may be null.
 	if (!Array.isArray(results))
 		// Data may not be ![] and !null
@@ -28,19 +42,21 @@ export const parseSearchTimesResponse = (
 		});
 
 	// Check important keys existence.
-	const time = results[0].Time;
+	if (results.length > 0) {
+		const time = results[0].Time;
 
-	if (!time)
-		throw new BadApiResponse({
-			message: 'time keys missing',
-			source: 'parseSearchTimesResponse',
-			data: {
-				Results: results,
-				status: data.status,
-				isSuccessful: data.Success,
-				errorMessage: data.ErrorMessage,
-			},
-		});
+		if (!time)
+			throw new BadApiResponse({
+				message: 'time keys missing',
+				source: 'parseSearchTimesResponse',
+				data: {
+					Results: results,
+					status: data.status,
+					isSuccessful: data.Success,
+					errorMessage: data.ErrorMessage,
+				},
+			});
+	}
 
 	return {
 		Results: results,
