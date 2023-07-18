@@ -1,6 +1,6 @@
 import { parseResponseCookies } from '../../common/ParseCookies';
 import { BadApiResponse } from '../../errors/BadApiResponse';
-import { IRequestResult, IResponse } from '../GenerateResponse';
+import { IRequestResult } from '../GenerateResponse';
 
 export interface IUserCreateResult extends IRequestResult {
 	Results: {
@@ -21,7 +21,7 @@ export interface IParseUserResponse {
 }
 
 export const parseUserCreateResponse = (
-	responseObject: IResponse<IUserCreateResult>
+	responseObject: IUserCreateResult
 ): IParseUserResponse => {
 	const { data, headers, status } = responseObject;
 	if (status !== 200)

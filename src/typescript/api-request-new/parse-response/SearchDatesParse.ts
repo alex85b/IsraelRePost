@@ -1,5 +1,5 @@
 import { BadApiResponse } from '../../errors/BadApiResponse';
-import { IRequestResult, IResponse } from '../GenerateResponse';
+import { IRequestResult } from '../GenerateResponse';
 
 export interface ISearchDatesResult extends IRequestResult {
 	Results: {
@@ -18,7 +18,7 @@ export interface IParseDateResponse {
 }
 
 export const parseSearchDatesResponse = (
-	responseObject: IResponse<ISearchDatesResult>
+	responseObject: ISearchDatesResult
 ): IParseDatesResponse => {
 	const { data, status } = responseObject;
 	if (status !== 200)

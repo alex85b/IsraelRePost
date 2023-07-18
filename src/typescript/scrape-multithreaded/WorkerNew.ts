@@ -1,5 +1,4 @@
 import { parentPort, workerData } from 'worker_threads';
-import { IProxyAuthObject } from './ManageThreads';
 import { generateResponse } from '../api-request-new/GenerateResponse';
 import {
 	IGetServicesResult,
@@ -27,7 +26,8 @@ import {
 } from '../api-request-new/parse-response/UserCreateParse';
 import { UserCreateConfig } from '../api-request-new/requests-config/UserCreateConfig';
 import { ISingleBranchQueryResponse } from '../interfaces/IBranchQueryResponse';
-import { IWorkerData } from './ManageWorkers';
+import { IProxyAuthObject, IWorkerData } from './ManageWorkers';
+import { CustomError } from '../errors/custom-error';
 
 interface ITypeGuardReport {
 	success: boolean;
@@ -35,7 +35,6 @@ interface ITypeGuardReport {
 }
 
 interface IScrapeFunctionResponse {
-	status: -1 | 0 | 1;
 	data:
 		| ICommonConfigInput
 		| IParseServicesResponse
@@ -80,25 +79,15 @@ interface ICommonConfigInput {
 	};
 }
 
-export interface IWorkerRerun {
-	id: number;
-	type: 'rerun';
-	data: {
-		amount: number;
-		branches: ISingleBranchQueryResponse[];
-		errors: Error[];
-	};
-}
-
-export interface IWorkerRequest {
-	id: number;
-	type: 'req';
-}
-
 export interface IWorkerMessage {
 	id: number;
 	status: 'f' | 's';
-	type: 'WorkerDataMessage' | 'WorkerTimeout' | 'WorkerBranchScraped';
+	type:
+		| 'WorkerDataMessage'
+		| 'WorkerTimeout'
+		| 'WorkerBranchScraped'
+		| 'WorkerRequest'
+		| 'WorkerScrapeDone';
 }
 
 export interface IWorkerDataMessage extends IWorkerMessage {
@@ -116,15 +105,39 @@ export interface IWorkerBranchScraped extends IWorkerMessage {
 	branchIndex: number;
 }
 
+export interface IWorkerRequest extends IWorkerMessage {
+	type: 'WorkerRequest';
+}
+
+export interface IWorkerScrapeDone extends IWorkerMessage {
+	type: 'WorkerScrapeDone';
+	errors: IBranchReport[];
+}
+
+export interface IBranchReport {
+	branchNameEn: string;
+	branchNumber: number;
+	qnomycode: number;
+	branchIndex: number;
+	success: boolean;
+	userSuccess: boolean;
+	servicesSuccess: boolean;
+	datesSuccess: boolean;
+	timesSuccess: boolean;
+	errorLocation: 'user' | 'services' | 'dates' | 'times' | null;
+	error: Error | string | null;
+}
+
 class BranchWorker {
 	branches: ISingleBranchQueryResponse[] = [];
 	workerId: number = -1;
-	currentService: string = '';
-	currentDate: string = '';
-	currentTime: string = '';
+	// currentService: string = '';
+	// currentDate: string = '';
+	// currentTime: string = '';
 	proxyConfig: IProxyAuthObject | null = null;
-	errors: Error[] = [];
-	rerunAttempts = 3;
+	errors: IBranchReport[] = [];
+	currentBranch: IBranchReport | null = null;
+	// rerunAttempts = 3;
 
 	// parent: init --> worker: verify worker data --> worker: init-result
 	// parent: scrape --> worker: scrape branches --> worker: scrape-result
@@ -138,7 +151,18 @@ class BranchWorker {
 			}
 			if (command === 'scrape') {
 				this.startTimeout({ minutes: 10 });
-				this.scrapeBranches({ branches: this.branches });
+				await this.scrapeBranches({ branches: this.branches });
+				console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+				this.serializeErrors();
+				console.log('##############################################');
+				const branchScraped: IWorkerScrapeDone = {
+					type: 'WorkerScrapeDone',
+					errors: this.errors,
+					id: this.workerId,
+					status: this.errors.length > 0 ? 'f' : 's',
+				};
+				parentPort?.postMessage(branchScraped);
+				// process.exit(0);
 			}
 			if (command === 'end') {
 			}
@@ -146,55 +170,106 @@ class BranchWorker {
 	}
 
 	async scrapeBranches(data: { branches: ISingleBranchQueryResponse[] }) {
-		for (let index = 0; index < data.branches.length; index++) {
-			const currentBranch = data.branches.pop();
-			if (!currentBranch) break;
-			try {
-				const getUserResponse = await this.getUser();
-				if (getUserResponse.data) {
-					const getServicesResponse = await this.getServices({
+		for (let bIndex = 0; bIndex < data.branches.length; bIndex++) {
+			const report = this.setupReportObject({
+				branchnameEN: data.branches[bIndex]._source.branchnameEN,
+				branchnumber: data.branches[bIndex]._source.branchnumber,
+				qnomycode: data.branches[bIndex]._source.qnomycode,
+				branchIndex: bIndex,
+			});
+			const getUserResponse = await this.getUser(report);
+			if (getUserResponse.data) {
+				const getServicesResponse = await this.getServices(
+					{
 						commonConfigInput: getUserResponse.data,
-						qnomycode: currentBranch._source.qnomycode,
-					});
-					if (getServicesResponse.data) {
-						for (const service of getServicesResponse.data.Results) {
-							const getDatesResponse = await this.getDates({
+						qnomycode: data.branches[bIndex]._source.qnomycode,
+					},
+					report
+				);
+				if (getServicesResponse.data) {
+					for (const service of getServicesResponse.data.Results) {
+						const getDatesResponse = await this.getDates(
+							{
 								commonConfigInput: getUserResponse.data,
 								service: service,
-							});
-							if (getDatesResponse.data) {
-								for (const date of getDatesResponse.data.Results) {
-									const getTimesResponse = await this.getTimes({
+							},
+							report
+						);
+						console.log();
+						if (getDatesResponse.data) {
+							for (const date of getDatesResponse.data.Results) {
+								const getTimesResponse = await this.getTimes(
+									{
 										commonConfigInput: getUserResponse.data,
 										date: date,
 										service: service,
-									});
-									if (getTimesResponse.data) {
-										//* Success.
-										const branchScraped: IWorkerBranchScraped = {
-											status: 's',
-											type: 'WorkerBranchScraped',
-											id: this.workerId,
-											branchIndex: index,
-										};
-										parentPort?.postMessage(branchScraped);
-										continue;
-									}
+									},
+									report
+								);
+								if (getTimesResponse.data) {
+									//* Write do db.
 								}
 							}
 						}
 					}
 				}
-			} catch (error) {
-				this.errors.push(error as Error);
 			}
+			this.processReportObject(report, bIndex);
 		}
 	}
 
-	async getUser() {
+	setupReportObject(data: {
+		branchnameEN: string;
+		branchnumber: number;
+		qnomycode: number;
+		branchIndex: number;
+	}): IBranchReport {
+		return {
+			branchNameEn: data.branchnameEN,
+			branchNumber: data.branchnumber,
+			qnomycode: data.qnomycode,
+			branchIndex: data.branchIndex,
+			success: false,
+			userSuccess: false,
+			servicesSuccess: false,
+			datesSuccess: false,
+			timesSuccess: false,
+			errorLocation: null,
+			error: null,
+		};
+	}
+
+	processReportObject(report: IBranchReport, branchIndex: number) {
+		report.success =
+			report.timesSuccess ||
+			(report.userSuccess && !report.datesSuccess) ||
+			(report.userSuccess && !report.servicesSuccess);
+		if (report.success) {
+			console.log(
+				`[scrapeBranches] worker ${this.workerId} branch ${report.branchNameEn} Ended successfully`
+			);
+			console.log(`[scrapeBranches] worker ${this.workerId} Report: `, report);
+			const branchScraped: IWorkerBranchScraped = {
+				status: 's',
+				type: 'WorkerBranchScraped',
+				id: this.workerId,
+				branchIndex: branchIndex,
+			};
+			parentPort?.postMessage(branchScraped);
+		} else {
+			console.log(
+				`[scrapeBranches] worker ${this.workerId} branch ${report.branchNameEn} Ended in failure`
+			);
+			this.errors.push(report);
+		}
+	}
+
+	async getUser(report: IBranchReport) {
 		const userConfigBuilder = new UserCreateConfig(this.proxyConfig!);
 		await this.requestCoordinator(this.workerId);
-		const response: IGetUserResponse = { status: 0, data: undefined };
+		const response: IGetUserResponse = {
+			data: undefined,
+		};
 		try {
 			const createResponse = await generateResponse<
 				UserCreateConfig,
@@ -208,45 +283,58 @@ class BranchWorker {
 				proxyUrl: this.proxyConfig!.proxyUrl,
 				useProxy: this.proxyConfig!.useProxy,
 			};
-			response.status = 1;
 			response.data = commonConfigInput;
+			report.userSuccess = true;
 			return response;
 		} catch (error) {
-			this.errors.push(error as Error);
+			report.userSuccess = false;
+			report.errorLocation = 'user';
+			report.error = error as Error;
 			return response;
 		}
 	}
 
-	async getServices(data: {
-		qnomycode: number;
-		commonConfigInput: ICommonConfigInput;
-	}) {
+	async getServices(
+		data: {
+			qnomycode: number;
+			commonConfigInput: ICommonConfigInput;
+		},
+		report: IBranchReport
+	) {
 		const { commonConfigInput, qnomycode } = data;
 		const servicesConfigBuilder = new GetServicesConfig({
 			...commonConfigInput,
 			url: { locationId: String(qnomycode), serviceTypeId: '0' },
 		});
 		await this.requestCoordinator(this.workerId);
-		const response: IGetServicesResponse = { status: 0, data: undefined };
+		const response: IGetServicesResponse = {
+			data: undefined,
+		};
 		try {
 			const servicesResponse = await generateResponse<
 				GetServicesConfig,
 				IGetServicesResult
 			>(servicesConfigBuilder, 40000);
 			const parsedServicesResponse = parseGetServicesResponse(servicesResponse);
-			response.status = 1;
+
 			response.data = parsedServicesResponse;
+			report.servicesSuccess = true;
 			return response;
 		} catch (error) {
-			this.errors.push(error as Error);
+			report.servicesSuccess = false;
+			report.errorLocation = 'services';
+			report.error = error as Error;
 			return response;
 		}
 	}
 
-	async getDates(data: {
-		commonConfigInput: ICommonConfigInput;
-		service: IParseServiceResponse;
-	}) {
+	async getDates(
+		data: {
+			commonConfigInput: ICommonConfigInput;
+			service: IParseServiceResponse;
+		},
+		report: IBranchReport
+	) {
 		const { commonConfigInput, service } = data;
 		const { serviceId, ServiceTypeId } = service;
 		const searchDatesBuilder = new SearchDatesConfig({
@@ -254,27 +342,34 @@ class BranchWorker {
 			url: { serviceId: String(serviceId), serviceTypeId: String(ServiceTypeId) },
 		});
 		await this.requestCoordinator(this.workerId);
-		const response: IGetDatesResponse = { status: 0, data: undefined };
+		const response: IGetDatesResponse = {
+			data: undefined,
+		};
 		try {
 			const datesResponse = await generateResponse<
 				SearchDatesConfig,
 				ISearchDatesResult
 			>(searchDatesBuilder, 40000);
 			const parsedDatesResponse = parseSearchDatesResponse(datesResponse);
-			response.status = 1;
+			report.datesSuccess = true;
 			response.data = parsedDatesResponse;
 			return response;
 		} catch (error) {
-			this.errors.push(error as Error);
+			report.datesSuccess = false;
+			report.errorLocation = 'dates';
+			report.error = error as Error;
 			return response;
 		}
 	}
 
-	async getTimes(data: {
-		commonConfigInput: ICommonConfigInput;
-		date: IParseDateResponse;
-		service: IParseServiceResponse;
-	}) {
+	async getTimes(
+		data: {
+			commonConfigInput: ICommonConfigInput;
+			date: IParseDateResponse;
+			service: IParseServiceResponse;
+		},
+		report: IBranchReport
+	) {
 		const { commonConfigInput, date, service } = data;
 		const { calendarId } = date;
 		const { serviceId } = service;
@@ -288,28 +383,56 @@ class BranchWorker {
 			},
 		});
 		await this.requestCoordinator(this.workerId);
-		const response: IGetTimesResponse = { status: 0, data: undefined };
+		const response: IGetTimesResponse = {
+			data: undefined,
+		};
 		try {
 			const timesResponse = await generateResponse<
 				SearchTimesConfig,
 				ISearchTimesResult
 			>(searchTimesBuilder, 40000);
+			// console.log(
+			// 	`[getTimes] worker ${this.workerId} timesResponse: `,
+			// 	timesResponse
+			// );
 			const parsedTimesResponse = parseSearchTimesResponse(timesResponse);
-			response.status = 1;
+			report.timesSuccess = true;
 			response.data = parsedTimesResponse;
 			return response;
 		} catch (error) {
-			this.errors.push(error as Error);
+			report.timesSuccess = false;
+			report.errorLocation = 'times';
+			report.error = error as Error;
 			return response;
 		}
 	}
 
 	// Parse this.errors into something uniform!
-	serializeErrors() {}
+	serializeErrors() {
+		for (const report of this.errors) {
+			if (!report.success) {
+			}
+		}
+		console.log('[serializeErrors]');
+		console.log('[serializeErrors] amount: ', this.errors.length);
+		for (const error of this.errors) {
+			if (error instanceof CustomError) {
+				console.log('[serializeErrors] CustomError: ');
+				console.log(error.serializeErrors());
+			} else {
+				console.log('[serializeErrors] undefined error: ');
+				console.log(error);
+			}
+		}
+	}
 
 	requestCoordinator = async (id: number) => {
 		await new Promise((resolve, reject) => {
-			const request: IWorkerRequest = { id: id, type: 'req' };
+			const request: IWorkerRequest = {
+				id: id,
+				status: 's',
+				type: 'WorkerRequest',
+			};
 			parentPort?.postMessage(request);
 			parentPort?.once('message', (message) => {
 				resolve(message);
@@ -325,7 +448,7 @@ class BranchWorker {
 		this.verifyProxyConfig(proxyConfig, report);
 
 		const workerDataMessage: IWorkerDataMessage = {
-			id: this.workerId,
+			id: workerId,
 			status: 'f',
 			type: 'WorkerDataMessage',
 			data: report.invalid,
@@ -337,7 +460,7 @@ class BranchWorker {
 		}
 
 		this.branches = processBranches;
-		this.workerId = this.workerId;
+		this.workerId = workerId;
 		this.proxyConfig = proxyConfig;
 		workerDataMessage.status = 's';
 		workerDataMessage.data = [];

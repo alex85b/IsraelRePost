@@ -1,7 +1,6 @@
 import { CustomError } from './custom-error';
 
 export class PuppeteerMalfunctionError extends CustomError {
-	statusCode = 503;
 	errorMessage: string;
 
 	constructor(errorMessage: string) {

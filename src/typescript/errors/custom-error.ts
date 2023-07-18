@@ -8,17 +8,15 @@
     Said handler will expect to use statuscode, and serializeErrors(), for response.
 */
 
-export abstract class CustomError extends Error {
-	abstract statusCode: number;
+export interface ISerializeErrorObj {
+	[key: string]: string | boolean;
+}
 
+export abstract class CustomError extends Error {
 	constructor(errorMessage: string) {
 		super(errorMessage);
 		Object.setPrototypeOf(this, CustomError.prototype);
 	}
 
-	abstract serializeErrors(): {
-		message: string;
-		source?: string;
-		data?: any;
-	}[];
+	abstract serializeErrors(): ISerializeErrorObj[];
 }

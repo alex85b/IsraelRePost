@@ -1,5 +1,5 @@
 import { BadApiResponse } from '../../errors/BadApiResponse';
-import { IRequestResult, IResponse } from '../GenerateResponse';
+import { IRequestResult } from '../GenerateResponse';
 
 export interface IGetServicesResult extends IRequestResult {
 	Results: {
@@ -40,7 +40,7 @@ export interface IParseServiceResponse {
 }
 
 export const parseGetServicesResponse = (
-	responseObject: IResponse<IGetServicesResult>
+	responseObject: IGetServicesResult
 ): IParseServicesResponse => {
 	const { data, status } = responseObject;
 	if (status !== 200)

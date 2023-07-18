@@ -16,7 +16,7 @@ const errorHandler = (
 	if (err instanceof CustomError) {
 		console.log('Error handler: known error');
 		const errPrintout = (err as CustomError).serializeErrors();
-		return res.status(err.statusCode).send({ errors: errPrintout });
+		return res.send({ errors: errPrintout });
 	}
 
 	// Error isn't from the expected type.

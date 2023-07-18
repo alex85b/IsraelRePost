@@ -1,8 +1,13 @@
 import { Worker } from 'worker_threads';
 import { Mutex } from 'async-mutex';
 import { ISingleBranchQueryResponse } from '../interfaces/IBranchQueryResponse';
-import { splitBranchesArray } from '../common/SplitBranchesArray';
-import { IWorkerDataMessage, IWorkerRequest, IWorkerRerun } from './WorkerNew';
+import {
+	IWorkerBranchScraped,
+	IWorkerDataMessage,
+	IWorkerRequest,
+	IWorkerScrapeDone,
+} from './WorkerNew';
+import { errors } from '@elastic/elasticsearch';
 
 export interface IProxyAuthObject {
 	proxyAuth: {
@@ -28,6 +33,10 @@ export interface IConstructorOptions {
 	proxyConfig: IProxyAuthObject;
 }
 
+interface IBranchIndexMap {
+	[key: number]: ISingleBranchQueryResponse;
+}
+
 export class ManageWorkers {
 	private workerScriptPath: string;
 	private requestsLimit: number;
@@ -40,10 +49,11 @@ export class ManageWorkers {
 	private workers: Worker[] = [];
 	private workersObj: { [key: number]: Worker | null } = {};
 	private initEvents: Promise<number>[] = [];
-	private scrapeEvents: Promise<void>[] = [];
+	private scrapeEvents: Promise<number>[] = [];
 	private branchesBatch: ISingleBranchQueryResponse[];
 	private proxyConfig: IProxyAuthObject;
-	private workLoad: ISingleBranchQueryResponse[][] = [];
+	// private workLoad: ISingleBranchQueryResponse[][] = [];
+	private workLoad: IBranchIndexMap[] = [];
 	private runErrors: any[] = [];
 
 	constructor(options: IConstructorOptions) {
@@ -56,14 +66,18 @@ export class ManageWorkers {
 	}
 
 	constructWorkLoad() {
+		// Create a cell for each worker.
 		for (let index = 0; index < this.threadAmount; index++) {
-			this.workLoad.push([]);
+			this.workLoad.push({});
 		}
-		const indexGenerator = this.circularNumbers(this.threadAmount);
+		let depth = -1;
+		const workerIndexGen = this.zeroToNCircularly(this.threadAmount);
 		while (this.branchesBatch.length > 0) {
+			const workerIndex = workerIndexGen.next().value;
+			if (workerIndex === 0) depth++;
 			const branch = this.branchesBatch.pop();
 			if (!branch) break;
-			this.workLoad[indexGenerator.next().value].push(branch);
+			this.workLoad[workerIndex][depth] = branch;
 		}
 	}
 
@@ -71,7 +85,11 @@ export class ManageWorkers {
 		return this.workLoad;
 	}
 
-	private *circularNumbers(lastNumber: number): Generator<number> {
+	getRunErrors() {
+		return JSON.parse(JSON.stringify(this.runErrors));
+	}
+
+	private *zeroToNCircularly(lastNumber: number): Generator<number> {
 		let currentNumber = 0;
 		while (true) {
 			yield currentNumber;
@@ -103,19 +121,50 @@ export class ManageWorkers {
 				this.workersObj[index] = null;
 			}
 		}
+		this.initEvents = [];
 
-		console.log(this.workersObj);
+		// console.log('[spawnWorkers] workers: ', this.workersObj);
 
 		return JSON.parse(JSON.stringify(this.workersObj));
 	}
 
-	async workersScrapeBranches() {}
+	// Add scrape branches events to each worker.
+	async workersScrapeBranches() {
+		for (const workerIndex in this.workersObj) {
+			const worker = this.workersObj[workerIndex];
+			try {
+				if (!worker) continue;
+				this.scrapeEvents.push(
+					this.setupScrapeEvent(worker, Number.parseInt(workerIndex))
+				);
+			} catch (error) {
+				console.error(
+					'[workersScrapeBranches] Error during "setupScrapeEvent": ',
+					error
+				);
+			}
+		}
+		const settledEvents = await Promise.allSettled(this.scrapeEvents);
+		for (let index = 0; index < settledEvents.length; index++) {
+			console.log('[workersScrapeBranches] event index: ', index);
+		}
+		this.scrapeEvents = [];
+
+		console.log('[workersScrapeBranches] branches:');
+		for (const branchBatches of this.workLoad) {
+			for (const index in branchBatches) {
+				console.log(branchBatches[index]);
+			}
+		}
+
+		return JSON.parse(JSON.stringify(settledEvents));
+	}
 
 	private setupWorker(index: number) {
 		return new Worker(this.workerScriptPath, {
 			workerData: {
 				workerId: index,
-				processBranches: this.workLoad[index],
+				processBranches: Object.values(this.workLoad[index]),
 				proxyConfig: this.proxyConfig,
 			},
 		});
@@ -124,28 +173,94 @@ export class ManageWorkers {
 	private setupInitEvent(worker: Worker, workerId: number) {
 		return new Promise<number>((resolve, reject) => {
 			worker.once('message', (message) =>
-				this.onWorkerMessage(message, resolve, reject, workerId)
+				this.onWorkerInitMessage(message, resolve, reject, workerId)
 			);
-			worker.once('error', (error) => this.onWorkerError(error, reject, workerId));
+			worker.once('error', (error) =>
+				this.onWorkerInitError(error, reject, workerId)
+			);
 			worker.once('exit', (code) =>
-				this.onWorkerExit(code, resolve, reject, workerId)
+				this.onWorkerInitExit(code, resolve, reject, workerId)
 			);
-
 			worker.postMessage({ type: 'init' });
 		});
 	}
 
 	private setupScrapeEvent(worker: Worker, workerId: number) {
 		return new Promise<number>((resolve, reject) => {
-			worker.once('message', (message) => {});
-			worker.once('error', (error) => {});
-			worker.once('exit', (code) => {});
-
+			worker.on('message', (message) => {
+				this.onWorkerScrapeMessage(message, resolve, reject, workerId, worker);
+			});
+			worker.once('error', (error) =>
+				this.onWorkerScrapeError(error, reject, workerId)
+			);
+			worker.once('exit', (code) =>
+				this.onWorkerScrapeExit(code, resolve, reject, workerId)
+			);
 			worker.postMessage({ type: 'scrape' });
 		});
 	}
 
-	private async onWorkerMessage(
+	private async onWorkerScrapeMessage(
+		message: IWorkerBranchScraped | IWorkerRequest | IWorkerScrapeDone,
+		resolve: (reason: number) => void,
+		reject: (reason: number) => void,
+		workerId: number,
+		worker: Worker
+	) {
+		switch (message.type) {
+			case 'WorkerRequest':
+				this.criticalArea(message.id);
+				worker.postMessage({ type: 'ack' });
+				break;
+			case 'WorkerBranchScraped':
+				console.log('[WorkerBranchScraped] message: ', message);
+				if (message.status === 's') {
+					if (workerId !== message.id) {
+						throw new Error(
+							`[onWorkerScrapeMessage] workerId ${workerId} !=message.id ${message.id}`
+						);
+					}
+					if (typeof message.branchIndex === 'number' && message.branchIndex > -1) {
+						delete this.workLoad[workerId][message.branchIndex];
+					}
+				}
+				break;
+			case 'WorkerScrapeDone':
+				// console.log('[WorkerScrapeDone] message: ', message);
+				if (message.status === 'f') {
+					if (message.errors) {
+						for (const error of message.errors) {
+							this.runErrors.push(error);
+						}
+					}
+					reject(workerId);
+				}
+				resolve(workerId);
+				break;
+			default:
+				console.error('[onWorkerScrapeMessage] unknown request: ', message);
+				reject(workerId);
+		}
+	}
+
+	private async onWorkerScrapeError(
+		error: Error,
+		reject: (reason: number) => void,
+		workerId: number
+	) {
+		this.onWorkerInitError(error, reject, workerId);
+	}
+
+	private async onWorkerScrapeExit(
+		code: number,
+		resolve: (reason: number) => void,
+		reject: (reason: number) => void,
+		workerId: number
+	) {
+		this.onWorkerInitExit(code, resolve, reject, workerId);
+	}
+
+	private async onWorkerInitMessage(
 		message: IWorkerDataMessage,
 		resolve: (reason: number) => void,
 		reject: (reason: number) => void,
@@ -159,10 +274,10 @@ export class ManageWorkers {
 				reject(workerId);
 			}
 		}
-		reject(message.id);
+		reject(workerId);
 	}
 
-	private async onWorkerError(
+	private async onWorkerInitError(
 		error: Error,
 		reject: (reason: number) => void,
 		workerId: number
@@ -171,14 +286,51 @@ export class ManageWorkers {
 		reject(workerId);
 	}
 
-	private async onWorkerExit(
+	private async onWorkerInitExit(
 		code: number,
 		resolve: (reason: number) => void,
 		reject: (reason: number) => void,
 		workerId: number
 	) {
-		console.log(`Noticed worker ${workerId} exit: `, code);
+		console.log(`Noticed worker ${workerId} exit-code: `, code);
 		if (code === 0) resolve(workerId);
 		reject(workerId);
+	}
+
+	private async criticalArea(workerId: number, debug: boolean = false) {
+		if (debug)
+			console.log(`[criticalArea] worker ${workerId} entered the "criticalArea"`);
+		await this.mutex.runExclusive(async () => {
+			// Counter is below 'requestsLimit'.
+			if (this.requestsCounter < this.requestsLimit) {
+				this.requestsCounter++;
+				if (debug)
+					console.log(
+						`[criticalArea] worker ${workerId} increased counter to: ${this.requestsCounter}`
+					);
+			}
+			// Counter NOW at 'requestsLimit', 'isDelayed' false, this triggers 'delay'.
+			if (
+				this.requestsCounter === this.requestsLimit &&
+				this.isDelayed === false
+			) {
+				console.log(`[criticalArea] worker ${workerId} triggered delay`);
+				this.isDelayed = true;
+				this.sharedDelay = new Promise((resolve) => {
+					setTimeout(() => {
+						this.requestsCounter = 0;
+						resolve();
+					}, this.requestsTimeout);
+				});
+				await this.sharedDelay;
+				this.sharedDelay = null;
+				this.isDelayed = false;
+			}
+			// Counter NOW at 'requestsLimit', 'isDelayed' true, this waits for shared 'timeout'.
+			if (this.requestsCounter === this.requestsLimit && this.isDelayed === true) {
+				console.log(`[criticalArea] worker ${workerId} awaits delay end`);
+				await this.sharedDelay;
+			}
+		});
 	}
 }

@@ -2,12 +2,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import dotenv from 'dotenv';
 import { queryAllBranches } from '../scrape/QueryAllBranches';
 import path from 'path';
-import {
-	IBranchQueryResponse,
-	ISingleBranchQueryResponse,
-} from '../interfaces/IBranchQueryResponse';
 import { splitBranchesArray } from '../common/SplitBranchesArray';
-import { ManageThreads } from '../scrape-multithreaded/ManageThreads';
 import { ManageWorkers } from '../scrape-multithreaded/ManageWorkers';
 import { readCertificates } from '../common/ReadCertificates';
 
@@ -36,7 +31,10 @@ router.post(
 
 			// Split branches-array into array of arrays of X branches batch.
 			const branchesBatches = splitBranchesArray(allBranches, 4);
-			console.log('test branch-batch size: ', branchesBatches[1].length);
+			console.log(
+				'[/api/scrape/all-time-slots] branch-batch size: ',
+				branchesBatches[1].length
+			);
 
 			const proxyConfig = {
 				proxyAuth: {
@@ -54,13 +52,14 @@ router.post(
 				branchesBatch: branchesBatches[1],
 				requestsLimit: 48,
 				requestsTimeout: 61000,
-				threadAmount: 2,
+				threadAmount: 1,
 			});
 			manager.constructWorkLoad();
 			const workersStatus = await manager.spawnWorkers();
-			// const qwe = await manager.
+			const workersReport = await manager.workersScrapeBranches();
+			const runErrors = manager.getRunErrors();
 
-			res.status(200).send(workersStatus);
+			res.status(200).send({ workersStatus, workersReport, runErrors });
 		} catch (error) {
 			console.log(error);
 			next(error as Error);
