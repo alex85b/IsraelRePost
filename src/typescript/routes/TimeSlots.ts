@@ -30,7 +30,7 @@ router.post(
 			console.log(`[Elastic] Branch query result amount: ${allBranches.length}`);
 
 			// Split branches-array into array of arrays of X branches batch.
-			const branchesBatches = splitBranchesArray(allBranches, 4);
+			const branchesBatches = splitBranchesArray(allBranches, 8);
 			console.log(
 				'[/api/scrape/all-time-slots] branch-batch size: ',
 				branchesBatches[1].length
@@ -52,14 +52,17 @@ router.post(
 				branchesBatch: branchesBatches[1],
 				requestsLimit: 48,
 				requestsTimeout: 61000,
-				threadAmount: 1,
+				threadAmount: 4,
 			});
 			manager.constructWorkLoad();
 			const workersStatus = await manager.spawnWorkers();
 			const workersReport = await manager.workersScrapeBranches();
 			const runErrors = manager.getRunErrors();
+			const remainingBranches = manager.getWorkLoadArray();
 
-			res.status(200).send({ workersStatus, workersReport, runErrors });
+			res
+				.status(200)
+				.send({ workersStatus, workersReport, runErrors, remainingBranches });
 		} catch (error) {
 			console.log(error);
 			next(error as Error);

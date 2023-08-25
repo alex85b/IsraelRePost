@@ -1,5 +1,5 @@
-import { IBranch } from '../interfaces/IBranch';
-import { IDocumentBranch } from '../interfaces/IDocumentBranch';
+import { IBranch } from "../interfaces/IBranch";
+import { IDocumentBranch } from "../interfaces/IDocumentBranch";
 
 export interface IRequestBranchesResponse {
 	filteredBranches: IDocumentBranch[];
@@ -34,12 +34,12 @@ export const filterBranches = (
 					id: branch.id,
 					branchnumber: branch.branchnumber,
 					branchname: branch.branchname,
-					branchnameEN: branch.branchnameEN || '',
+					branchnameEN: branch.branchnameEN || "",
 					city: branch.city,
-					cityEN: branch.cityEN || '',
+					cityEN: branch.cityEN || "",
 					street: branch.street,
-					streetEN: branch.streetEN || '',
-					streetcode: branch.streetcode || '',
+					streetEN: branch.streetEN || "",
+					streetcode: branch.streetcode || "",
 					zip: branch.zip,
 					qnomycode: branch.qnomycode,
 					qnomyWaitTimeCode: branch.qnomyWaitTimeCode,
@@ -50,6 +50,7 @@ export const filterBranches = (
 						lat: branch.geocode_latitude,
 						lon: branch.geocode_longitude,
 					},
+					services: [],
 				};
 
 				accumulator.push(newBranch);
@@ -58,12 +59,9 @@ export const filterBranches = (
 		},
 		[]
 	);
-	console.log('[filterBranches] Done');
+	console.log("[filterBranches] Done");
 
-	console.log(
-		'[filterBranches] Dataset size after filtering: ',
-		Object.keys(filteredBranches).length
-	);
+	console.log("[filterBranches] Dataset size after filtering: ", Object.keys(filteredBranches).length);
 
 	return filteredBranches;
 };

@@ -1,12 +1,19 @@
-import { CustomError } from './custom-error';
+// import { CustomError, ISerializeErrorObj } from './custom-error';
 
-export class BadApiResponse extends CustomError {
-	constructor(private error: { message: string; source: string; data?: any }) {
-		super('Bad Api Response');
-		Object.setPrototypeOf(this, BadApiResponse.prototype);
-	}
+// interface IBadApiResponse extends ISerializeErrorObj {
+// 	message: string;
+// 	errorLocation: string;
+// 	responseMessage: string;
+// 	responseStatus: string;
+// }
 
-	serializeErrors() {
-		return [this.error];
-	}
-}
+// export class BadApiResponse extends CustomError {
+// 	constructor(private error: IBadApiResponse) {
+// 		super('Bad Api Response');
+// 		Object.setPrototypeOf(this, BadApiResponse.prototype);
+// 	}
+
+// 	serializeErrors() {
+// 		return [this.error];
+// 	}
+// }

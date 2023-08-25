@@ -1,58 +1,114 @@
-import { Client, NodeOptions } from '@elastic/elasticsearch';
-import { ElasticMalfunctionError } from '../errors/elst-malfunction-error';
+import { Client, NodeOptions } from "@elastic/elasticsearch";
 import {
 	BulkResponse,
+	ErrorCause,
 	IndicesCreateResponse,
 	IndicesIndexSettings,
+	IndicesResponseBase,
 	MappingTypeMapping,
-	QueryDslQueryContainer,
-} from '@elastic/elasticsearch/lib/api/types';
-import { BulkAddError, IBulkError } from '../errors/bulk-edit-error';
-import { IDocumentBranch } from '../interfaces/IDocumentBranch';
-import { ITimeSlotsDocument } from '../interfaces/ITimeSlotsDocument';
+	SearchResponse,
+	WriteResponseBase,
+} from "@elastic/elasticsearch/lib/api/types";
+import { IDocumentBranch } from "../interfaces/IDocumentBranch";
 
 /*
 	This encapsulates all the logic that connected to Elasticsearch requests,
-	Implements needed CRUD operations on the 'all-branches' and 'appointments' indices.
+	Implements needed CRUD operations.
 */
+
+// ###################################################################################################
+// ### Interfaces ####################################################################################
+// ###################################################################################################
+
+export interface ErrorMapping {
+	userError: string;
+	servicesErrors: ServiceError[];
+	datesErrors: DateError[];
+	timesError: string;
+}
+
+export interface ServiceError {
+	serviceId: string;
+	errorText: string;
+}
+
+export interface DateError {
+	dateId: string;
+	errorText: string;
+}
+
+// ###################################################################################################
+// ### Class: ElasticClient ##########################################################################
+// ###################################################################################################
+
 export class ElasticClient {
-	//
-	// This will be used to send requests to Elasticsearch.
+	// ###########################################################
+	// ### Instance variables ####################################
+	// ###########################################################
 	private client: Client | null = null;
-
-	// Hardcoded indices.
-	private branchesIndex: string = 'all-post-branches';
-	private slotsIndex: string = 'open-slots';
-
-	// Hardcoded branches mapping.
+	private currentError: Error | null = null;
+	private failReasons: string[] = [];
+	private branchesIndex: string = "branches";
 	private branchesMapping: MappingTypeMapping = {
-		dynamic: 'strict',
+		dynamic: "strict",
 		properties: {
-			id: { type: 'integer' },
-			branchnumber: { type: 'integer' },
-			branchname: { type: 'text' },
-			branchnameEN: { type: 'text' },
-			city: { type: 'text' },
-			cityEN: { type: 'text' },
-			street: { type: 'text' },
-			streetEN: { type: 'text' },
-			streetcode: { type: 'keyword' },
-			zip: { type: 'keyword' },
-			qnomycode: { type: 'integer' },
-			qnomyWaitTimeCode: { type: 'integer' },
-			haszimuntor: { type: 'integer' },
-			isMakeAppointment: { type: 'integer' },
-			location: { type: 'geo_point' },
+			id: { type: "integer" },
+			branchnumber: { type: "integer" },
+			branchname: { type: "text" },
+			branchnameEN: { type: "text" },
+			city: { type: "text" },
+			cityEN: { type: "text" },
+			street: { type: "text" },
+			streetEN: { type: "text" },
+			streetcode: { type: "keyword" },
+			zip: { type: "keyword" },
+			qnomycode: { type: "integer" },
+			qnomyWaitTimeCode: { type: "integer" },
+			haszimuntor: { type: "integer" },
+			isMakeAppointment: { type: "integer" },
+			location: { type: "geo_point" },
+			services: {
+				type: "nested",
+				properties: {
+					serviceId: { type: "keyword" },
+					serviceName: { type: "keyword" },
+					dates: {
+						type: "nested",
+						properties: {
+							calendarId: { type: "keyword" },
+							calendarDate: { type: "date", format: "yyyy-MM-dd'T'HH:mm:ss" },
+							hours: {
+								type: "text",
+								fields: {
+									keyword: { type: "keyword" },
+								},
+							},
+						},
+					},
+				},
+			},
 		},
 	};
 
-	// Hardcoded time slots mapping.
-	private timeSlotsMapping: MappingTypeMapping = {
-		dynamic: 'strict',
+	private errorMapping: MappingTypeMapping = {
+		dynamic: "strict",
 		properties: {
-			id: { type: 'text' },
-			calendarDate: { type: 'date', format: "yyyy-MM-dd'T'HH:mm:ss" },
-			time: { type: 'integer' },
+			userError: { type: "text" }, // Long error text for user error
+			servicesErrors: {
+				type: "nested",
+				properties: {
+					serviceId: { type: "keyword" }, // Service ID
+					errorText: { type: "text" }, // Long error text for the service
+				},
+			},
+			datesErrors: {
+				type: "nested",
+				properties: {
+					dateId: { type: "keyword" }, // Date ID associated with the error
+					errorText: { type: "text" }, // Long error text for the date
+				},
+			},
+			timesError: { type: "text" }, // Long error text for timesError
 		},
 	};
 
@@ -62,20 +118,27 @@ export class ElasticClient {
 		number_of_replicas: 1,
 	};
 
-	// Construct client.
-	constructor(setupData: {
+	// ###########################################################
+	// ### Methods ###############################################
+	// ###########################################################
+
+	constructor({
+		node,
+		username,
+		password,
+		caCertificate,
+		rejectUnauthorized,
+	}: {
 		node: string | string[] | NodeOptions | NodeOptions[];
 		username: string;
 		password: string;
 		caCertificate: string;
 		rejectUnauthorized: boolean;
 	}) {
-		const { node, caCertificate, password, username, rejectUnauthorized } =
-			setupData;
 		this.client = new Client({
 			node: node,
 			auth: {
-				username: username || 'elastic',
+				username: username || "elastic",
 				password: password,
 			},
 			tls: {
@@ -86,300 +149,255 @@ export class ElasticClient {
 	}
 
 	async sendPing() {
+		const result: {
+			success: boolean;
+			error: Error | null;
+		} = {
+			success: false,
+			error: null,
+		};
 		try {
 			await this.client?.ping();
+			result.success = true;
+			return result;
 		} catch (error) {
-			console.error((error as Error).message);
-			throw new ElasticMalfunctionError('sendPing failed');
+			result.error = error as Error;
+			return result;
 		}
 	}
 
-	private async createIndex(
-		indexName: string,
-		settings: IndicesIndexSettings,
-		mappings: MappingTypeMapping
-	) {
+	private async createIndex({
+		indexName,
+		settings,
+		mappings,
+	}: {
+		indexName: string;
+		settings: IndicesIndexSettings;
+		mappings: MappingTypeMapping;
+	}) {
+		const result: {
+			success: boolean;
+			result: IndicesCreateResponse | null;
+			error: Error | null;
+		} = {
+			success: false,
+			result: null,
+			error: null,
+		};
 		try {
-			const result = await this.client?.indices.create({
-				index: indexName,
-				body: {
-					settings,
-					mappings,
-				},
+			result.result =
+				(await this.client?.indices.create({
+					index: indexName,
+					body: {
+						settings,
+						mappings,
+					},
+				})) ?? null;
+			result.success = true;
+			return result;
+		} catch (error) {
+			result.error = error as Error;
+			return result;
+		}
+	}
+
+	async branchIndexExists() {
+		const result: {
+			success: boolean;
+			error: Error | null;
+		} = {
+			success: false,
+			error: null,
+		};
+		try {
+			result.success =
+				(await this.client?.indices.exists({ index: this.branchesIndex })) ?? false;
+			return result;
+		} catch (error) {
+			result.error = error as Error;
+			return result;
+		}
+	}
+
+	async createBranchesIndex() {
+		const result: {
+			success: boolean;
+			reason: string;
+			error: Error | null;
+		} = {
+			success: false,
+			reason: "",
+			error: null,
+		};
+		try {
+			const existCheck = await this.branchIndexExists();
+			if (existCheck.success) {
+				result.success = true;
+				result.reason = `${this.branchesIndex} already exist`;
+				return result;
+			}
+			this.createIndex({
+				indexName: this.branchesIndex,
+				mappings: this.branchesMapping,
+				settings: this.settings,
 			});
-			return result || false;
+			result.success = true;
+			return result;
 		} catch (error) {
-			console.error((error as Error).message);
-			throw new ElasticMalfunctionError(`createIndex failed: ${indexName}`);
+			result.error = error as Error;
+			return result;
 		}
 	}
 
-	async setupIndex(index: 'branches' | 'slots' | 'all') {
-		if (index === 'all') {
-			if (!(await this.indexExists('branches'))) this.createAllBranchesIndex;
-			if (!(await this.indexExists('slots'))) this.createTimeSlotsIndex;
-		} else if (index === 'slots') {
-			if (!(await this.indexExists('slots'))) this.createTimeSlotsIndex;
-		} else {
-			if (!(await this.indexExists('branches'))) this.createAllBranchesIndex;
-		}
-	}
-
-	async indexExists(index: 'branches' | 'slots') {
-		const checkThis = index === 'branches' ? this.branchesIndex : this.slotsIndex;
+	async deleteBranchesIndex() {
+		const result: {
+			success: boolean;
+			reason: string[];
+			response: IndicesResponseBase[];
+			error: Error | null;
+		} = {
+			success: false,
+			response: [],
+			reason: [],
+			error: null,
+		};
 		try {
-			const response = await this.client?.indices.exists({ index: checkThis });
-			return response || false;
-		} catch (error) {
-			throw new ElasticMalfunctionError(`indexExists failed: ${index}`);
-		}
-	}
-
-	private async createAllBranchesIndex() {
-		let response: IndicesCreateResponse | false;
-		try {
-			response = await this.createIndex(
-				this.branchesIndex,
-				this.settings,
-				this.branchesMapping
-			);
-		} catch (error) {
-			console.error((error as Error).message);
-			throw new ElasticMalfunctionError('createAllBranchesIndex failed creation');
-		}
-
-		if (!response || !response.acknowledged) {
-			throw new ElasticMalfunctionError('createAllBranchesIndex response failure');
-		}
-
-		return true;
-	}
-
-	private async createTimeSlotsIndex() {
-		let response: IndicesCreateResponse | false;
-		try {
-			response = await this.createIndex(
-				this.slotsIndex,
-				this.settings,
-				this.timeSlotsMapping
-			);
-		} catch (error) {
-			console.error((error as Error).message);
-			throw new ElasticMalfunctionError('createTimeSlotsIndex failed creation');
-		}
-
-		if (!response || !response.acknowledged) {
-			throw new ElasticMalfunctionError('createTimeSlotsIndex response failure');
-		}
-
-		return true;
-	}
-
-	async deleteIndices(index: 'branches' | 'slots' | 'all') {
-		const deleteThis =
-			index === 'branches'
-				? this.branchesIndex
-				: index === 'slots'
-				? this.slotsIndex
-				: '*';
-		try {
-			const response = await this.client?.indices.getAlias({ index: deleteThis });
-			if (!response) return false;
-			for (const ind in response) {
-				if (ind !== '.security-7') {
+			const allIndices = await this.client?.indices.getAlias({
+				index: this.branchesIndex,
+			});
+			if (!allIndices) {
+				result.success = true;
+				result.reason.push("no indices found in the db");
+				return result;
+			}
+			for (const ind in allIndices) {
+				if (ind !== ".security-7") {
 					const response = await this.client?.indices.delete({ index: ind });
-					console.log(`Index '${ind}' has been deleted: `, response);
+					if (response) result.response.push(response);
+					result.reason.push(`Index '${ind}' has been deleted: `);
 				}
 			}
-			return true;
+			result.success = true;
+			return result;
 		} catch (error) {
-			console.error((error as Error).message);
-			throw new ElasticMalfunctionError(`deleteIndices ${index} failed deletion`);
+			result.error = error as Error;
+			return result;
 		}
 	}
 
-	async addBranch(document: IDocumentBranch) {
+	private async addSingleBranch({ branchDocument }: { branchDocument: IDocumentBranch }) {
+		const result: {
+			success: boolean;
+			reason: string;
+			addBranchResponse: WriteResponseBase | null;
+			error: Error | null;
+		} = {
+			success: false,
+			addBranchResponse: null,
+			reason: "",
+			error: null,
+		};
 		try {
-			await this.client?.index({
-				index: this.branchesIndex,
-				document: document,
-			});
+			result.addBranchResponse =
+				(await this.client?.create({
+					index: this.branchesIndex,
+					id: String(branchDocument.branchnumber),
+					document: branchDocument,
+				})) ?? null;
+			return result;
 		} catch (error) {
-			console.error((error as Error).message);
-			throw new ElasticMalfunctionError(`addBranch failed: ${document}`);
+			result.error = error as Error;
+			result.reason = "addSingleBranch failed unexpectedly";
+			return result;
 		}
 	}
 
-	async getAllBranches() {
-		const response = await this.client?.search({
-			index: this.branchesIndex,
-			query: {
-				match_all: {},
-			},
-			size: 2000,
-		});
-		if (response) return response;
-		throw new ElasticMalfunctionError('getAllBranches failed fetch');
+	async getAllBranchIndexRecords() {
+		const result: {
+			success: boolean;
+			reason: string;
+			response: SearchResponse | null;
+			error: Error | null;
+		} = {
+			success: false,
+			response: null,
+			reason: "",
+			error: null,
+		};
+		try {
+			result.response =
+				(await this.client?.search({
+					index: this.branchesIndex,
+					query: {
+						match_all: {},
+					},
+					size: 2000,
+				})) ?? null;
+			result.success = true;
+			return result;
+		} catch (error) {
+			result.error = error as Error;
+			result.reason = "getAllBranches failed unexpectedly";
+			return result;
+		}
 	}
 
 	async bulkAddBranches(addBranches: IDocumentBranch[]) {
-		const body = addBranches.flatMap((object) => [
-			{ index: { _index: this.branchesIndex } },
-			object,
-		]);
-
-		let response: BulkResponse | undefined;
+		const result: {
+			success: boolean;
+			reason: string;
+			response: BulkResponse | null;
+			failed: { reason: string; caused_by: string | ErrorCause }[];
+			error: Error | null;
+		} = {
+			success: false,
+			reason: "",
+			response: null,
+			failed: [],
+			error: null,
+		};
 
 		try {
-			response = await this.client?.bulk({ body });
-			console.log('[bulkAddBranches] has error : ', response?.errors);
-			if (!response) {
-				throw new ElasticMalfunctionError('Bulk add has failed');
-			}
-		} catch (error) {
-			console.error(error);
-			throw new ElasticMalfunctionError((error as Error).message);
-		}
-
-		if (response.errors) {
-			const errors: IBulkError[] = [];
-			for (const item of response.items) {
-				errors.push({
-					message: String(item.index?.error?.reason || ''),
-					source: String(item.index?.error?.caused_by || ''),
-				});
-			}
-			throw new BulkAddError(errors);
-		}
-
-		return response?.items;
-	}
-
-	async bulkAddSlots(addTimeSlots: ITimeSlotsDocument[]) {
-		const body = addTimeSlots.flatMap((document) =>
-			document.timeSlots.map((timeSlot) => ({
-				index: { _index: this.slotsIndex },
-				branchKey: document.branchKey,
-				BranchDate: document.branchDate,
-				Time: timeSlot.Time,
-			}))
-		);
-
-		let response: BulkResponse | undefined;
-
-		try {
-			response = await this.client?.bulk({ body });
-			console.log('[bulkAddSlots] has error: ', response?.errors);
-			if (!response) {
-				throw new ElasticMalfunctionError('Bulk add has failed');
-			}
-		} catch (error) {
-			console.error(error);
-			throw new ElasticMalfunctionError((error as Error).message);
-		}
-
-		if (response.errors) {
-			const errors: IBulkError[] = [];
-			for (const item of response.items) {
-				errors.push({
-					message: String(item.index?.error?.reason || ''),
-					source: String(item.index?.error?.caused_by || ''),
-				});
-			}
-			throw new BulkAddError(errors);
-		}
-
-		return response?.items;
-	}
-
-	async TEST_BranchSpatialIndexing(latitude: number, longitude: number) {
-		const distance = '1km'; // Distance in kilometers
-
-		/* ############################################################ */
-		/* ### Queries ################################################ */
-		/* ############################################################ */
-
-		const spatialQuery: QueryDslQueryContainer = {
-			geo_distance: {
-				distance: distance,
-				location: {
-					lat: latitude,
-					lon: longitude,
-				},
-			},
-		};
-
-		const flatQuery: QueryDslQueryContainer = {
-			match: {
-				cityEN: 'Zohar',
-			},
-		};
-
-		/*
-		//* 'Complex' strings.
-		const queryStringQuery: QueryDslQueryContainer = {
-			query_string: {
-				default_field: 'cityEN',
-				query: 'Zohar',
-			},
-		};
-
-		//* Strings.
-		const matchQuery: QueryDslQueryContainer = {
-			match: {
-				cityEN: 'Zohar',
-			},
-		};
-
-		//* Exact match or bust, good foe keyword type and numbers.
-		const termQuery: QueryDslQueryContainer = {
-			term: {
-				cityEN: 'Zohar',
-			},
-		};
-		*/
-
-		try {
-			/* ############################################################ */
-			/* ### Make Queries ########################################### */
-			/* ############################################################ */
-
-			const spatialResponse = await this.client?.search({
-				index: this.branchesIndex,
-				query: spatialQuery,
-				size: 330,
-				explain: true,
+			// Prepare the bulk request
+			const bulkRequest: object[] = [];
+			addBranches.forEach((branchDocument) => {
+				bulkRequest.push(
+					{
+						index: {
+							_index: this.branchesIndex,
+							_id: branchDocument.branchnumber.toString(),
+						},
+					},
+					branchDocument
+				);
 			});
+			// Request bulk write.
+			result.response = (await this.client?.bulk({ body: bulkRequest })) ?? null;
 
-			const flatResponse = await this.client?.search({
-				index: this.branchesIndex,
-				query: flatQuery,
-				size: 330,
-				explain: true,
-			});
+			if (!result.response) {
+				result.success = false;
+				result.reason = "no response given to bulkRequest";
+				return result;
+			}
+			if (result.response.errors) {
+				result.success = false;
+				result.reason = "bulk request has failed records";
+				result.response.items.forEach((response) => {
+					if (response.index?.error)
+						result.failed.push({
+							reason: response.index.error.reason ?? "",
+							caused_by: response.index.error.caused_by ?? "",
+						});
+				});
+				return result;
+			}
 
-			/* ############################################################ */
-			/* ### Log Query Result ####################################### */
-			/* ############################################################ */
-
-			console.log('spatialResponse?.hits : ', spatialResponse?.hits);
-			console.log('flatResponse?.hits : ', flatResponse?.hits);
-
-			spatialResponse?.hits.hits.forEach((hit) =>
-				console.log('spatialResponse hit: ', hit)
-			);
-
-			flatResponse?.hits.hits.forEach((hit) =>
-				console.log('flatResponse hit: ', hit)
-			);
-
-			const spatialExecutionTime = spatialResponse?.took;
-			const flatExecutionTime = flatResponse?.took;
-
-			console.log('Spatial Query Execution Time:', spatialExecutionTime, 'ms');
-			console.log('Flat Query Execution Time:', flatExecutionTime, 'ms');
+			result.success = true;
+			return result;
 		} catch (error) {
-			console.error('Error:', error);
+			result.error = error as Error;
+			result.reason = "bulkAddBranches failed unexpectedly";
+			return result;
 		}
 	}
 }

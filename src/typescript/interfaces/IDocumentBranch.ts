@@ -1,4 +1,17 @@
 // Defines the 'Branch' that exists in Elastic's database.
+
+export interface INewServiceRecord {
+	serviceId: string;
+	serviceName: string;
+	dates: INewDateEntryRecord[];
+}
+
+export interface INewDateEntryRecord {
+	calendarId: string;
+	calendarDate: string;
+	hours: string[];
+}
+
 export interface IDocumentBranch {
 	id: number;
 	branchnumber: number;
@@ -18,4 +31,5 @@ export interface IDocumentBranch {
 		lat: number;
 		lon: number;
 	};
+	services: INewServiceRecord[];
 }

@@ -1,22 +1,22 @@
-/*
-    I want to return an uniform format of errors:
-    an array of { message: error-message }.
+// /*
+//     I want to return an uniform format of errors:
+//     an array of { message: error-message }.
 
-    This will be an abstract base of 'Uniform' custom errors.
+//     This will be an abstract base of 'Uniform' custom errors.
 
-    This will be used in a custom error handler,
-    Said handler will expect to use statuscode, and serializeErrors(), for response.
-*/
+//     This will be used in a custom error handler,
+//     Said handler will expect to use statuscode, and serializeErrors(), for response.
+// */
 
-export interface ISerializeErrorObj {
-	[key: string]: string | boolean;
-}
+// export interface ISerializeErrorObj {
+// 	[key: string]: string | boolean;
+// }
 
-export abstract class CustomError extends Error {
-	constructor(errorMessage: string) {
-		super(errorMessage);
-		Object.setPrototypeOf(this, CustomError.prototype);
-	}
+// export abstract class CustomError extends Error {
+// 	constructor(errorMessage: string) {
+// 		super(errorMessage);
+// 		Object.setPrototypeOf(this, CustomError.prototype);
+// 	}
 
-	abstract serializeErrors(): ISerializeErrorObj[];
-}
+// 	abstract serializeErrors(): ISerializeErrorObj[];
+// }

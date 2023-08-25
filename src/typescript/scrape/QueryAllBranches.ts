@@ -1,13 +1,10 @@
-import { ElasticClient } from '../elastic/elstClient';
-import * as path from 'path';
-import fs from 'fs';
-import { ElasticMalfunctionError } from '../errors/elst-malfunction-error';
-import {
-	SearchResponseBody,
-	SearchTotalHits,
-} from '@elastic/elasticsearch/lib/api/types';
-import { NotProvided } from '../errors/NotProvided';
-import { IBranchQueryResponse } from '../interfaces/IBranchQueryResponse';
+import { ElasticClient } from "../elastic/elstClient";
+import * as path from "path";
+import fs from "fs";
+import { ElasticMalfunctionError } from "../errors/elst-malfunction-error";
+import { SearchResponseBody, SearchTotalHits } from "@elastic/elasticsearch/lib/api/types";
+import { NotProvided } from "../errors/NotProvided";
+import { IBranchQueryResponse } from "../interfaces/IBranchQueryResponse";
 
 export const queryAllBranches = async (certificateContents: string) => {
 	//Calculate path to certificates.
@@ -25,27 +22,32 @@ export const queryAllBranches = async (certificateContents: string) => {
 	// Create a client.
 	const elasticClient = new ElasticClient({
 		caCertificate: certificateContents,
-		password: process.env.ELS_PSS || '',
+		password: process.env.ELS_PSS || "",
 		rejectUnauthorized: false,
-		username: 'elastic',
-		node: 'https://127.0.0.1:9200',
+		username: "elastic",
+		node: "https://127.0.0.1:9200",
 	});
 
 	elasticClient.sendPing();
-	console.log('[queryAllBranches] Elastic is up and running');
+	console.log("[queryAllBranches] Elastic is up and running");
 
-	if (!(await elasticClient.indexExists('branches')))
-		throw new ElasticMalfunctionError('all-post-branches index does not exist');
+	if (!(await elasticClient.branchIndexExists()))
+		throw new ElasticMalfunctionError("all-post-branches index does not exist");
 
-	const branches: SearchResponseBody = await elasticClient.getAllBranches();
-	console.log('[queryAllBranches] search all branches : Done');
+	const branches = await elasticClient.getAllBranchIndexRecords();
+	if (!branches.success) {
+		console.error("[persistBranches] Failed:");
+		console.error("Reason: ", branches.reason);
+		if (branches.error) throw branches.error;
+	}
 
-	const resultsAmount = (branches.hits.total as SearchTotalHits).value;
-	if (resultsAmount === 0)
+	console.log("[queryAllBranches] search all branches : Done");
+
+	if (!branches.response)
 		throw new NotProvided({
-			message: 'query did not provide results',
-			source: 'getAllBranches',
+			message: "query provided no response",
+			source: "getAllBranches",
 		});
-	const results = branches.hits.hits as IBranchQueryResponse;
+	const results = branches.response.hits.hits as IBranchQueryResponse;
 	return { allBranches: results };
 };

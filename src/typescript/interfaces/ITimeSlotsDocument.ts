@@ -7,10 +7,34 @@
 
 // export type ISODateTimeString = `${Year}-${Month}-${Day}T00:00:00`;
 
-export interface ITimeSlotsDocument {
-	branchKey: string;
-	branchDate: string;
-	branchServiceId: number;
-	branchServiceName: string;
-	timeSlots: { Time: number }[];
-}
+// export interface ITimeSlotsDocument {
+// 	branchKey: string;
+// 	branchDate: string;
+// 	branchServiceId: number;
+// 	branchServiceName: string;
+// 	timeSlots: { Time: number }[];
+// }
+
+// export interface ITimeSlotsDocument {
+// 	branchId: string;
+// 	branchnameEN: string;
+// 	qnomycode: number;
+// 	services: NewServiceRecord[];
+// 	branchReference: string;
+// }
+
+// interface NewServiceRecord {
+// 	serviceId: string;
+// 	serviceName: string;
+// 	dates: NewDateEntryRecord[];
+// }
+
+// interface NewDateEntryRecord {
+// 	calendarId: string;
+// 	calendarDate: string;
+// 	hours: NewHourEntryRecord[];
+// }
+
+// interface NewHourEntryRecord {
+// 	Time: string;
+// }

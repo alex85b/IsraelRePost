@@ -1,12 +1,12 @@
-import { CustomError } from './custom-error';
+// import { CustomError } from './custom-error';
 
-export class NotProvided extends CustomError {
-	constructor(private errors: { message: string; source: string }) {
-		super('setupElasticPuppeteer error');
-		Object.setPrototypeOf(this, NotProvided.prototype);
-	}
+// export class NotProvided extends CustomError {
+// 	constructor(private errors: { message: string; source: string }) {
+// 		super('setupElasticPuppeteer error');
+// 		Object.setPrototypeOf(this, NotProvided.prototype);
+// 	}
 
-	serializeErrors() {
-		return [this.errors];
-	}
-}
+// 	serializeErrors() {
+// 		return [this.errors];
+// 	}
+// }

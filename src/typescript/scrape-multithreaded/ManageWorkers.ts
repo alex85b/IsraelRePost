@@ -150,12 +150,12 @@ export class ManageWorkers {
 		}
 		this.scrapeEvents = [];
 
-		console.log('[workersScrapeBranches] branches:');
-		for (const branchBatches of this.workLoad) {
-			for (const index in branchBatches) {
-				console.log(branchBatches[index]);
-			}
-		}
+		// console.log('[workersScrapeBranches] branches:');
+		// for (const branchBatches of this.workLoad) {
+		// 	for (const index in branchBatches) {
+		// 		console.log(branchBatches[index]);
+		// 	}
+		// }
 
 		return JSON.parse(JSON.stringify(settledEvents));
 	}
@@ -226,7 +226,7 @@ export class ManageWorkers {
 				}
 				break;
 			case 'WorkerScrapeDone':
-				// console.log('[WorkerScrapeDone] message: ', message);
+				console.log('[WorkerScrapeDone] message: ', message);
 				if (message.status === 'f') {
 					if (message.errors) {
 						for (const error of message.errors) {
