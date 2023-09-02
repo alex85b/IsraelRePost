@@ -2,7 +2,7 @@ import { IAxiosRequestSetup } from "../../api-requests/BranchRequest";
 import { INode } from "./INode";
 import { ServicesRequest } from "../../api-requests/ServicesRequest";
 import { DatesNode } from "./DatesNode";
-import { INewServiceRecord } from "../../interfaces/IDocumentBranch";
+import { INewServiceRecord, IServiceError } from "../../elastic/elstClient";
 
 export interface IServiceNodeData {
 	headers: {
@@ -39,13 +39,16 @@ export class ServicesNode implements INode {
 	constructor(
 		private requestSetup: IAxiosRequestSetup,
 		private serviceNodeData: IServiceNodeData,
-		private buildServices: INewServiceRecord[]
+		private buildServices: INewServiceRecord[],
+		private branchErrors: IServiceError[],
+		private beforeRequest?: { id: number; callBack: (id: number) => Promise<void> }
 	) {
 		this.serviceRequest = new ServicesRequest();
 	}
 
 	async getChildren() {
 		const newNodes: INode[] = [];
+		if (this.beforeRequest) this.beforeRequest.callBack(this.beforeRequest.id);
 		const response = await this.serviceRequest.generateResponse(
 			this.serviceNodeData,
 			this.requestSetup
@@ -59,6 +62,11 @@ export class ServicesNode implements INode {
 					serviceName: service.serviceName,
 					dates: [],
 				});
+				this.branchErrors.push({
+					dates: [],
+					serviceId: String(service.serviceId),
+					serviceError: "",
+				});
 				newNodes.push(
 					new DatesNode(
 						this.requestSetup,
@@ -66,12 +74,19 @@ export class ServicesNode implements INode {
 							headers: this.serviceNodeData.headers,
 							url: { serviceId: String(service.serviceId) },
 						},
-						this.buildServices[this.buildServices.length - 1]
+						this.buildServices[this.buildServices.length - 1],
+						this.branchErrors[this.branchErrors.length - 1].dates,
+						this.beforeRequest
 					)
 				);
 			}
 			return newNodes;
 		}
+		this.branchErrors.push({
+			serviceError: this.error?.message ?? "No-message",
+			dates: [],
+			serviceId: "",
+		});
 		return null;
 	}
 

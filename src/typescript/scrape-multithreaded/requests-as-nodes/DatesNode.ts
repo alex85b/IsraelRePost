@@ -2,7 +2,7 @@ import { IAxiosRequestSetup } from "../../api-requests/BranchRequest";
 import { INode } from "./INode";
 import { DatesRequest } from "../../api-requests/DatesRequest";
 import { TimesNode } from "./TimesNode";
-import { INewServiceRecord } from "../../interfaces/IDocumentBranch";
+import { IDateError, INewServiceRecord } from "../../elastic/elstClient";
 
 export interface IDatesNodeData {
 	headers: {
@@ -28,13 +28,16 @@ export class DatesNode implements INode {
 	constructor(
 		private requestSetup: IAxiosRequestSetup,
 		private datesNodeData: IDatesNodeData,
-		private buildService: INewServiceRecord
+		private buildService: INewServiceRecord,
+		private branchErrors: IDateError[],
+		private beforeRequest?: { id: number; callBack: (id: number) => Promise<void> }
 	) {
 		this.datesRequest = new DatesRequest();
 	}
 
 	async getChildren() {
 		const newNodes: INode[] = [];
+		if (this.beforeRequest) this.beforeRequest.callBack(this.beforeRequest.id);
 		const response = await this.datesRequest.generateResponse(
 			this.datesNodeData,
 			this.requestSetup
@@ -48,6 +51,11 @@ export class DatesNode implements INode {
 					calendarId: String(date.calendarId),
 					hours: [],
 				});
+				this.branchErrors.push({
+					calendarId: String(date.calendarId),
+					datesError: "",
+					timesError: "",
+				});
 				newNodes.push(
 					new TimesNode(
 						this.requestSetup,
@@ -59,12 +67,19 @@ export class DatesNode implements INode {
 								ServiceId: this.datesNodeData.url.serviceId,
 							},
 						},
-						this.buildService.dates[this.buildService.dates.length - 1].hours
+						this.buildService.dates[this.buildService.dates.length - 1].hours,
+						this.branchErrors[this.buildService.dates.length - 1],
+						this.beforeRequest
 					)
 				);
 			}
 			return newNodes;
 		}
+		this.branchErrors.push({
+			calendarId: "",
+			timesError: "",
+			datesError: this.error?.message ?? "No-message",
+		});
 		return null;
 	}
 

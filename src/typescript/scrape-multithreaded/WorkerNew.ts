@@ -1,5 +1,5 @@
 import { parentPort, workerData } from "worker_threads";
-import { ISingleBranchQueryResponse } from "../interfaces/IBranchQueryResponse";
+import { ISingleBranchQueryResponse } from "../elastic/elstClient";
 import { IProxyAuthObject, IWorkerData } from "./ManageWorkers";
 import {
 	DatesRequest,
@@ -23,7 +23,7 @@ import {
 	IConfigBuildData,
 	IResponseGenerator,
 } from "../api-requests/BranchRequest";
-import { CustomError } from "../errors/custom-error";
+// import { CustomError } from "../errors/custom-error";
 // import { ITimeSlotsDocument } from "../interfaces/ITimeSlotsDocument";
 interface ITypeGuardReport {
 	success: boolean;
@@ -517,11 +517,11 @@ class BranchWorker {
 			const branchFailures = this.rerunRoutes[key];
 			for (const failure of branchFailures) {
 				let failureError = "";
-				if (failure.error instanceof CustomError) {
-					failureError = JSON.stringify(failure.error.serializeErrors());
-				} else {
-					failureError = JSON.stringify(failure.error);
-				}
+				// if (failure.error instanceof CustomError) {
+				// 	failureError = JSON.stringify(failure.error.serializeErrors());
+				// } else {
+				// 	failureError = JSON.stringify(failure.error);
+				// }
 				errorReport.push({
 					branchIndex: failure.branchIndex,
 					error: failureError,

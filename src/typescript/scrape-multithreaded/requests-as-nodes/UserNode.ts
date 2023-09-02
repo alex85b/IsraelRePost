@@ -2,7 +2,7 @@ import { IAxiosRequestSetup } from "../../api-requests/BranchRequest";
 import { UserRequest } from "../../api-requests/UserRequest";
 import { ServicesNode } from "./ServicesNode";
 import { INode } from "./INode";
-import { INewServiceRecord } from "../../interfaces/IDocumentBranch";
+import { IErrorMapping, INewServiceRecord } from "../../elastic/elstClient";
 
 export interface IUserNodeData {
 	requestSetup: IAxiosRequestSetup;
@@ -29,12 +29,15 @@ export class UserNode implements INode {
 	constructor(
 		private axiosSetup: IAxiosRequestSetup,
 		private locationId: number,
-		private buildServices: INewServiceRecord[]
+		private buildServices: INewServiceRecord[],
+		private branchErrors: IErrorMapping,
+		private beforeRequest?: { id: number; callBack: (id: number) => Promise<void> }
 	) {
 		this.userRequest = new UserRequest();
 	}
 
 	async getChildren(): Promise<INode[] | null> {
+		if (this.beforeRequest) this.beforeRequest.callBack(this.beforeRequest.id);
 		const response = await this.userRequest.generateResponse(
 			{ headers: {}, url: {} },
 			this.axiosSetup
@@ -56,10 +59,13 @@ export class UserNode implements INode {
 						headers,
 						url: { locationId: String(this.locationId), serviceTypeId: "0" },
 					},
-					this.buildServices
+					this.buildServices,
+					this.branchErrors.services,
+					this.beforeRequest
 				),
 			];
 		}
+		this.branchErrors.userError = this.error?.message ?? "No-message";
 		return null;
 	}
 

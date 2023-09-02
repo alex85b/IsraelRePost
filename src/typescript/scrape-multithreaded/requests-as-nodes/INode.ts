@@ -1,4 +1,4 @@
-import { INewServiceRecord } from "../../interfaces/IDocumentBranch";
+import { INewServiceRecord } from "../../elastic/elstClient";
 
 export interface INode {
 	// Provides all the childe nodes of this Node.

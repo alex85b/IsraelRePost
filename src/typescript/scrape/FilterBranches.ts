@@ -1,31 +1,11 @@
 import { IBranch } from "../interfaces/IBranch";
-import { IDocumentBranch } from "../interfaces/IDocumentBranch";
+import { IDocumentBranch } from "../elastic/elstClient";
 
 export interface IRequestBranchesResponse {
 	filteredBranches: IDocumentBranch[];
 }
 
-export const filterBranches = (
-	unfilteredBranches: IBranch[]
-
-	// cookieBank: CookieBank;
-	// htmlToken: string;
-) => {
-	// const { cookieBank, htmlToken } = requestSetup;
-	// const branchesList = (
-	// 	await MakeRequest(
-	// 		new LoadBranchesBuilder(cookieBank.getCookies(), undefined, undefined, {
-	// 			__RequestVerificationToken: htmlToken,
-	// 		})
-	// 	)
-	// ).data as ILoadBranchesResponse;
-	// console.log('### [requestBranches] Fetch all branches : Done ###');
-
-	// console.log(
-	// 	'### [requestBranches] Dataset size before filtering ### : ',
-	// 	Object.keys(branchesList.branches).length
-	// );
-
+export const filterBranches = (unfilteredBranches: IBranch[]) => {
 	// Filter out the all the kiosks and shops that only offer mail pickup services.
 	const filteredBranches: IDocumentBranch[] = unfilteredBranches.reduce(
 		(accumulator: IDocumentBranch[], branch: IBranch) => {
@@ -61,7 +41,10 @@ export const filterBranches = (
 	);
 	console.log("[filterBranches] Done");
 
-	console.log("[filterBranches] Dataset size after filtering: ", Object.keys(filteredBranches).length);
+	console.log(
+		"[filterBranches] Dataset size after filtering: ",
+		Object.keys(filteredBranches).length
+	);
 
 	return filteredBranches;
 };

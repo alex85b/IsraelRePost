@@ -1,10 +1,8 @@
 import express, { Request, Response, NextFunction } from "express";
 import { URLs } from "../common/urls";
-import { persistBranches } from "../scrape/PersistBranches";
 import { PuppeteerBrowser } from "../puppeteer/pptr-browser";
 import { filterBranches } from "../scrape/FilterBranches";
-import { NotProvided } from "../errors/NotProvided";
-import { readCertificates } from "../common/ReadCertificates";
+import { ElasticClient } from "../elastic/elstClient";
 
 const router = express.Router();
 
@@ -13,23 +11,15 @@ const router = express.Router();
 router.post("/api/scrape/all-branches", async (req: Request, res: Response, next: NextFunction) => {
 	const headlessBrowser = new PuppeteerBrowser(false, 60000);
 	try {
-		const certificateContents = readCertificates();
 		const { attempts, errors, success, unfilteredBranches } = await getUnfilteredBranches(4);
-
 		if (!success || !unfilteredBranches) throw errors[errors.length - 1];
-
-		const filteredBranches = filterBranches(unfilteredBranches);
-
-		const { persistResponse } = await persistBranches({
-			certificateContents: certificateContents,
-			doResetBranches: true,
-			filteredBranches: filteredBranches,
-		});
-
+		const branches = filterBranches(unfilteredBranches);
+		const elastic = new ElasticClient();
+		const newRecords = (await elastic.bulkAddBranches(branches)) ?? [];
 		res.status(200).send({
 			message: "Done",
-			persistedAmount: persistResponse.length ?? 0,
-			persisted: persistResponse,
+			persistedAmount: newRecords.length,
+			persisted: newRecords,
 		});
 	} catch (error) {
 		console.error("[/api/scrape/all-branches] Error!");
@@ -61,12 +51,8 @@ const getUnfilteredBranches = async (retries: number) => {
 			});
 
 			const loadBranchesData = headlessBrowser.getBranchesFromXHR();
-			if (!loadBranchesData)
-				throw new NotProvided({
-					message: "branches are null",
-					source: "getBranchesFromXHR",
-				});
 			await headlessBrowser.end();
+			if (!loadBranchesData) throw new Error("No branches from XHR Object");
 			const unfilteredBranches = loadBranchesData.branches;
 			return {
 				success: true,

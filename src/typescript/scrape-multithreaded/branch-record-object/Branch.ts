@@ -2,14 +2,16 @@
     This class will update an object that represents a 'Branch' elasticsearch record.
 */
 
-import { UserRequest } from "../../api-requests/UserRequest";
-import { IServicesConfigBuild, ServicesRequest } from "../../api-requests/ServicesRequest";
-import { DatesRequest, IDatesConfigBuild } from "../../api-requests/DatesRequest";
-import { TimesRequest } from "../../api-requests/TimesRequest";
-import { IDocumentBranch, INewServiceRecord } from "../../interfaces/IDocumentBranch";
+import {
+	ElasticClient,
+	IDocumentBranch,
+	IErrorMapping,
+	INewServiceRecord,
+} from "../../elastic/elstClient";
 import { INode } from "../requests-as-nodes/INode";
 import { UserNode } from "../requests-as-nodes/UserNode";
 import { IAxiosRequestSetup } from "../../api-requests/BranchRequest";
+import { Result } from "@elastic/elasticsearch/lib/api/types";
 
 export class Branch {
 	// Root (Branch)
@@ -31,22 +33,65 @@ export class Branch {
 
 	private stack: INode[] = [];
 	private newServices: INewServiceRecord[] = [];
+	private servicesHaveErrors = false;
+	private elasticClient: ElasticClient;
+	private reason: string[] = [];
+	private newErrors: IErrorMapping = {
+		userError: "",
+		services: [],
+	};
 
-	constructor(private root: IDocumentBranch, private axiosSetup: IAxiosRequestSetup) {}
+	constructor(
+		private branch: IDocumentBranch,
+		private axiosSetup: IAxiosRequestSetup,
+		private beforeRequest?: { id: number; callBack: (id: number) => Promise<void> }
+	) {
+		this.elasticClient = new ElasticClient();
+	}
 
-	async updateBranchObject() {
+	async updateBranchServices() {
+		const report: {
+			requestsHadError: boolean | null;
+			persistServicesSuccess: boolean | null;
+			persistErrorsResult: Result | null;
+		} = { persistServicesSuccess: null, persistErrorsResult: null, requestsHadError: null };
 		await this.dfsDescent();
-		return this.newServices;
+		if (this.servicesHaveErrors) {
+			report.persistErrorsResult =
+				(await this.elasticClient.addSingleError(
+					this.newErrors,
+					String(this.branch.branchnumber)
+				)) ?? null;
+		}
+		report.persistServicesSuccess =
+			(await this.elasticClient.updateBranchServices(
+				String(this.branch.branchnumber),
+				this.newServices
+			)) ?? null;
+
+		return report;
 	}
 
 	private async dfsDescent() {
-		this.stack.push(new UserNode(this.axiosSetup, this.root.qnomycode, this.newServices));
+		this.stack.push(
+			new UserNode(
+				this.axiosSetup,
+				this.branch.qnomycode,
+				this.newServices,
+				this.newErrors,
+				this.beforeRequest
+			)
+		);
 
 		while (this.stack.length) {
 			const node = this.stack.pop();
 			if (!node) break;
 			const childNodes = await node.getChildren();
-			if (!childNodes) continue;
+			if (childNodes === null) {
+				const error = node.getRequestError();
+				if (error !== null) this.servicesHaveErrors = true;
+				continue;
+			}
 			for (let index = childNodes.length - 1; index > -1; index--) {
 				this.stack.push(childNodes[index]);
 			}

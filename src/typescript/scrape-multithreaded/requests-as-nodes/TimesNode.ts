@@ -1,6 +1,7 @@
 import { IAxiosRequestSetup } from "../../api-requests/BranchRequest";
 import { INode } from "./INode";
 import { TimesRequest } from "../../api-requests/TimesRequest";
+import { IDateError } from "../../elastic/elstClient";
 
 export interface ITimesNodeData {
 	headers: {
@@ -25,11 +26,14 @@ export class TimesNode implements INode {
 	constructor(
 		private requestSetup: IAxiosRequestSetup,
 		private timesNodeData: ITimesNodeData,
-		private buildTimes: string[]
+		private buildTimes: string[],
+		private branchErrors: IDateError,
+		private beforeRequest?: { id: number; callBack: (id: number) => Promise<void> }
 	) {
 		this.timesRequest = new TimesRequest();
 	}
 	async getChildren() {
+		if (this.beforeRequest) this.beforeRequest.callBack(this.beforeRequest.id);
 		const response = await this.timesRequest.generateResponse(
 			this.timesNodeData,
 			this.requestSetup
@@ -40,6 +44,8 @@ export class TimesNode implements INode {
 			for (const time of this.results) {
 				this.buildTimes.push(String(time.Time));
 			}
+		} else {
+			this.branchErrors.timesError = this.error?.message ?? "No-message";
 		}
 		return null;
 	}
