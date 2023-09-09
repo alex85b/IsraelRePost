@@ -1,35 +1,20 @@
+import path from "path";
 import { Worker } from "worker_threads";
 import { Mutex } from "async-mutex";
 import { ISingleBranchQueryResponse } from "../interfaces/../elastic/elstClient";
-import {
-	IWorkerBranchScraped,
-	IWorkerDataMessage,
-	IWorkerRequest,
-	IWorkerScrapeDone,
-} from "./WorkerNew";
-
-export interface IProxyAuthObject {
-	proxyAuth: {
-		password: string;
-		username: string;
-	};
-	proxyUrl: string;
-	useProxy: boolean;
-}
+import { IWorkerMessage } from "./Worker";
+import { IBranchReport } from "./branch-record-object/Branch";
 
 export interface IWorkerData {
 	workerId: number;
 	processBranches: ISingleBranchQueryResponse[];
-	proxyConfig: IProxyAuthObject;
 }
 
 export interface IConstructorOptions {
-	workerScriptPath: string;
 	requestsLimit: number;
 	requestsTimeout: number;
 	threadAmount: number;
 	branchesBatch: ISingleBranchQueryResponse[];
-	proxyConfig: IProxyAuthObject;
 }
 
 interface IBranchIndexMap {
@@ -43,23 +28,22 @@ export class ManageWorkers {
 	private threadAmount: number;
 	private requestsCounter = 0;
 	private isDelayed = false;
-	private sharedDelay: Promise<void> | null = null;
 	private mutex = new Mutex();
-	private workers: Worker[] = [];
 	private workersObj: { [key: number]: Worker | null } = {};
 	private initEvents: Promise<number>[] = [];
 	private scrapeEvents: Promise<number>[] = [];
 	private branchesBatch: ISingleBranchQueryResponse[];
-	private proxyConfig: IProxyAuthObject;
 	private workLoad: IBranchIndexMap[] = [];
+	private updatedBranches: IBranchReport[] = [];
 
 	constructor(options: IConstructorOptions) {
-		this.workerScriptPath = options.workerScriptPath;
+		// Get a path to worker script.
+		this.workerScriptPath = path.join(__dirname, "Worker.js");
+		console.log("[ManageWorkers][constructor] : ", this.workerScriptPath);
 		this.requestsLimit = options.requestsLimit ?? 48;
 		this.requestsTimeout = options.requestsTimeout ?? 61000;
 		this.threadAmount = options.threadAmount ?? 2;
 		this.branchesBatch = options.branchesBatch ?? [];
-		this.proxyConfig = options.proxyConfig;
 	}
 
 	/**
@@ -125,7 +109,7 @@ export class ManageWorkers {
 	 * In case that "workersObj" already populated.
 	 */
 	async spawnWorkers() {
-		if (this.workers.length !== 0) return null;
+		if (Object.keys(this.workersObj).length > 0) return null;
 
 		// Creates new worker and it's Init-event.
 		for (let index = 0; index < this.threadAmount; index++) {
@@ -182,18 +166,11 @@ export class ManageWorkers {
 		// Await for all "scrapeEvents" to settle into "settledEvents".
 		const settledEvents = await Promise.allSettled(this.scrapeEvents);
 
-		// Iterate each Scrape-event, for any rejected event "Forget" the worker.
-		// for (let index = 0; index < settledEvents.length; index++) {
-		// 	const event = settledEvents[index];
-		// 	if (event.status === "rejected") {
-		// 		// ?
-		// 	}
-		// }
-
 		// Resets the "scrapeEvents" array.
 		this.scrapeEvents = [];
 
-		return JSON.parse(JSON.stringify(settledEvents)) as PromiseSettledResult<number>[];
+		// JSON.parse(JSON.stringify(settledEvents)) as PromiseSettledResult<number>[];
+		return this.updatedBranches;
 	}
 
 	/**
@@ -209,7 +186,6 @@ export class ManageWorkers {
 			workerData: {
 				workerId: index,
 				processBranches: Object.values(this.workLoad[index]),
-				proxyConfig: this.proxyConfig,
 			},
 		});
 	}
@@ -256,9 +232,9 @@ export class ManageWorkers {
 	 */
 	private setupScrapeEvent(worker: Worker, workerId: number) {
 		return new Promise<number>((resolve, reject) => {
-			worker.on("message", (message) => {
-				this.onWorkerScrapeMessage(message, resolve, reject, workerId, worker);
-			});
+			worker.on("message", (message) =>
+				this.onWorkerScrapeMessage(message, resolve, reject, workerId, worker)
+			);
 			worker.once("error", (error) => this.onWorkerScrapeError(error, reject, workerId));
 			worker.once("exit", (code) => this.onWorkerScrapeExit(code, resolve, reject, workerId));
 			worker.postMessage({ type: "scrape" });
@@ -279,7 +255,7 @@ export class ManageWorkers {
 	 * @param worker the actual Worker Entity \ Object that needs a setup.
 	 */
 	private async onWorkerScrapeMessage(
-		message: IWorkerBranchScraped | IWorkerRequest | IWorkerScrapeDone,
+		message: IWorkerMessage,
 		resolve: (reason: number) => void,
 		reject: (reason: number) => void,
 		workerId: number,
@@ -287,19 +263,25 @@ export class ManageWorkers {
 	) {
 		switch (message.type) {
 			// In case of "WorkerRequest" message - enter the critical area.
-			case "WorkerRequest":
-				this.criticalArea(message.id);
+			case "coordinate":
+				await this.criticalArea(message.workerId);
 				worker.postMessage({ type: "ack" });
 				break;
 			// In case of "WorkerBranchScraped" - remove handled branch from the workload.
 			// TODO: this can be good point to update a remote and stable source that
 			// TODO: a branch has been handled and there is no need to try and handle it again.
-			case "WorkerBranchScraped":
-				console.log("[WorkerBranchScraped] message: ", message);
+			case "scraped":
+				console.log("[onWorkerScrapeMessage] scraped: ", message);
+				if (Array.isArray(message.data)) {
+					if (typeof message.data[0] !== "string") {
+						this.updatedBranches.push(message.data[0]);
+					}
+				}
+
 				if (message.status === "s") {
-					if (workerId !== message.id) {
+					if (workerId !== message.workerId) {
 						throw new Error(
-							`[onWorkerScrapeMessage] workerId ${workerId} !=message.id ${message.id}`
+							`[onWorkerScrapeMessage] workerId ${workerId} !=message.id ${message.workerId}`
 						);
 					}
 					if (typeof message.branchIndex === "number" && message.branchIndex > -1) {
@@ -308,15 +290,18 @@ export class ManageWorkers {
 				}
 				break;
 			// Reject or resolved this event based on "Done" status.
-			case "WorkerScrapeDone":
-				console.log("[WorkerScrapeDone] message: ", message);
+			case "done":
+				console.log("[onWorkerScrapeMessage] done: ", message);
 				if (message.status === "f") {
 					reject(workerId);
 				}
 				resolve(workerId);
 				break;
+			case "expired":
+				console.log("[onWorkerScrapeMessage] expired: ", message);
+				break;
 			default:
-				console.error("[onWorkerScrapeMessage] unknown request: ", message);
+				console.error("[onWorkerScrapeMessage] default: ", message);
 				reject(workerId);
 		}
 	}
@@ -339,12 +324,12 @@ export class ManageWorkers {
 	}
 
 	private async onWorkerInitMessage(
-		message: IWorkerDataMessage,
+		message: IWorkerMessage,
 		resolve: (reason: number) => void,
 		reject: (reason: number) => void,
 		workerId: number
 	) {
-		if (message.type === "WorkerDataMessage") {
+		if (message.type === "up") {
 			if (message.status === "s") resolve(workerId);
 			if (message.status === "f") {
 				reject(workerId);
@@ -377,9 +362,12 @@ export class ManageWorkers {
 	// ### Critical area using a Mutex ####################################################################
 	// ####################################################################################################
 
-	private async criticalArea(workerId: number, debug: boolean = false) {
-		if (debug) console.log(`[criticalArea] worker ${workerId} entered the "criticalArea"`);
-		await this.mutex.runExclusive(async () => {
+	private async criticalArea(workerId: number, debug: boolean = true) {
+		if (debug) {
+			console.log(`[criticalArea] worker ${workerId} activated the function.`);
+		}
+		const release = await this.mutex.acquire();
+		try {
 			// Counter is below 'requestsLimit'.
 			if (this.requestsCounter < this.requestsLimit) {
 				this.requestsCounter++;
@@ -392,21 +380,13 @@ export class ManageWorkers {
 			if (this.requestsCounter === this.requestsLimit && this.isDelayed === false) {
 				console.log(`[criticalArea] worker ${workerId} triggered delay`);
 				this.isDelayed = true;
-				this.sharedDelay = new Promise((resolve) => {
-					setTimeout(() => {
-						this.requestsCounter = 0;
-						resolve();
-					}, this.requestsTimeout);
-				});
-				await this.sharedDelay;
-				this.sharedDelay = null;
+				await new Promise((resolve) => setTimeout(resolve, this.requestsTimeout));
+				this.requestsCounter = 0;
 				this.isDelayed = false;
 			}
-			// Counter NOW at 'requestsLimit', 'isDelayed' true, this waits for shared 'timeout'.
-			if (this.requestsCounter === this.requestsLimit && this.isDelayed === true) {
-				console.log(`[criticalArea] worker ${workerId} awaits delay end`);
-				await this.sharedDelay;
-			}
-		});
+		} finally {
+			console.log(`[criticalArea] worker ${workerId} released delay`);
+			release();
+		}
 	}
 }

@@ -1,4 +1,4 @@
-import axios, { AxiosError, AxiosResponse, AxiosInstance, AxiosRequestConfig } from "axios";
+import axios, { AxiosError, AxiosResponse, AxiosInstance, AxiosRequestConfig } from 'axios';
 
 export interface IConfigBuildData {
 	url: { [key: string]: string };
@@ -25,23 +25,23 @@ export interface IExpectedServerResponse {
 }
 
 interface ICommonAxiosConfig extends AxiosRequestConfig {
-	method: "get";
+	method: 'get';
 	maxBodyLength: number;
 	headers: {
 		authority: string;
 		accept: string;
-		"accept-language": string;
-		"application-api-key": string;
-		"application-name": string;
+		'accept-language': string;
+		'application-api-key': string;
+		'application-name': string;
 		authorization: string;
 		origin: string;
-		"sec-ch-ua": string;
-		"sec-ch-ua-mobile": string;
-		"sec-ch-ua-platform": string;
-		"sec-fetch-dest": string;
-		"sec-fetch-mode": string;
-		"sec-fetch-site": string;
-		"user-agent": string;
+		'sec-ch-ua': string;
+		'sec-ch-ua-mobile': string;
+		'sec-ch-ua-platform': string;
+		'sec-fetch-dest': string;
+		'sec-fetch-mode': string;
+		'sec-fetch-site': string;
+		'user-agent': string;
 		Cookie: string;
 	};
 }
@@ -69,29 +69,34 @@ export abstract class BranchRequest<
 > implements IResponseGenerator<RE, D, IAxiosRequestSetup>
 {
 	protected axiosResponse: AxiosResponse<R, ICommonAxiosConfig> | null = null;
+	protected proxyUsername: string | null = null;
+	protected proxyPassword: string | null = null;
+	protected proxyUrl: string | null = null;
+	protected proxyPort: string | null = null;
+	protected proxyIsActive: string | null = null;
 	protected error: Error | null = null;
 	protected reasons: string[] = [];
 	protected requestData: D | null = null;
 	protected commonConfig: ICommonAxiosConfig = {
-		method: "get",
+		method: 'get',
 		maxBodyLength: Infinity,
 		headers: {
-			authority: "central.qnomy.com",
-			accept: "application/json, text/javascript, */*; q=0.01",
-			"accept-language": "he-IL,he;q=0.9",
-			"application-api-key": "CA4ED65C-DC64-4969-B47D-EF564E3763E7",
-			"application-name": "PostIL",
-			authorization: "",
-			origin: "https://israelpost.co.il",
-			"sec-ch-ua": '"Not.A/Brand";v="8", "Chromium";v="114", "Google Chrome";v="114"',
-			"sec-ch-ua-mobile": "?0",
-			"sec-ch-ua-platform": '"Windows"',
-			"sec-fetch-dest": "empty",
-			"sec-fetch-mode": "cors",
-			"sec-fetch-site": "cross-site",
-			"user-agent":
-				"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
-			Cookie: "",
+			authority: 'central.qnomy.com',
+			accept: 'application/json, text/javascript, */*; q=0.01',
+			'accept-language': 'he-IL,he;q=0.9',
+			'application-api-key': 'CA4ED65C-DC64-4969-B47D-EF564E3763E7',
+			'application-name': 'PostIL',
+			authorization: '',
+			origin: 'https://israelpost.co.il',
+			'sec-ch-ua': '"Not.A/Brand";v="8", "Chromium";v="114", "Google Chrome";v="114"',
+			'sec-ch-ua-mobile': '?0',
+			'sec-ch-ua-platform': '"Windows"',
+			'sec-fetch-dest': 'empty',
+			'sec-fetch-mode': 'cors',
+			'sec-fetch-site': 'cross-site',
+			'user-agent':
+				'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
+			Cookie: '',
 		},
 	};
 
@@ -101,6 +106,14 @@ export abstract class BranchRequest<
 			const customAxios: AxiosInstance = axios.create({
 				timeout: timeout,
 			});
+			if (data.useProxy) {
+				customAxios.defaults.proxy = {
+					auth: { username: data.proxyUsername, password: data.proxyPassword },
+					host: data.proxyUrl,
+					port: 0,
+				};
+				console.log();
+			}
 			this.axiosResponse = await customAxios.request<
 				ICommonAxiosConfig,
 				AxiosResponse<R, ICommonAxiosConfig>,
@@ -108,12 +121,11 @@ export abstract class BranchRequest<
 			>(this.commonConfig);
 			return true;
 		} catch (error) {
-			// console.log('[makeAxiosRequest] Error: ', error);
 			if (error instanceof AxiosError && error.response) {
 				this.axiosResponse = error.response;
 			}
 			this.error = error as Error;
-			this.reasons.push("Axios request failure");
+			this.reasons.push('Axios request failure');
 			return false;
 		}
 	}
@@ -127,7 +139,7 @@ export abstract class BranchRequest<
 		for (const cookie in cookies) {
 			responseArray.push(`${String(cookie)}=${cookies[cookie]}`);
 		}
-		return responseArray.join(" ");
+		return responseArray.join(' ');
 	}
 
 	getError() {
@@ -152,14 +164,52 @@ export abstract class BranchRequest<
 				if (responseReport) {
 					return responseReport;
 				} else {
+					let axiosError: AxiosError | null = null;
+					if (this.error) axiosError = this.error as AxiosError;
 					console.error(
-						"[generateResponse] : parseAPIResponse failed ",
-						this.error,
+						'[generateResponse] : parseAPIResponse failed ',
+						axiosError?.name,
+						axiosError?.cause,
+						axiosError?.code,
+						axiosError?.status,
+						axiosError?.message,
 						this.reasons
 					);
 				}
 			}
 		}
 		return null;
+	}
+
+	private readEnvironmentFile() {
+		const proxyIsActive = process.env.PROX_ACT || '';
+		const proxyPassword = process.env.PROX_PAS || '';
+		const proxyUsername = process.env.PROX_USR || '';
+		const proxyPort = process.env.PROX_SPORT || '';
+		const proxyUrl = process.env.PROX_ENDP || '';
+
+		const invalid: string[] = [];
+		if (typeof proxyIsActive !== 'string') {
+			invalid.push('useProxy is not a string');
+		} else if (typeof proxyUrl !== 'string') {
+			invalid.push('proxyUrl is not a string');
+		} else if (typeof proxyPassword !== 'string') {
+			invalid.push('proxy password is not a string');
+		} else if (typeof proxyUsername !== 'string') {
+			invalid.push('proxy username is not a string');
+		} else if (typeof proxyPort !== 'string') {
+			invalid.push('proxy port is not a string');
+		}
+
+		if (invalid.length > 0) {
+			const invalidStringed = invalid.join(';');
+			throw Error("Can't read environment file: " + invalidStringed);
+		}
+
+		this.proxyIsActive = proxyIsActive;
+		this.proxyPassword = proxyPassword;
+		this.proxyUsername = proxyUsername;
+		this.proxyPort = proxyPort;
+		this.proxyUrl = proxyUrl;
 	}
 }

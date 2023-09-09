@@ -13,6 +13,13 @@ import { UserNode } from "../requests-as-nodes/UserNode";
 import { IAxiosRequestSetup } from "../../api-requests/BranchRequest";
 import { Result } from "@elastic/elasticsearch/lib/api/types";
 
+export interface IBranchReport {
+	branchNumber: number;
+	requestsHadError: boolean | null;
+	persistServicesSuccess: boolean | null;
+	persistErrorsResult: Result | null;
+}
+
 export class Branch {
 	// Root (Branch)
 	// └── Service 1
@@ -50,12 +57,13 @@ export class Branch {
 	}
 
 	async updateBranchServices() {
-		const report: {
-			requestsHadError: boolean | null;
-			persistServicesSuccess: boolean | null;
-			persistErrorsResult: Result | null;
-		} = { persistServicesSuccess: null, persistErrorsResult: null, requestsHadError: null };
 		await this.dfsDescent();
+		const report: IBranchReport = {
+			branchNumber: this.branch.branchnumber,
+			persistServicesSuccess: null,
+			persistErrorsResult: null,
+			requestsHadError: this.servicesHaveErrors,
+		};
 		if (this.servicesHaveErrors) {
 			report.persistErrorsResult =
 				(await this.elasticClient.addSingleError(

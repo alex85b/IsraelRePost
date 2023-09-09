@@ -1,14 +1,14 @@
-import { Client, ClientOptions, NodeOptions, errors } from "@elastic/elasticsearch";
+import { Client, ClientOptions } from '@elastic/elasticsearch';
 import {
 	BulkOperationType,
-	BulkResponse,
 	BulkResponseItem,
 	IndicesIndexSettings,
-	IndicesResponseBase,
 	MappingTypeMapping,
-} from "@elastic/elasticsearch/lib/api/types";
-import path from "path";
-import fs from "fs";
+} from '@elastic/elasticsearch/lib/api/types';
+import path from 'path';
+import fs from 'fs';
+import axios, { AxiosRequestConfig } from 'axios';
+import * as https from 'https';
 
 /*
 	This encapsulates all the logic that connected to Elasticsearch requests,
@@ -79,6 +79,25 @@ export interface ISingleBranchQueryResponse {
 
 export interface IBranchQueryResponse extends Array<ISingleBranchQueryResponse> {}
 
+export interface IElasticResponseData {
+	took: number;
+	timed_out: boolean;
+	_shards: {
+		total: number;
+		successful: number;
+		skipped: number;
+		failed: number;
+	};
+	hits: {
+		total: {
+			value: number;
+			relation: string;
+		};
+		max_score: number;
+		hits: ISingleBranchQueryResponse[];
+	};
+}
+
 // ###################################################################################################
 // ### Class: ElasticClient ##########################################################################
 // ###################################################################################################
@@ -90,42 +109,44 @@ export class ElasticClient {
 	private client: Client | null = null;
 	private currentError: Error | null = null;
 	private failReasons: string[] = [];
-	private branchesIndexName: string = "branches";
-	private errorsIndexName: string = "errors";
-	private node = "https://127.0.0.1:9200";
-	private username = "elastic";
+	private branchesIndexName: string = 'branches';
+	private errorsIndexName: string = 'errors';
+	private node = 'https://127.0.0.1:9200';
+	private username = '';
+	private password = '';
+	private certificates = '';
 	private branchesMapping: MappingTypeMapping = {
-		dynamic: "strict",
+		dynamic: 'strict',
 		properties: {
-			id: { type: "integer" },
-			branchnumber: { type: "integer" },
-			branchname: { type: "text" },
-			branchnameEN: { type: "text" },
-			city: { type: "text" },
-			cityEN: { type: "text" },
-			street: { type: "text" },
-			streetEN: { type: "text" },
-			streetcode: { type: "keyword" },
-			zip: { type: "keyword" },
-			qnomycode: { type: "integer" },
-			qnomyWaitTimeCode: { type: "integer" },
-			haszimuntor: { type: "integer" },
-			isMakeAppointment: { type: "integer" },
-			location: { type: "geo_point" },
+			id: { type: 'integer' },
+			branchnumber: { type: 'integer' },
+			branchname: { type: 'text' },
+			branchnameEN: { type: 'text' },
+			city: { type: 'text' },
+			cityEN: { type: 'text' },
+			street: { type: 'text' },
+			streetEN: { type: 'text' },
+			streetcode: { type: 'keyword' },
+			zip: { type: 'keyword' },
+			qnomycode: { type: 'integer' },
+			qnomyWaitTimeCode: { type: 'integer' },
+			haszimuntor: { type: 'integer' },
+			isMakeAppointment: { type: 'integer' },
+			location: { type: 'geo_point' },
 			services: {
-				type: "nested",
+				type: 'nested',
 				properties: {
-					serviceId: { type: "keyword" },
-					serviceName: { type: "keyword" },
+					serviceId: { type: 'keyword' },
+					serviceName: { type: 'keyword' },
 					dates: {
-						type: "nested",
+						type: 'nested',
 						properties: {
-							calendarId: { type: "keyword" },
-							calendarDate: { type: "date", format: "yyyy-MM-dd'T'HH:mm:ss" },
+							calendarId: { type: 'keyword' },
+							calendarDate: { type: 'date', format: "yyyy-MM-dd'T'HH:mm:ss" },
 							hours: {
-								type: "text",
+								type: 'text',
 								fields: {
-									keyword: { type: "keyword" },
+									keyword: { type: 'keyword' },
 								},
 							},
 						},
@@ -136,20 +157,20 @@ export class ElasticClient {
 	};
 
 	private errorMapping: MappingTypeMapping = {
-		dynamic: "strict",
+		dynamic: 'strict',
 		properties: {
-			userError: { type: "text" },
+			userError: { type: 'text' },
 			services: {
-				type: "nested",
+				type: 'nested',
 				properties: {
-					serviceId: { type: "keyword" },
-					serviceError: { type: "text" },
+					serviceId: { type: 'keyword' },
+					serviceError: { type: 'text' },
 					dates: {
-						type: "nested",
+						type: 'nested',
 						properties: {
-							calendarId: { type: "keyword" },
-							datesError: { type: "text" },
-							timesError: { type: "text" },
+							calendarId: { type: 'keyword' },
+							datesError: { type: 'text' },
+							timesError: { type: 'text' },
 						},
 					},
 				},
@@ -169,15 +190,23 @@ export class ElasticClient {
 
 	constructor(clientOptions?: ClientOptions) {
 		let useOptions: ClientOptions = {};
+		this.username = process.env.ELS_USR ?? '';
+		this.password = process.env.ELS_PSS ?? '';
+		this.certificates = this.readCertificates();
+		if (this.username === '' || this.password === '' || this.certificates === '') {
+			throw new Error(
+				'[Elastic Client] : Username or password or certificates are empty string'
+			);
+		}
 		if (!clientOptions) {
 			useOptions = {
 				node: this.node,
 				auth: {
 					username: this.username,
-					password: process.env.ELS_PSS || "",
+					password: this.password,
 				},
 				tls: {
-					ca: this.readCertificates(),
+					ca: this.certificates,
 					rejectUnauthorized: false,
 				},
 			};
@@ -235,13 +264,13 @@ export class ElasticClient {
 	private readCertificates() {
 		const certificatePath = path.join(
 			__dirname,
-			"..",
-			"..",
-			"..",
-			"elastic-cert",
-			"http_ca.crt"
+			'..',
+			'..',
+			'..',
+			'elastic-cert',
+			'http_ca.crt'
 		);
-		return fs.readFileSync(certificatePath, "utf8");
+		return fs.readFileSync(certificatePath, 'utf8');
 	}
 
 	private async isIndexExists({ indexName }: { indexName: string }) {
@@ -256,7 +285,7 @@ export class ElasticClient {
 
 	private async deleteIndex({ indexName }: { indexName: string }) {
 		try {
-			if (indexName === ".security-7") return false;
+			if (indexName === '.security-7') return false;
 			const response = await this.client?.indices.delete({ index: indexName });
 			if (response === undefined || response?.acknowledged === false) return false;
 			return true;
@@ -282,7 +311,7 @@ export class ElasticClient {
 					index: indexName,
 					id: recordId,
 					document: record,
-					op_type: "index", // Explicitly set to "index" for overwrite behavior
+					op_type: 'index', // Explicitly set to "index" for overwrite behavior
 				})) ?? null;
 			return response?.result ?? null;
 		} catch (error) {
@@ -328,7 +357,7 @@ export class ElasticClient {
 			return true;
 		} catch (error) {
 			this.currentError = error as Error;
-			this.failReasons.push("ping failed");
+			this.failReasons.push('ping failed');
 			return false;
 		}
 	}
@@ -438,21 +467,21 @@ export class ElasticClient {
 			const response = (await this.client?.bulk({ body: bulkRequest })) ?? null;
 
 			if (response === null) {
-				this.failReasons.push("no response given to bulkRequest");
+				this.failReasons.push('no response given to bulkRequest');
 				return null;
 			}
 			if (response.errors) {
-				this.failReasons.push("bulk request has failed records");
+				this.failReasons.push('bulk request has failed records');
 				response.items.forEach((sResponse) => {
 					if (sResponse.index?.error)
-						this.failReasons.push(sResponse.index.error.reason ?? "");
+						this.failReasons.push(sResponse.index.error.reason ?? '');
 				});
 				return null;
 			}
 			return response.items;
 		} catch (error) {
 			this.currentError = error as Error;
-			this.failReasons.push("Bulk Add Branches - failed unexpectedly");
+			this.failReasons.push('Bulk Add Branches - failed unexpectedly');
 			return null;
 		}
 	}
@@ -469,8 +498,8 @@ export class ElasticClient {
 							},
 						},
 						script: {
-							source: "ctx._source.services = params.updatedServicesArray",
-							lang: "painless",
+							source: 'ctx._source.services = params.updatedServicesArray',
+							lang: 'painless',
 							params: {
 								updatedServicesArray: services,
 							},
@@ -484,8 +513,46 @@ export class ElasticClient {
 			return success;
 		} catch (error) {
 			this.currentError = error as Error;
-			this.failReasons.push("Update Branch-service By Query - failed unexpectedly");
+			this.failReasons.push('Update Branch-service By Query - failed unexpectedly');
 			return null;
+		}
+	}
+
+	async testAxios_search() {
+		try {
+			const action = '_search';
+			const method = 'GET';
+			const elasticQuery = {
+				query: {
+					match_all: {},
+				},
+				size: 500,
+			};
+
+			const axiosRequestConfig: AxiosRequestConfig = {
+				baseURL: `${this.node}/${this.branchesIndexName}/${action}`,
+				auth: { password: this.password, username: this.username },
+				method: method,
+				validateStatus: (status: number) => {
+					return true;
+				},
+				httpsAgent: new https.Agent({
+					ca: this.certificates,
+				}),
+			};
+			const axiosResponse = await axios.request(axiosRequestConfig);
+			const data: IElasticResponseData = axiosResponse.data;
+
+			const result = {
+				status: axiosResponse.status ?? 'No status',
+				statusText: axiosResponse.statusText ?? ' No status text',
+				hitsAmount: data?.hits?.total?.value ?? 0,
+				hits: data?.hits?.hits ?? [],
+			};
+
+			return result;
+		} catch (error) {
+			console.error('Error:', error);
 		}
 	}
 
@@ -493,14 +560,14 @@ export class ElasticClient {
 		const badBranchDocument = {
 			id: 1,
 			branchnumber: 123,
-			branchname: "Branch 1",
-			branchnameEN: "Branch 1 (English)",
-			city: "City 1",
-			cityEN: "City 1 (English)",
-			street: "Street 1",
-			streetEN: "Street 1 (English)",
-			streetcode: "ABC123",
-			zip: "12345",
+			branchname: 'Branch 1',
+			branchnameEN: 'Branch 1 (English)',
+			city: 'City 1',
+			cityEN: 'City 1 (English)',
+			street: 'Street 1',
+			streetEN: 'Street 1 (English)',
+			streetcode: 'ABC123',
+			zip: '12345',
 			qnomycode: 456,
 			qnomyWaitTimeCode: 789,
 			haszimuntor: 1,
@@ -512,7 +579,7 @@ export class ElasticClient {
 			qweqwe: 123123,
 			services: [],
 		};
-		return (await this.addSingleBranch(badBranchDocument)) ?? "Null";
+		return (await this.addSingleBranch(badBranchDocument)) ?? 'Null';
 	}
 }
 
@@ -552,7 +619,7 @@ in this case some N records out of overall M records could report a failure.
 */
 export class qwe extends Error {
 	constructor(errorObject: IElasticErrorData) {
-		super("Elastic has failed");
+		super('Elastic has failed');
 		Object.setPrototypeOf(this, qwe);
 	}
 
