@@ -1,8 +1,9 @@
-import { IAxiosRequestSetup } from "../../api-requests/BranchRequest";
-import { INode } from "./INode";
-import { ServicesRequest } from "../../api-requests/ServicesRequest";
-import { DatesNode } from "./DatesNode";
-import { INewServiceRecord, IServiceError } from "../../elastic/elstClient";
+import { IAxiosRequestSetup } from '../../api-requests/BranchRequest';
+import { INode } from './INode';
+import { ServicesRequest } from '../../api-requests/ServicesRequest';
+import { DatesNode } from './DatesNode';
+import { INewServiceRecord } from '../../elastic/BranchModel';
+import { IServiceError } from '../../elastic/ErrorModel';
 
 export interface IServiceNodeData {
 	headers: {
@@ -65,7 +66,7 @@ export class ServicesNode implements INode {
 				this.branchErrors.push({
 					dates: [],
 					serviceId: String(service.serviceId),
-					serviceError: "",
+					serviceError: '',
 				});
 				newNodes.push(
 					new DatesNode(
@@ -83,9 +84,9 @@ export class ServicesNode implements INode {
 			return newNodes;
 		}
 		this.branchErrors.push({
-			serviceError: this.error?.message ?? "No-message",
+			serviceError: this.error?.message ?? 'No-message',
 			dates: [],
-			serviceId: "",
+			serviceId: '',
 		});
 		return null;
 	}

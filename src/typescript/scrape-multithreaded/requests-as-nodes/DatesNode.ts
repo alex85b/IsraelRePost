@@ -1,8 +1,9 @@
-import { IAxiosRequestSetup } from "../../api-requests/BranchRequest";
-import { INode } from "./INode";
-import { DatesRequest } from "../../api-requests/DatesRequest";
-import { TimesNode } from "./TimesNode";
-import { IDateError, INewServiceRecord } from "../../elastic/elstClient";
+import { IAxiosRequestSetup } from '../../api-requests/BranchRequest';
+import { INode } from './INode';
+import { DatesRequest } from '../../api-requests/DatesRequest';
+import { TimesNode } from './TimesNode';
+import { INewServiceRecord } from '../../elastic/BranchModel';
+import { IDateError } from '../../elastic/ErrorModel';
 
 export interface IDatesNodeData {
 	headers: {
@@ -53,8 +54,8 @@ export class DatesNode implements INode {
 				});
 				this.branchErrors.push({
 					calendarId: String(date.calendarId),
-					datesError: "",
-					timesError: "",
+					datesError: '',
+					timesError: '',
 				});
 				newNodes.push(
 					new TimesNode(
@@ -63,7 +64,7 @@ export class DatesNode implements INode {
 							headers: this.datesNodeData.headers,
 							url: {
 								CalendarId: String(date.calendarId),
-								dayPart: "0",
+								dayPart: '0',
 								ServiceId: this.datesNodeData.url.serviceId,
 							},
 						},
@@ -76,9 +77,9 @@ export class DatesNode implements INode {
 			return newNodes;
 		}
 		this.branchErrors.push({
-			calendarId: "",
-			timesError: "",
-			datesError: this.error?.message ?? "No-message",
+			calendarId: '',
+			timesError: '',
+			datesError: this.error?.message ?? 'No-message',
 		});
 		return null;
 	}

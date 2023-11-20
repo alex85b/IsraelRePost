@@ -1,15 +1,5 @@
-import {
-	BranchRequest,
-	IAxiosResponseReport,
-	IConfigBuildData,
-	IExpectedServerResponse,
-} from "./BranchRequest";
-
-export interface IExpectedTimesResponse extends IExpectedServerResponse {
-	Results: {
-		Time: number;
-	}[];
-}
+import { IExpectedServerResponse } from '../isreal-post-requests/PostBaseRequest';
+import { BranchRequest, IAxiosResponseReport, IConfigBuildData } from './BranchRequest';
 
 export interface ITimesConfigBuild extends IConfigBuildData {
 	url: { CalendarId: string; ServiceId: string; dayPart: string };
@@ -39,13 +29,13 @@ export class TimesRequest extends BranchRequest<
 	buildRequestConfig(data: ITimesConfigBuild): boolean {
 		try {
 			this.commonConfig.url =
-				"https://central.qnomy.com/CentralAPI/SearchAvailableSlots?CalendarId=" +
+				'https://central.qnomy.com/CentralAPI/SearchAvailableSlots?CalendarId=' +
 				data.url.CalendarId +
-				"&ServiceId=" +
+				'&ServiceId=' +
 				data.url.ServiceId +
-				"&dayPart=" +
+				'&dayPart=' +
 				data.url.dayPart;
-			this.commonConfig.headers.authorization = "JWT " + data.headers.authorization;
+			this.commonConfig.headers.authorization = 'JWT ' + data.headers.authorization;
 			this.commonConfig.headers.Cookie = this.reformatCookiesForAxios(data.headers.cookies);
 			return true;
 		} catch (error) {
@@ -55,7 +45,7 @@ export class TimesRequest extends BranchRequest<
 	}
 	parseAPIResponse(): ITimesResponseReport | null {
 		try {
-			const errorMessage = this.axiosResponse?.data?.ErrorMessage ?? "";
+			const errorMessage = this.axiosResponse?.data?.ErrorMessage ?? '';
 			const success = this.axiosResponse?.data?.Success ?? false;
 			let results = this.axiosResponse?.data?.Results;
 
@@ -63,7 +53,7 @@ export class TimesRequest extends BranchRequest<
 				this.reasons.push('response "success" is false');
 				return null;
 			} else if (results === null || results === undefined) {
-				this.reasons.push("response is success and no dates");
+				this.reasons.push('response is success and no dates');
 				results = [];
 			}
 			if (errorMessage !== null && errorMessage !== undefined && errorMessage.length > 0) {
@@ -73,8 +63,8 @@ export class TimesRequest extends BranchRequest<
 
 			if (Array.isArray(results) && results.length > 0) {
 				const time = this.axiosResponse?.data?.Results[0].Time;
-				if (typeof time !== "number") {
-					this.reasons.push("time is not a number");
+				if (typeof time !== 'number') {
+					this.reasons.push('time is not a number');
 					return null;
 				}
 			}
@@ -86,3 +76,25 @@ export class TimesRequest extends BranchRequest<
 		}
 	}
 }
+
+// ###################################################################################################
+// ### Interfaces ####################################################################################
+// ###################################################################################################
+
+// ##############################################
+// ### Israel Post Data Response ################
+// ##############################################
+
+export interface IExpectedTimesResponse extends IExpectedServerResponse {
+	Results: {
+		Time: number;
+	}[];
+}
+
+// ##############################################
+// ### 'Make Server Request' Response ###########
+// ##############################################
+
+// ##############################################
+// ### Required Data For Request ################
+// ##############################################

@@ -3,3 +3,5 @@ node_modules
 elastic-cert
 .env
 src/js-build
+SmartProxy.txt
+WebShare.txt

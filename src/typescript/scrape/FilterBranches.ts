@@ -1,5 +1,5 @@
-import { IBranch } from "../interfaces/IBranch";
-import { IDocumentBranch } from "../elastic/elstClient";
+import { IDocumentBranch } from '../elastic/BranchModel';
+import { IBranch } from '../interfaces/IBranch';
 
 export interface IRequestBranchesResponse {
 	filteredBranches: IDocumentBranch[];
@@ -14,12 +14,12 @@ export const filterBranches = (unfilteredBranches: IBranch[]) => {
 					id: branch.id,
 					branchnumber: branch.branchnumber,
 					branchname: branch.branchname,
-					branchnameEN: branch.branchnameEN || "",
+					branchnameEN: branch.branchnameEN || '',
 					city: branch.city,
-					cityEN: branch.cityEN || "",
+					cityEN: branch.cityEN || '',
 					street: branch.street,
-					streetEN: branch.streetEN || "",
-					streetcode: branch.streetcode || "",
+					streetEN: branch.streetEN || '',
+					streetcode: branch.streetcode || '',
 					zip: branch.zip,
 					qnomycode: branch.qnomycode,
 					qnomyWaitTimeCode: branch.qnomyWaitTimeCode,
@@ -39,10 +39,10 @@ export const filterBranches = (unfilteredBranches: IBranch[]) => {
 		},
 		[]
 	);
-	console.log("[filterBranches] Done");
+	console.log('[filterBranches] Done');
 
 	console.log(
-		"[filterBranches] Dataset size after filtering: ",
+		'[filterBranches] Dataset size after filtering: ',
 		Object.keys(filteredBranches).length
 	);
 

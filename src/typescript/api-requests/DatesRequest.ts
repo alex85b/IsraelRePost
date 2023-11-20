@@ -1,10 +1,10 @@
-import { getTodayDateObject } from "../common/todays-date";
+import { getTodayDateObject } from '../common/todays-date';
 import {
 	BranchRequest,
 	IAxiosResponseReport,
 	IConfigBuildData,
 	IExpectedServerResponse,
-} from "./BranchRequest";
+} from './BranchRequest';
 
 export interface IExpectedDatesResponse extends IExpectedServerResponse {
 	Results: {
@@ -44,11 +44,11 @@ export class DatesRequest extends BranchRequest<
 		try {
 			const { date } = getTodayDateObject();
 			this.commonConfig.url =
-				"https://central.qnomy.com/CentralAPI/SearchAvailableDates?maxResults=30&serviceId=" +
+				'https://central.qnomy.com/CentralAPI/SearchAvailableDates?maxResults=30&serviceId=' +
 				data.url.serviceId +
-				"&startDate=" +
+				'&startDate=' +
 				date;
-			this.commonConfig.headers.authorization = "JWT " + data.headers.authorization;
+			this.commonConfig.headers.authorization = 'JWT ' + data.headers.authorization;
 			this.commonConfig.headers.Cookie = this.reformatCookiesForAxios(data.headers.cookies);
 			return true;
 		} catch (error) {
@@ -58,7 +58,7 @@ export class DatesRequest extends BranchRequest<
 	}
 	parseAPIResponse(): IDatesResponseReport | null {
 		try {
-			const errorMessage = this.axiosResponse?.data?.ErrorMessage ?? "";
+			const errorMessage = this.axiosResponse?.data?.ErrorMessage ?? '';
 			const success = this.axiosResponse?.data?.Success ?? false;
 			let results = this.axiosResponse?.data?.Results;
 
@@ -66,7 +66,7 @@ export class DatesRequest extends BranchRequest<
 				this.reasons.push('response "success" is false');
 				return null;
 			} else if (results === null || results === undefined) {
-				this.reasons.push("response is success and no dates");
+				this.reasons.push('response is success and no dates');
 				results = [];
 			}
 			if (errorMessage !== null && errorMessage !== undefined && errorMessage.length > 0) {
@@ -77,15 +77,15 @@ export class DatesRequest extends BranchRequest<
 			if (Array.isArray(results) && results.length > 0) {
 				const calendarDate = this.axiosResponse?.data?.Results[0].calendarDate;
 				const calendarId = this.axiosResponse?.data?.Results[0].calendarId;
-				if (typeof calendarDate !== "string") {
-					this.reasons.push("calendarDate is not a string");
+				if (typeof calendarDate !== 'string') {
+					this.reasons.push('calendarDate is not a string');
 					return null;
 				} else if (calendarDate.length === 0) {
-					this.reasons.push("calendarDate is empty");
+					this.reasons.push('calendarDate is empty');
 					return null;
 				}
-				if (typeof calendarId !== "number") {
-					this.reasons.push("calendarId is not a number");
+				if (typeof calendarId !== 'number') {
+					this.reasons.push('calendarId is not a number');
 					return null;
 				}
 			}

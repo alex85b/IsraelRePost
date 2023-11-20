@@ -2,22 +2,17 @@
     This class will update an object that represents a 'Branch' elasticsearch record.
 */
 
-import {
-	ElasticClient,
-	IDocumentBranch,
-	IErrorMapping,
-	INewServiceRecord,
-} from "../../elastic/elstClient";
-import { INode } from "../requests-as-nodes/INode";
-import { UserNode } from "../requests-as-nodes/UserNode";
-import { IAxiosRequestSetup } from "../../api-requests/BranchRequest";
-import { Result } from "@elastic/elasticsearch/lib/api/types";
+import { INode } from '../requests-as-nodes/INode';
+import { UserNode } from '../requests-as-nodes/UserNode';
+import { IAxiosRequestSetup } from '../../api-requests/BranchRequest';
+import { BranchModule, IDocumentBranch, INewServiceRecord } from '../../elastic/BranchModel';
+import { ErrorModule, IErrorMapping } from '../../elastic/ErrorModel';
 
 export interface IBranchReport {
 	branchNumber: number;
 	requestsHadError: boolean | null;
 	persistServicesSuccess: boolean | null;
-	persistErrorsResult: Result | null;
+	persistErrorsResult: string | null;
 }
 
 export class Branch {
@@ -41,10 +36,12 @@ export class Branch {
 	private stack: INode[] = [];
 	private newServices: INewServiceRecord[] = [];
 	private servicesHaveErrors = false;
-	private elasticClient: ElasticClient;
+	// private elasticClient: ElasticClient;
+	private branches: BranchModule;
+	private errors: ErrorModule;
 	private reason: string[] = [];
 	private newErrors: IErrorMapping = {
-		userError: "",
+		userError: '',
 		services: [],
 	};
 
@@ -53,7 +50,9 @@ export class Branch {
 		private axiosSetup: IAxiosRequestSetup,
 		private beforeRequest?: { id: number; callBack: (id: number) => Promise<void> }
 	) {
-		this.elasticClient = new ElasticClient();
+		// this.elasticClient = new ElasticClient();
+		this.branches = new BranchModule();
+		this.errors = new ErrorModule();
 	}
 
 	async updateBranchServices() {
@@ -66,16 +65,16 @@ export class Branch {
 		};
 		if (this.servicesHaveErrors) {
 			report.persistErrorsResult =
-				(await this.elasticClient.addSingleError(
-					this.newErrors,
-					String(this.branch.branchnumber)
-				)) ?? null;
+				(await this.errors.updateAddError(this.newErrors, this.branch.branchnumber)) ??
+				null;
 		}
 		report.persistServicesSuccess =
-			(await this.elasticClient.updateBranchServices(
-				String(this.branch.branchnumber),
-				this.newServices
-			)) ?? null;
+			(
+				await this.branches.updateBranchServices(
+					String(this.branch.branchnumber),
+					this.newServices
+				)
+			).updated > 0;
 
 		return report;
 	}

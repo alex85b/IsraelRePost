@@ -1,7 +1,7 @@
-import { IAxiosRequestSetup } from "../../api-requests/BranchRequest";
-import { INode } from "./INode";
-import { TimesRequest } from "../../api-requests/TimesRequest";
-import { IDateError } from "../../elastic/elstClient";
+import { IAxiosRequestSetup } from '../../api-requests/BranchRequest';
+import { INode } from './INode';
+import { TimesRequest } from '../../api-requests/TimesRequest';
+import { IDateError } from '../../elastic/ErrorModel';
 
 export interface ITimesNodeData {
 	headers: {
@@ -45,7 +45,7 @@ export class TimesNode implements INode {
 				this.buildTimes.push(String(time.Time));
 			}
 		} else {
-			this.branchErrors.timesError = this.error?.message ?? "No-message";
+			this.branchErrors.timesError = this.error?.message ?? 'No-message';
 		}
 		return null;
 	}

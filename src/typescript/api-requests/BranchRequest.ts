@@ -181,35 +181,35 @@ export abstract class BranchRequest<
 		return null;
 	}
 
-	private readEnvironmentFile() {
-		const proxyIsActive = process.env.PROX_ACT || '';
-		const proxyPassword = process.env.PROX_PAS || '';
-		const proxyUsername = process.env.PROX_USR || '';
-		const proxyPort = process.env.PROX_SPORT || '';
-		const proxyUrl = process.env.PROX_ENDP || '';
+	// private readEnvironmentFile() {
+	// 	const proxyIsActive = process.env.PROX_ACT || '';
+	// 	const proxyPassword = process.env.PROX_PAS || '';
+	// 	const proxyUsername = process.env.PROX_USR || '';
+	// 	const proxyPort = process.env.PROX_SPORT || '';
+	// 	const proxyUrl = process.env.PROX_ENDP || '';
 
-		const invalid: string[] = [];
-		if (typeof proxyIsActive !== 'string') {
-			invalid.push('useProxy is not a string');
-		} else if (typeof proxyUrl !== 'string') {
-			invalid.push('proxyUrl is not a string');
-		} else if (typeof proxyPassword !== 'string') {
-			invalid.push('proxy password is not a string');
-		} else if (typeof proxyUsername !== 'string') {
-			invalid.push('proxy username is not a string');
-		} else if (typeof proxyPort !== 'string') {
-			invalid.push('proxy port is not a string');
-		}
+	// 	const invalid: string[] = [];
+	// 	if (typeof proxyIsActive !== 'string') {
+	// 		invalid.push('useProxy is not a string');
+	// 	} else if (typeof proxyUrl !== 'string') {
+	// 		invalid.push('proxyUrl is not a string');
+	// 	} else if (typeof proxyPassword !== 'string') {
+	// 		invalid.push('proxy password is not a string');
+	// 	} else if (typeof proxyUsername !== 'string') {
+	// 		invalid.push('proxy username is not a string');
+	// 	} else if (typeof proxyPort !== 'string') {
+	// 		invalid.push('proxy port is not a string');
+	// 	}
 
-		if (invalid.length > 0) {
-			const invalidStringed = invalid.join(';');
-			throw Error("Can't read environment file: " + invalidStringed);
-		}
+	// 	if (invalid.length > 0) {
+	// 		const invalidStringed = invalid.join(';');
+	// 		throw Error("Can't read environment file: " + invalidStringed);
+	// 	}
 
-		this.proxyIsActive = proxyIsActive;
-		this.proxyPassword = proxyPassword;
-		this.proxyUsername = proxyUsername;
-		this.proxyPort = proxyPort;
-		this.proxyUrl = proxyUrl;
-	}
+	// 	this.proxyIsActive = proxyIsActive;
+	// 	this.proxyPassword = proxyPassword;
+	// 	this.proxyUsername = proxyUsername;
+	// 	this.proxyPort = proxyPort;
+	// 	this.proxyUrl = proxyUrl;
+	// }
 }

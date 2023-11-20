@@ -1,7 +1,7 @@
-import { ISingleBranchQueryResponse } from "../elastic/elstClient";
-import { parentPort, workerData } from "worker_threads";
-import { Branch, IBranchReport } from "./branch-record-object/Branch";
-import { IWorkerData } from "./ManageWorkers";
+import { parentPort, workerData } from 'worker_threads';
+import { Branch, IBranchReport } from './branch-record-object/Branch';
+import { IWorkerData } from './ManageWorkers';
+import { ISingleBranchQueryResponse } from '../elastic/BranchModel';
 
 // ####################################################################################################
 // ### Interfaces #####################################################################################
@@ -10,8 +10,8 @@ import { IWorkerData } from "./ManageWorkers";
 export interface IWorkerMessage {
 	workerId: number;
 	branchIndex: number | null;
-	status: "f" | "s" | null;
-	type: "scraped" | "done" | "coordinate" | "up" | "expired";
+	status: 'f' | 's' | null;
+	type: 'scraped' | 'done' | 'coordinate' | 'up' | 'expired';
 	data: IBranchReport[] | string[] | null;
 }
 
@@ -25,35 +25,35 @@ class BranchWorker {
 	private branchReports: IBranchReport[] = [];
 	private scrapedFailed = false;
 	private proxyConfig = {
-		proxyPassword: "",
-		proxyUrl: "",
-		proxyUsername: "",
+		proxyPassword: '',
+		proxyUrl: '',
+		proxyUsername: '',
 		timeout: 10000,
 		useProxy: false,
 	};
 
 	listen() {
-		parentPort?.on("message", async (message: any) => {
+		parentPort?.on('message', async (message: any) => {
 			// console.log("[Worker][listen()] message : ", message);
 			switch (message.type) {
-				case "init":
+				case 'init':
 					this.verifyWorkerData();
 					break;
-				case "scrape":
+				case 'scrape':
 					this.startExpiration({ minutes: 10 });
 					await this.scrapeBranches(this.branches);
 					const branchScraped: IWorkerMessage = {
-						status: this.scrapedFailed ? "f" : "s",
-						type: "done",
+						status: this.scrapedFailed ? 'f' : 's',
+						type: 'done',
 						branchIndex: null,
 						workerId: this.workerId,
 						data: this.branchReports ?? [],
 					};
 					parentPort?.postMessage(branchScraped);
 					break;
-				case "ack":
+				case 'ack':
 					break;
-				case "end":
+				case 'end':
 					process.exit(0);
 					break;
 				default:
@@ -75,8 +75,8 @@ class BranchWorker {
 			const workerScraped: IWorkerMessage = {
 				workerId: this.workerId,
 				branchIndex: branchIndex,
-				status: updateServicesReport.requestsHadError ? "f" : "s",
-				type: "scraped",
+				status: updateServicesReport.requestsHadError ? 'f' : 's',
+				type: 'scraped',
 				data: [updateServicesReport],
 			};
 			parentPort?.postMessage(workerScraped);
@@ -89,12 +89,12 @@ class BranchWorker {
 			const request: IWorkerMessage = {
 				workerId: id,
 				status: null,
-				type: "coordinate",
+				type: 'coordinate',
 				data: null,
 				branchIndex: null,
 			};
 			parentPort?.postMessage(request);
-			parentPort?.once("message", (message) => {
+			parentPort?.once('message', (message) => {
 				resolve(message);
 			});
 		});
@@ -108,8 +108,8 @@ class BranchWorker {
 
 		const workerDataMessage: IWorkerMessage = {
 			workerId: workerId,
-			status: "f",
-			type: "up",
+			status: 'f',
+			type: 'up',
 			data: invalid,
 			branchIndex: null,
 		};
@@ -121,13 +121,13 @@ class BranchWorker {
 
 		this.branches = processBranches;
 		this.workerId = workerId;
-		workerDataMessage.status = "s";
+		workerDataMessage.status = 's';
 		workerDataMessage.data = [];
 		parentPort?.postMessage(workerDataMessage);
 	}
 
 	verifyId(id: number, invalid: string[]) {
-		if (typeof id !== "number" || id < 0) {
+		if (typeof id !== 'number' || id < 0) {
 			invalid.push(`id not a valid number ${id}`);
 		}
 		return invalid;
@@ -135,11 +135,11 @@ class BranchWorker {
 
 	verifyBranches(branches: ISingleBranchQueryResponse[], invalid: string[]) {
 		if (!branches) {
-			invalid.push("branches null / undefined");
+			invalid.push('branches null / undefined');
 		} else if (!Array.isArray(branches)) {
-			invalid.push("branches not array");
+			invalid.push('branches not array');
 		} else if (branches.length < 1) {
-			invalid.push("branches empty array");
+			invalid.push('branches empty array');
 		}
 		return invalid;
 	}
@@ -148,8 +148,8 @@ class BranchWorker {
 		const THREAD_RUNTIME_TIMEOUT = data.minutes * 60 * 1000; // minutes in milliseconds
 		setTimeout(() => {
 			const TimeOutFailure: IWorkerMessage = {
-				status: "f",
-				type: "expired",
+				status: 'f',
+				type: 'expired',
 				branchIndex: null,
 				data: null,
 				workerId: this.workerId,

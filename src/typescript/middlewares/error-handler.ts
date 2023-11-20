@@ -1,5 +1,5 @@
 // import { CustomError } from '../errors/custom-error';
-import { Request, Response, NextFunction } from "express";
+import { Request, Response, NextFunction } from 'express';
 
 /*
     Will be used to Always response with a { errors: [{ message: error-message}, { message: error-message}, ...]}.
@@ -16,9 +16,9 @@ const errorHandler = (err: Error, req: Request, res: Response, next: NextFunctio
 
 	// Error isn't from the expected type.
 	// Something unexpected has gone wrong.
-	console.log("Error handler: unknown error: ", err);
+	console.log('Error handler: unknown error: ', err);
 	res.status(500).send({
-		errors: [{ message: "Something went wrong", error: err }],
+		errors: [{ message: 'Something went wrong', error: err.message, name: err.name }],
 	});
 };
 

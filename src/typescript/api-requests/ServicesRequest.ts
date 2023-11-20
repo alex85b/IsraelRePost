@@ -4,7 +4,7 @@ import {
 	IConfigBuildData,
 	IExpectedServerResponse,
 	IResponseGenerator,
-} from "./BranchRequest";
+} from './BranchRequest';
 
 export interface IExpectedServiceResponse extends IExpectedServerResponse {
 	Results: {
@@ -64,11 +64,11 @@ export class ServicesRequest extends BranchRequest<
 	buildRequestConfig(data: IServicesConfigBuild): boolean {
 		try {
 			this.commonConfig.url =
-				"https://central.qnomy.com/CentralAPI/LocationGetServices?locationId=" +
+				'https://central.qnomy.com/CentralAPI/LocationGetServices?locationId=' +
 				data.url.locationId +
-				"&serviceTypeId=" +
+				'&serviceTypeId=' +
 				data.url.serviceTypeId;
-			this.commonConfig.headers.authorization = "JWT " + data.headers.authorization;
+			this.commonConfig.headers.authorization = 'JWT ' + data.headers.authorization;
 			this.commonConfig.headers.Cookie = this.reformatCookiesForAxios(data.headers.cookies);
 			return true;
 		} catch (error) {
@@ -79,7 +79,7 @@ export class ServicesRequest extends BranchRequest<
 
 	parseAPIResponse(): IServicesResponseReport | null {
 		try {
-			const errorMessage = this.axiosResponse?.data?.ErrorMessage ?? "";
+			const errorMessage = this.axiosResponse?.data?.ErrorMessage ?? '';
 			const success = this.axiosResponse?.data?.Success ?? false;
 			let results = this.axiosResponse?.data?.Results;
 
@@ -87,7 +87,7 @@ export class ServicesRequest extends BranchRequest<
 				this.reasons.push('response "success" is false');
 				return null;
 			} else if (results === null || results === undefined) {
-				this.reasons.push("response is success and no services");
+				this.reasons.push('response is success and no services');
 				results = [];
 			}
 			if (errorMessage !== null && errorMessage !== undefined && errorMessage.length > 0) {
@@ -98,12 +98,12 @@ export class ServicesRequest extends BranchRequest<
 			if (Array.isArray(results) && results.length > 0) {
 				const serviceId = this.axiosResponse?.data?.Results[0].serviceId;
 				const ServiceTypeId = this.axiosResponse?.data?.Results[0].ServiceTypeId;
-				if (typeof serviceId !== "number") {
-					this.reasons.push("serviceId is not a number");
+				if (typeof serviceId !== 'number') {
+					this.reasons.push('serviceId is not a number');
 					return null;
 				}
-				if (typeof ServiceTypeId !== "number") {
-					this.reasons.push("ServiceTypeId is not a number");
+				if (typeof ServiceTypeId !== 'number') {
+					this.reasons.push('ServiceTypeId is not a number');
 					return null;
 				}
 			}

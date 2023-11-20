@@ -1,6 +1,4 @@
-export const parseResponseCookies = (
-	cookies: string[]
-): { [key: string]: string } => {
+export const parseResponseCookies = (cookies: string[]): { [key: string]: string } => {
 	const transformed: { [key: string]: string } = {};
 	cookies.forEach((cell) => {
 		if (cell.includes('=')) {

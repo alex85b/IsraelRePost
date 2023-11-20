@@ -1,9 +1,9 @@
-import path from "path";
-import { Worker } from "worker_threads";
-import { Mutex } from "async-mutex";
-import { ISingleBranchQueryResponse } from "../interfaces/../elastic/elstClient";
-import { IWorkerMessage } from "./Worker";
-import { IBranchReport } from "./branch-record-object/Branch";
+import path from 'path';
+import { Worker } from 'worker_threads';
+import { Mutex } from 'async-mutex';
+import { IWorkerMessage } from './Worker';
+import { IBranchReport } from './branch-record-object/Branch';
+import { ISingleBranchQueryResponse } from '../elastic/BranchModel';
 
 export interface IWorkerData {
 	workerId: number;
@@ -38,8 +38,8 @@ export class ManageWorkers {
 
 	constructor(options: IConstructorOptions) {
 		// Get a path to worker script.
-		this.workerScriptPath = path.join(__dirname, "Worker.js");
-		console.log("[ManageWorkers][constructor] : ", this.workerScriptPath);
+		this.workerScriptPath = path.join(__dirname, 'Worker.js');
+		console.log('[ManageWorkers][constructor] : ', this.workerScriptPath);
 		this.requestsLimit = options.requestsLimit ?? 48;
 		this.requestsTimeout = options.requestsTimeout ?? 61000;
 		this.threadAmount = options.threadAmount ?? 2;
@@ -132,7 +132,7 @@ export class ManageWorkers {
 		// Iterate each Init-event, for any rejected event "Forget" the worker.
 		for (let index = 0; index < settledEvents.length; index++) {
 			const event = settledEvents[index];
-			if (event.status === "rejected") {
+			if (event.status === 'rejected') {
 				this.workersObj[index] = null;
 			}
 		}
@@ -205,21 +205,21 @@ export class ManageWorkers {
 		return new Promise<number>((resolve, reject) => {
 			// On worker message - trigger "onWorkerInitMessage" ONCE,
 			// The onWorkerInitMessage can resolve and reject this "Event".
-			worker.once("message", (message) =>
+			worker.once('message', (message) =>
 				this.onWorkerInitMessage(message, resolve, reject, workerId)
 			);
 
 			// On worker error - trigger "onWorkerInitError" ONCE.
 			// The onWorkerInitError can only reject this "Event".
-			worker.once("error", (error) => this.onWorkerInitError(error, reject, workerId));
+			worker.once('error', (error) => this.onWorkerInitError(error, reject, workerId));
 
 			// On worker exit - trigger "onWorkerInitExit" ONCE.
 			// The onWorkerInitExit can resolve and reject this "Event".
-			worker.once("exit", (code) => this.onWorkerInitExit(code, resolve, reject, workerId));
+			worker.once('exit', (code) => this.onWorkerInitExit(code, resolve, reject, workerId));
 
 			// Send to the worker the command "init",
 			// This command will trigger the "Init Event".
-			worker.postMessage({ type: "init" });
+			worker.postMessage({ type: 'init' });
 		});
 	}
 
@@ -232,12 +232,12 @@ export class ManageWorkers {
 	 */
 	private setupScrapeEvent(worker: Worker, workerId: number) {
 		return new Promise<number>((resolve, reject) => {
-			worker.on("message", (message) =>
+			worker.on('message', (message) =>
 				this.onWorkerScrapeMessage(message, resolve, reject, workerId, worker)
 			);
-			worker.once("error", (error) => this.onWorkerScrapeError(error, reject, workerId));
-			worker.once("exit", (code) => this.onWorkerScrapeExit(code, resolve, reject, workerId));
-			worker.postMessage({ type: "scrape" });
+			worker.once('error', (error) => this.onWorkerScrapeError(error, reject, workerId));
+			worker.once('exit', (code) => this.onWorkerScrapeExit(code, resolve, reject, workerId));
+			worker.postMessage({ type: 'scrape' });
 		});
 	}
 
@@ -263,45 +263,45 @@ export class ManageWorkers {
 	) {
 		switch (message.type) {
 			// In case of "WorkerRequest" message - enter the critical area.
-			case "coordinate":
+			case 'coordinate':
 				await this.criticalArea(message.workerId);
-				worker.postMessage({ type: "ack" });
+				worker.postMessage({ type: 'ack' });
 				break;
 			// In case of "WorkerBranchScraped" - remove handled branch from the workload.
 			// TODO: this can be good point to update a remote and stable source that
 			// TODO: a branch has been handled and there is no need to try and handle it again.
-			case "scraped":
-				console.log("[onWorkerScrapeMessage] scraped: ", message);
+			case 'scraped':
+				console.log('[onWorkerScrapeMessage] scraped: ', message);
 				if (Array.isArray(message.data)) {
-					if (typeof message.data[0] !== "string") {
+					if (typeof message.data[0] !== 'string') {
 						this.updatedBranches.push(message.data[0]);
 					}
 				}
 
-				if (message.status === "s") {
+				if (message.status === 's') {
 					if (workerId !== message.workerId) {
 						throw new Error(
 							`[onWorkerScrapeMessage] workerId ${workerId} !=message.id ${message.workerId}`
 						);
 					}
-					if (typeof message.branchIndex === "number" && message.branchIndex > -1) {
+					if (typeof message.branchIndex === 'number' && message.branchIndex > -1) {
 						delete this.workLoad[workerId][message.branchIndex];
 					}
 				}
 				break;
 			// Reject or resolved this event based on "Done" status.
-			case "done":
-				console.log("[onWorkerScrapeMessage] done: ", message);
-				if (message.status === "f") {
+			case 'done':
+				console.log('[onWorkerScrapeMessage] done: ', message);
+				if (message.status === 'f') {
 					reject(workerId);
 				}
 				resolve(workerId);
 				break;
-			case "expired":
-				console.log("[onWorkerScrapeMessage] expired: ", message);
+			case 'expired':
+				console.log('[onWorkerScrapeMessage] expired: ', message);
 				break;
 			default:
-				console.error("[onWorkerScrapeMessage] default: ", message);
+				console.error('[onWorkerScrapeMessage] default: ', message);
 				reject(workerId);
 		}
 	}
@@ -329,9 +329,9 @@ export class ManageWorkers {
 		reject: (reason: number) => void,
 		workerId: number
 	) {
-		if (message.type === "up") {
-			if (message.status === "s") resolve(workerId);
-			if (message.status === "f") {
+		if (message.type === 'up') {
+			if (message.status === 's') resolve(workerId);
+			if (message.status === 'f') {
 				reject(workerId);
 			}
 		}

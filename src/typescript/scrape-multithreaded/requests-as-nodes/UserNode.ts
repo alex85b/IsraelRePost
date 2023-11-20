@@ -1,8 +1,9 @@
-import { IAxiosRequestSetup } from "../../api-requests/BranchRequest";
-import { UserRequest } from "../../api-requests/UserRequest";
-import { ServicesNode } from "./ServicesNode";
-import { INode } from "./INode";
-import { IErrorMapping, INewServiceRecord } from "../../elastic/elstClient";
+import { IAxiosRequestSetup } from '../../api-requests/BranchRequest';
+import { UserRequest } from '../../api-requests/UserRequest';
+import { ServicesNode } from './ServicesNode';
+import { INode } from './INode';
+import { INewServiceRecord } from '../../elastic/BranchModel';
+import { IErrorMapping } from '../../elastic/ErrorModel';
 
 export interface IUserNodeData {
 	requestSetup: IAxiosRequestSetup;
@@ -19,11 +20,11 @@ export class UserNode implements INode {
 		ARRAffinitySameSite: string;
 		GCLB: string;
 	} = {
-		ARRAffinity: "none",
-		ARRAffinitySameSite: "none",
-		CentralJWTCookie: "none",
-		GCLB: "none",
-		token: "none",
+		ARRAffinity: 'none',
+		ARRAffinitySameSite: 'none',
+		CentralJWTCookie: 'none',
+		GCLB: 'none',
+		token: 'none',
 	};
 
 	constructor(
@@ -57,7 +58,7 @@ export class UserNode implements INode {
 					this.axiosSetup,
 					{
 						headers,
-						url: { locationId: String(this.locationId), serviceTypeId: "0" },
+						url: { locationId: String(this.locationId), serviceTypeId: '0' },
 					},
 					this.buildServices,
 					this.branchErrors.services,
@@ -65,7 +66,7 @@ export class UserNode implements INode {
 				),
 			];
 		}
-		this.branchErrors.userError = this.error?.message ?? "No-message";
+		this.branchErrors.userError = this.error?.message ?? 'No-message';
 		return null;
 	}
 

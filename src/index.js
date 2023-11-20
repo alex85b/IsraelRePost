@@ -1,9 +1,9 @@
-const express = require("express");
+const express = require('express');
 
-const { AllBranches } = require("./js-build/routes/AllBranches");
-const errorHandler = require("./js-build/middlewares/error-handler");
-const { TestLab } = require("./js-build/routes/TestLab");
-const { TimeSlots } = require("./js-build/routes/TimeSlots");
+const { AllBranches } = require('./js-build/routes/AllBranches');
+const errorHandler = require('./js-build/middlewares/error-handler');
+const { TestLab } = require('./js-build/routes/TestLab');
+const { TimeSlots } = require('./js-build/routes/TimeSlots');
 
 //! Hide this service behind authentication and or authorization.
 
@@ -18,8 +18,8 @@ const app = express();
 app.use(AllBranches);
 app.use(TimeSlots);
 app.use(TestLab);
-app.all("*", () => {
-	throw new Error("Route not found");
+app.all('*', () => {
+	throw new Error('Route not found');
 });
 
 // custom error handler.

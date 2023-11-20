@@ -1,10 +1,10 @@
-import { parseResponseCookies } from "../common/ParseCookies";
+import { parseResponseCookies } from '../common/ParseCookies';
 import {
 	BranchRequest,
 	IAxiosResponseReport,
 	IConfigBuildData,
 	IExpectedServerResponse,
-} from "./BranchRequest";
+} from './BranchRequest';
 
 export interface IExpectedUserResponse extends IExpectedServerResponse {
 	Results: {
@@ -38,22 +38,22 @@ export class UserRequest extends BranchRequest<
 	parseAPIResponse(): IUserResponseReport | null {
 		try {
 			const token = this.axiosResponse?.data.Results.token;
-			const rawCookies = this.axiosResponse?.headers["set-cookie"] ?? [];
+			const rawCookies = this.axiosResponse?.headers['set-cookie'] ?? [];
 			const cookies = parseResponseCookies(rawCookies);
-			const CentralJWTCookie = cookies["CentralJWTCookie"];
-			const ARRAffinity = cookies["ARRAffinity"];
-			const ARRAffinitySameSite = cookies["ARRAffinitySameSite"];
-			const GCLB = cookies["GCLB"];
+			const CentralJWTCookie = cookies['CentralJWTCookie'];
+			const ARRAffinity = cookies['ARRAffinity'];
+			const ARRAffinitySameSite = cookies['ARRAffinitySameSite'];
+			const GCLB = cookies['GCLB'];
 
-			if (typeof token !== "string") {
-				this.reasons.push("token not a string");
+			if (typeof token !== 'string') {
+				this.reasons.push('token not a string');
 				return null;
 			} else if (!token.length) {
-				this.reasons.push("token is empty string");
+				this.reasons.push('token is empty string');
 				return null;
 			}
 			if (!CentralJWTCookie || !ARRAffinity || !ARRAffinitySameSite || !GCLB) {
-				this.reasons.push("missing one or more cookie");
+				this.reasons.push('missing one or more cookie');
 				return null;
 			}
 
@@ -75,8 +75,8 @@ export class UserRequest extends BranchRequest<
 
 	buildRequestConfig(): boolean {
 		try {
-			this.commonConfig.url = "https://central.qnomy.com/CentralAPI/UserCreateAnonymous";
-			this.commonConfig.headers.authorization = "JWT null";
+			this.commonConfig.url = 'https://central.qnomy.com/CentralAPI/UserCreateAnonymous';
+			this.commonConfig.headers.authorization = 'JWT null';
 			return true;
 		} catch (error) {
 			this.error = error as Error;
