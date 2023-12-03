@@ -1,41 +1,35 @@
-import { CustomWorker } from '../CWorker';
-
-// Define a Message object that will be passed between threads.
 export interface IMessage<H extends string> {
 	handlerName: H;
 	handlerData?: any[];
 }
 
-// Define a set of arguments to pass to a 'Message Handler Function'.
-// H is the handler of the message.
-// WH are the handler names of the worker that is associated with the message.
-export interface IMessageHFArguments<H extends string> {
-	message: IMessage<H>;
-	operationData: any; // Additional-unexpected data related to the operation
-	cWorker: CustomWorker; // Custom worker associated with the message
+export interface IMessageCallback<H extends string> {
+	(message: IMessage<H>): any;
 }
 
-// Define a signature of a 'Message Handler Function'.
-export interface IMessageHandlerFunction<H extends string> {
-	(data: IMessageHFArguments<H>): any; // Function signature for message handling
+export interface IHandlerData<TH extends string, SH extends string> {
+	message: IMessage<TH>;
+	senderId?: string;
+	messageCallback?: IMessageCallback<SH>;
 }
 
-// Create a generic class that maps 'Message Handler Function' names to actual functions.
-export class MessagesHandler<H extends string> {
-	private functionMapping: Map<H, IMessageHandlerFunction<H>> = new Map();
+export interface IHandlerFunction<TH extends string, SH extends string> {
+	(data: IHandlerData<TH, SH>): any;
+}
 
-	// Add a message handler function to the mapping
-	addMessageHandler(handlerName: H, handler: IMessageHandlerFunction<H>) {
+export class MessagesHandler<TH extends string> {
+	private functionMapping: Map<TH, IHandlerFunction<any, any>> = new Map();
+
+	addMessageHandler<SH extends string>(handlerName: TH, handler: IHandlerFunction<TH, SH>) {
 		this.functionMapping.set(handlerName, handler);
 	}
 
-	// Handle a message using the corresponding handler function
-	handle(handlerArguments: IMessageHFArguments<H>) {
-		const handler = this.functionMapping.get(handlerArguments.message.handlerName);
+	handle<SH extends string>(message: IMessage<TH>, messageCallback?: IMessageCallback<SH>) {
+		const handler = this.functionMapping.get(message.handlerName);
 		if (handler) {
-			return handler(handlerArguments); // Invoke the handler function
+			return handler({ message, messageCallback });
 		} else {
-			return null; // No handler found for the given handlerName
+			return null;
 		}
 	}
 }

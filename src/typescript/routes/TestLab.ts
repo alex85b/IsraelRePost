@@ -11,10 +11,10 @@ import { IPostTimesRequired, PostTimesRequest } from '../isreal-post-requests/Po
 import { SmartProxyCollection } from '../proxy-management/SmartProxyCollection';
 import { WebShareCollection } from '../proxy-management/WebShareCollection';
 import { ContinuesUpdate } from '../scrape-multithreaded/ContinuesUpdate';
-import { bEnqueue, dequeue, enqueue, queueName, queueSize } from '../redis/RedisTest';
+// import { bEnqueue, dequeue, enqueue, queueName, queueSize } from '../redis/RedisTest';
 import { BranchesToProcess } from '../redis/BranchesToProcess';
 import { ProcessedBranches } from '../redis/ProcessedBranches';
-import { AtomicCounter } from '../atomic-counter/AtomicCounter';
+import '../test/transferable/P';
 
 // import '../scrape-multithreaded/test/parent';
 
@@ -27,8 +27,9 @@ const router = express.Router();
 router.get('/api/scrape/testing', async (req: Request, res: Response, next: NextFunction) => {
 	const responses: any[] = [];
 	try {
-		const cUpdate = new ContinuesUpdate(true);
-		cUpdate.test();
+		// const cUpdate = new ContinuesUpdate(true);
+		// cUpdate.test();
+
 		res.status(200).send(responses);
 	} catch (error) {
 		console.log(error);
@@ -81,17 +82,17 @@ const ContinuesUpdateQPop = async (responses: any[]) => {
 // ### Test Redis Queue - Basic ######################################################################
 // ###################################################################################################
 
-const testRedisQueueBasic = async (responses: any[]) => {
-	responses.push({ queueName: queueName });
-	responses.push({ queueSize: await queueSize() });
-	// responses.push({ bulkEnqueue: await bEnqueue() });
-	// responses.push({ enqueue: await enqueue() });
-	responses.push({ dequeue: await dequeue() });
-	responses.push({ dequeue: await dequeue() });
-	responses.push({ dequeue: await dequeue() });
-	responses.push({ dequeue: await dequeue() });
-	return responses;
-};
+// const testRedisQueueBasic = async (responses: any[]) => {
+// 	responses.push({ queueName: queueName });
+// 	responses.push({ queueSize: await queueSize() });
+// 	// responses.push({ bulkEnqueue: await bEnqueue() });
+// 	// responses.push({ enqueue: await enqueue() });
+// 	responses.push({ dequeue: await dequeue() });
+// 	responses.push({ dequeue: await dequeue() });
+// 	responses.push({ dequeue: await dequeue() });
+// 	responses.push({ dequeue: await dequeue() });
+// 	return responses;
+// };
 
 // ###################################################################################################
 // ### Test Proxies ##################################################################################

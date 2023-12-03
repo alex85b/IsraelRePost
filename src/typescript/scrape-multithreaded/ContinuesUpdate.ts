@@ -1,21 +1,21 @@
-import { BranchModule, ISingleBranchQueryResponse } from '../elastic/BranchModel';
-import { IEndpoint, IProxyIP } from '../proxy-management/ProxyCollection';
+import { BranchModule } from '../elastic/BranchModel';
 import { SmartProxyCollection } from '../proxy-management/SmartProxyCollection';
 import { BranchesToProcess } from '../redis/BranchesToProcess';
 import { ProcessedBranches } from '../redis/ProcessedBranches';
-import path from 'path';
-import { IMessageHFArguments, MessagesHandler } from './messages/HandleThreadMessages';
+import { IHandlerFunction, MessagesHandler } from './messages/HandleThreadMessages';
 import { IMMessageHandlers } from './IpManager';
-import { CustomWorker } from './CWorker';
+import path from 'path';
+import { AxiosProxyConfig } from 'axios';
+import { IpManagementWorker } from '../custom-worker/IpManagementWorker';
 
 // ContinuesUpdate -- creates w thread/s -->
 // --> IP Management -- creates w thread/s -->
 // --> Branch Updater: Performs Update.
-// Branch Updater <-- pop branch for update -- Elastic Branches.
-// Branch Updater -- push branch after successful update --> Elastic Done queue.
+// Branch Updater <-- pop branch for update -- Redis Branches.
+// Branch Updater -- push branch after successful update --> Redis Done queue.
 
 export class ContinuesUpdate {
-	private IpManagers: { [key: number]: CustomWorker | null } = {};
+	private IpManagers: { [key: number]: IpManagementWorker | null } = {};
 	private workerScriptPath;
 
 	constructor(private useProxy: boolean) {
@@ -54,102 +54,107 @@ export class ContinuesUpdate {
 	private setupMessageManagement() {
 		const mHandler = new MessagesHandler<CUMessageHandlers>();
 
-		mHandler.addMessageHandler(
-			'manager-depleted',
-			(data: IMessageHFArguments<CUMessageHandlers>) => {
-				const { operationData, cWorker, message } = data;
-				console.log(`Ip Manager ${cWorker.threadId} consumed 300 requests`);
-				cWorker.postMessage<IMMessageHandlers>({ handlerName: 'stop-endpoint' });
-			}
-		);
+		const hManagerDepleted: IHandlerFunction<CUMessageHandlers, IMMessageHandlers> = ({
+			messageCallback,
+			senderId,
+		}) => {
+			if (!messageCallback)
+				throw Error('[manager-depleted] handler: messageCallback was not provided');
+			messageCallback({ handlerName: 'stop-endpoint' });
+			console.log(
+				`Continues Update noticed Ip Manager ${senderId ?? 'Unknown'} consumed 300 requests`
+			);
+		};
 
-		mHandler.addMessageHandler(
-			'manager-done',
-			(data: IMessageHFArguments<CUMessageHandlers>) => {
-				const { message, operationData, cWorker } = data;
-				console.log(`Ip Manager ${cWorker.threadId} no more branches to update`);
-				cWorker.postMessage<IMMessageHandlers>({ handlerName: 'stop-endpoint' });
-			}
-		);
+		const hManagerDone: IHandlerFunction<CUMessageHandlers, IMMessageHandlers> = ({
+			messageCallback,
+			senderId,
+		}) => {
+			if (!messageCallback)
+				throw Error('[manager-depleted] handler: messageCallback was not provided');
+			messageCallback({ handlerName: 'stop-endpoint' });
+			console.log(
+				`Continues Update noticed Ip Manager ${
+					senderId ?? 'Unknown'
+				} has no more branches to update`
+			);
+		};
+
+		mHandler.addMessageHandler('manager-depleted', hManagerDepleted);
+		mHandler.addMessageHandler('manager-done', hManagerDone);
 
 		return mHandler;
 	}
 
-	private async setupIpManagement() {
-		// Setup Ip Management to prevent excessive requesting.
-
-		// Create Proxy Object, that contains proxy endpoint data.
-		let proxyObject: IProxyIP | null = null;
-		if (this.useProxy) {
-			const smartProxy = new SmartProxyCollection();
-			proxyObject = await smartProxy.getProxyObject();
+	private async addIpManager(
+		mHandler: MessagesHandler<CUMessageHandlers>,
+		aProxyConfig?: AxiosProxyConfig
+	) {
+		const ipManager = new IpManagementWorker(this.workerScriptPath, {
+			workerData: aProxyConfig,
+		});
+		if (ipManager.threadId !== undefined) {
+			ipManager.once('online', () => this.IpManagerOnline(ipManager));
+			ipManager.once('message', (message) =>
+				mHandler.handle({
+					handlerName: message.handlerName,
+					handlerData: message.handlerData,
+				})
+			);
+			ipManager.once('error', (error) => this.IpManagerError(ipManager.threadId, error));
+			ipManager.once('exit', (code) => this.IpManagerExit(ipManager.threadId, code));
+			this.IpManagers[ipManager.threadId] = ipManager;
 		}
+	}
 
+	// Setup Ip Management to prevent excessive requesting.
+	private async setupIpManagement() {
 		// Setup functions for message handling.
 		const mHandler = this.setupMessageManagement();
-
-		// Create threads for each IP \ Proxy Endpoint resource.
-		// Initiate events for each thread.
-		if (proxyObject) {
+		if (this.useProxy) {
+			// Create Proxy Object, that contains proxy endpoint data.
+			const proxyObject = await new SmartProxyCollection().getProxyObject();
 			const endpoints = proxyObject.endpoints;
+			// Create threads for each IP \ Proxy Endpoint resource.
+			// Initiate events for each thread.
 			for (const endpoint of endpoints) {
-				const ipManager = new CustomWorker(this.workerScriptPath, {
-					workerData: {
-						ipEndpoint: endpoint,
-					},
-				});
-				if (ipManager.threadId !== undefined) {
-					ipManager.once('online', () => this.IpManagerOnline(ipManager, endpoint));
-					ipManager.once<CUMessageHandlers>('message', (message) =>
-						mHandler.handle({
-							message,
-							cWorker: ipManager,
-							operationData: undefined,
-						})
-					);
-					ipManager.once('error', (error) =>
-						this.IpManagerError(ipManager.threadId, error)
-					);
-					ipManager.once('exit', (code) => this.IpManagerExit(ipManager.threadId, code));
-					this.IpManagers[ipManager.threadId] = ipManager;
-				}
+				const aProxyConfig: AxiosProxyConfig = {
+					host: endpoint.endPoint,
+					port: Number.parseInt(endpoint.port),
+					auth: { username: proxyObject.userName, password: proxyObject.password },
+				};
+				this.addIpManager(mHandler, aProxyConfig);
 			}
-		} // TODO: No Proxy Object
+		} else {
+			// Create a single Ip Manager for a single Ip.
+			this.addIpManager(mHandler);
+		}
 	}
 
 	// ########################################################
 	// ### Setup Events Functions #############################
 	// ########################################################
 
-	private async IpManagerOnline(cWorker: CustomWorker, endpoint: IEndpoint) {
-		console.log(`Ip Manager ${cWorker.threadId} is online`);
-		cWorker.postMessage<IMMessageHandlers>({
+	private async IpManagerOnline(ipManagementWorker: IpManagementWorker) {
+		console.log(`Continues Update noticed Ip Manager ${ipManagementWorker.threadId} is online`);
+		ipManagementWorker.postMessage({
 			handlerName: 'start-endpoint',
-			handlerData: [endpoint],
 		});
 	}
 
 	private async IpManagerError(threadId: number, error: Error) {
-		console.log(`Ip Manager ${threadId} had error`);
+		console.log(`Continues Update noticed Ip Manager ${threadId} had error`);
 		console.log('Error: ', error);
 	}
 
 	private async IpManagerExit(threadId: number, code: number) {
-		console.log(`Ip Manager ${threadId} has exited with code ${code}`);
+		console.log(`Continues Update noticed Ip Manager ${threadId} has exited with code ${code}`);
 	}
 
 	async test() {
 		return await this.setupIpManagement();
 	}
 }
-
-// ###################################################################################################
-// ### Interfaces ####################################################################################
-// ###################################################################################################
-
-// ###################################################################################################
-// ### Enums #########################################################################################
-// ###################################################################################################
 
 // ###################################################################################################
 // ### Types #########################################################################################
