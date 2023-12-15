@@ -1,10 +1,12 @@
 import fs from 'fs';
 import * as readline from 'readline';
+import * as dotenv from 'dotenv';
+dotenv.config();
 
 export abstract class ProxyCollection {
-	abstract getProxyObject(): Promise<IProxyIP>;
+	abstract getProxyObject(): Promise<ProxyEndpoints>;
 
-	protected async generateEndpointsFromFile(filePath: string) {
+	protected async generateEndpointsFromFile(filePath: string): Promise<IEndpoint[]> {
 		const endpointPortObjects: IEndpoint[] = [];
 		const fileStream = fs.createReadStream(filePath);
 
@@ -37,7 +39,7 @@ export abstract class ProxyCollection {
 		const password = process.env[envPassword] ?? '';
 		if (username == '' || password == '') {
 			throw new Error(
-				`[Read Smart Proxy Auth][Error][Username: ${username}][Password: ${password}]`
+				`[Read Proxy Auth][Error][Username: ${username}][Password: ${password}]`
 			);
 		}
 		return { password: password, userName: username };
@@ -48,11 +50,8 @@ export abstract class ProxyCollection {
 // ### Interfaces ####################################################################################
 // ###################################################################################################/
 
-export interface IProxyIP {
-	userName: string;
-	password: string;
-	endpoints: IEndpoint[];
-}
+export type ProxyEndpoints = ProxyEndpoint[];
+export type ProxyEndpoint = string;
 
 export interface IEndpoint {
 	endPoint: string;

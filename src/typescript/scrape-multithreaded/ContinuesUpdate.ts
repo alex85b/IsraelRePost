@@ -114,17 +114,17 @@ export class ContinuesUpdate {
 		if (this.useProxy) {
 			// Create Proxy Object, that contains proxy endpoint data.
 			const proxyObject = await new SmartProxyCollection().getProxyObject();
-			const endpoints = proxyObject.endpoints;
+			// const endpoints = proxyObject.endpoints;
 			// Create threads for each IP \ Proxy Endpoint resource.
 			// Initiate events for each thread.
-			for (const endpoint of endpoints) {
-				const aProxyConfig: AxiosProxyConfig = {
-					host: endpoint.endPoint,
-					port: Number.parseInt(endpoint.port),
-					auth: { username: proxyObject.userName, password: proxyObject.password },
-				};
-				this.addIpManager(mHandler, aProxyConfig);
-			}
+			// for (const endpoint of endpoints) {
+			// 	const aProxyConfig: AxiosProxyConfig = {
+			// 		host: endpoint.endPoint,
+			// 		port: Number.parseInt(endpoint.port),
+			// 		auth: { username: proxyObject.userName, password: proxyObject.password },
+			// 	};
+			// 	this.addIpManager(mHandler, aProxyConfig);
+			// }
 		} else {
 			// Create a single Ip Manager for a single Ip.
 			this.addIpManager(mHandler);

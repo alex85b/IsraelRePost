@@ -1,5 +1,3 @@
-// import { IBranchQueryResponse } from "../interfaces/../elastic/elstClient";
-
 import { ISingleBranchQueryResponse } from '../elastic/BranchModel';
 
 export const splitBranchesArray = (

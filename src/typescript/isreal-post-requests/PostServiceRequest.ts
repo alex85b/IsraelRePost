@@ -27,15 +27,15 @@ export class PostServiceRequest extends PostBaseRequest {
 		const { headers, url } = required;
 
 		const axiosRequestConfig = this.getAxiosRequestConfig();
-		axiosRequestConfig.url =
-			'https://central.qnomy.com/CentralAPI/LocationGetServices?locationId=' +
-			url.locationId +
-			'&serviceTypeId=' +
-			url.serviceTypeId;
+		axiosRequestConfig.url = 'CentralAPI/LocationGetServices';
 		axiosRequestConfig.headers.authorization = 'JWT ' + headers.authorization;
 		axiosRequestConfig.headers.Cookie = this.reformatCookiesForAxios(headers.cookies);
+		axiosRequestConfig.params = {
+			locationId: url.locationId,
+			serviceTypeId: url.serviceTypeId,
+		};
 
-		const { status, statusText, responseData, cookies } =
+		const { status, statusText, responseData } =
 			await this.israelPostRequest<IExpectedServiceResponse>(axiosRequestConfig);
 
 		if (status < 200 || status > 299) {

@@ -39,7 +39,6 @@ export class Branch {
 	// private elasticClient: ElasticClient;
 	private branches: BranchModule;
 	private errors: ErrorModule;
-	private reason: string[] = [];
 	private newErrors: IErrorMapping = {
 		userError: '',
 		services: [],

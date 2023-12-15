@@ -22,7 +22,7 @@ const avgRequestsPerBranch = 8;
 const amountOfUpdaters = 1;
 // Math.floor(requestsPerMinute / avgRequestsPerBranch);
 
-// Atomic Counters.
+// Shared Atomic Counters.
 const requestsAllowed = new RequestsAllowed({ allowedRequests: requestsPerMinute });
 const requestCounter = new RequestCounter({ reset: true });
 
@@ -141,9 +141,11 @@ messagesHandler.addMessageHandler('updater-request', hUpdaterRequest);
  */
 const addUpdater = (proxy?: AxiosProxyConfig) => {
 	const bUpdater = new BranchUpdaterWorker(updaterScriptPath, {
-		workerData: proxy,
-		requestsAllowed: requestsAllowed.getMemoryBuffer(),
-		requestCounter: requestCounter.getMemoryBuffer(),
+		workerData: {
+			axiosProxyConfig: proxy,
+			requestsAllowedBuffer: requestsAllowed.getMemoryBuffer(),
+			requestCounterBuffer: requestCounter.getMemoryBuffer(),
+		},
 	});
 	if (bUpdater.threadId !== undefined) {
 		bUpdater.once('online', () => updaterIsOnline(bUpdater));

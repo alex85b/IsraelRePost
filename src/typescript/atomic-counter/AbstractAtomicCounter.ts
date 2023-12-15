@@ -25,7 +25,7 @@ export abstract class AbstractAtomicCounter<
 		}
 
 		// Create an instance of the specified array type or use Uint8Array as the default.
-		console.log('AbstractAtomicCounter - arrayType : ', arrayType);
+		// console.log('AbstractAtomicCounter - arrayType : ', arrayType);
 		if (arrayType == undefined || arrayType == null) {
 			this.memoryView = new Int8Array(this.memoryBuffer) as T;
 		} else {

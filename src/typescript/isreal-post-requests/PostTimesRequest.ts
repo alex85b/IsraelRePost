@@ -24,15 +24,14 @@ export class PostTimesRequest extends PostBaseRequest {
 		const { headers, url } = required;
 
 		const axiosRequestConfig = this.getAxiosRequestConfig();
-		axiosRequestConfig.url =
-			'https://central.qnomy.com/CentralAPI/SearchAvailableSlots?CalendarId=' +
-			url.CalendarId +
-			'&ServiceId=' +
-			url.ServiceId +
-			'&dayPart=' +
-			url.dayPart;
+		axiosRequestConfig.url = 'CentralAPI/SearchAvailableSlots';
 		axiosRequestConfig.headers.authorization = 'JWT ' + headers.authorization;
 		axiosRequestConfig.headers.Cookie = this.reformatCookiesForAxios(headers.cookies);
+		axiosRequestConfig.params = {
+			CalendarId: url.CalendarId,
+			ServiceId: url.ServiceId,
+			dayPart: url.dayPart,
+		};
 
 		const { status, statusText, responseData, cookies } =
 			await this.israelPostRequest<IExpectedTimesResponse>(axiosRequestConfig);

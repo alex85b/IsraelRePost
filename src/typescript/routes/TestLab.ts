@@ -1,6 +1,11 @@
 import express, { Request, Response, NextFunction, response } from 'express';
-import { BranchModule, IDocumentBranch, ISingleBranchQueryResponse } from '../elastic/BranchModel';
-import { ErrorModule } from '../elastic/ErrorModel';
+import {
+	BranchModule,
+	IDocumentBranch,
+	INewServiceRecord,
+	ISingleBranchQueryResponse,
+} from '../elastic/BranchModel';
+import { ErrorModule, IErrorMapping, IServiceError } from '../elastic/ErrorModel';
 import { PostUserRequest } from '../isreal-post-requests/PostUserRequest';
 import {
 	IPostServiceRequired,
@@ -11,11 +16,14 @@ import { IPostTimesRequired, PostTimesRequest } from '../isreal-post-requests/Po
 import { SmartProxyCollection } from '../proxy-management/SmartProxyCollection';
 import { WebShareCollection } from '../proxy-management/WebShareCollection';
 import { ContinuesUpdate } from '../scrape-multithreaded/ContinuesUpdate';
-// import { bEnqueue, dequeue, enqueue, queueName, queueSize } from '../redis/RedisTest';
 import { BranchesToProcess } from '../redis/BranchesToProcess';
 import { ProcessedBranches } from '../redis/ProcessedBranches';
-import '../test/transferable/P';
-
+import { UserNode } from '../appointments-update/UserNode';
+import { RequestsAllowed } from '../atomic-counter/RequestsAllowed';
+import { RequestCounter } from '../atomic-counter/RequestCounter';
+import { AxiosProxyConfig } from 'axios';
+import { ServicesNode } from '../appointments-update/ServicesNode';
+// import '../test/transferable/P';
 // import '../scrape-multithreaded/test/parent';
 
 const router = express.Router();
@@ -29,7 +37,6 @@ router.get('/api/scrape/testing', async (req: Request, res: Response, next: Next
 	try {
 		// const cUpdate = new ContinuesUpdate(true);
 		// cUpdate.test();
-
 		res.status(200).send(responses);
 	} catch (error) {
 		console.log(error);
@@ -82,17 +89,19 @@ const ContinuesUpdateQPop = async (responses: any[]) => {
 // ### Test Redis Queue - Basic ######################################################################
 // ###################################################################################################
 
-// const testRedisQueueBasic = async (responses: any[]) => {
-// 	responses.push({ queueName: queueName });
-// 	responses.push({ queueSize: await queueSize() });
-// 	// responses.push({ bulkEnqueue: await bEnqueue() });
-// 	// responses.push({ enqueue: await enqueue() });
-// 	responses.push({ dequeue: await dequeue() });
-// 	responses.push({ dequeue: await dequeue() });
-// 	responses.push({ dequeue: await dequeue() });
-// 	responses.push({ dequeue: await dequeue() });
-// 	return responses;
-// };
+// import { bEnqueue, dequeue, enqueue, queueName, queueSize } from '../redis/RedisTest';
+const testRedisQueueBasic = async (responses: any[]) => {
+	const { bEnqueue, dequeue, enqueue, queueName, queueSize } = require('../redis/RedisTest');
+	responses.push({ queueName: queueName });
+	responses.push({ queueSize: await queueSize() });
+	// responses.push({ bulkEnqueue: await bEnqueue() });
+	// responses.push({ enqueue: await enqueue() });
+	responses.push({ dequeue: await dequeue() });
+	responses.push({ dequeue: await dequeue() });
+	responses.push({ dequeue: await dequeue() });
+	responses.push({ dequeue: await dequeue() });
+	return responses;
+};
 
 // ###################################################################################################
 // ### Test Proxies ##################################################################################

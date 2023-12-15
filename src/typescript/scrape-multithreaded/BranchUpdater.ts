@@ -1,18 +1,45 @@
-import { parentPort, threadId } from 'worker_threads';
+import { parentPort, threadId, workerData } from 'worker_threads';
 import { MessagesHandler } from '../scrape-multithreaded/messages/HandleThreadMessages';
+import { IpManagerParentPort } from '../custom-parent/IpManagerParentPort';
+import { RequestsAllowed } from '../atomic-counter/RequestsAllowed';
+import { RequestCounter } from '../atomic-counter/RequestCounter';
 
 const messagesHandler = new MessagesHandler<IBUMessageHandlers>();
 if (!parentPort) throw Error(`IpManager ${threadId ?? -1}: parent port is null \ undefined`);
+const ipManagerParentPort = new IpManagerParentPort(parentPort);
+const { axiosProxyConfig, requestCounterBuffer, requestsAllowedBuffer } =
+	ipManagerParentPort.extractData(workerData);
+
+// Shared Atomic Counters.
+const requestsAllowed = new RequestsAllowed({ arrayBuffer: requestsAllowedBuffer });
+const requestCounter = new RequestCounter({ reset: false, arrayBuffer: requestCounterBuffer });
+
+// /**
+//  * This function checks if API request counter has not reached its limit,
+//  * If a limit has reached, a message will be sent to this thread's parent,
+//  * 	This Thread will wait to parent's response, before continuing.
+//  * If a limit has not reached, Count new request - and exit this function.
+//  */
+// const verifyBeforeRequest = async () => {
+// 	if (!requestsAllowed.isAllowed()) {
+// 		// Request is not allowed !
+
+// 		// "Locks" this thread while awaiting for parent's response.
+// 		await new Promise<void>((resolve, reject) => {
+// 			// Notify parent - and wait for response.
+// 			ipManagerParentPort.postMessage({ handlerName: 'updater-depleted' });
+// 			ipManagerParentPort.once('message', );
+// 		});
+// 	}
+// };
+
+console.log(
+	`$Branch Updater ${threadId} received ${requestCounterBuffer} and ${requestsAllowedBuffer} buffers`
+);
 
 const listen = () => {
 	parentPort?.on('message', (message) => {
-		// const [requestsAllowedBuffer, requestCounterBuffer] = message;
-		// console.log(message);
-		// console.log(requestsAllowedBuffer);
-		// console.log(requestCounterBuffer);
-		// for (let unknown in message) {
-		// 	console.log(unknown);
-		// }
+		console.log(`$Branch Updater ${threadId} received ${message.handlerName} message`);
 	});
 };
 

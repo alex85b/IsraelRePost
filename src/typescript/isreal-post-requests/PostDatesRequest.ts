@@ -30,13 +30,14 @@ export class PostDatesRequest extends PostBaseRequest {
 		const { headers, url } = required;
 		const { date } = getTodayDateObject();
 		const axiosRequestConfig = this.getAxiosRequestConfig();
-		axiosRequestConfig.url =
-			'https://central.qnomy.com/CentralAPI/SearchAvailableDates?maxResults=30&serviceId=' +
-			url.serviceId +
-			'&startDate=' +
-			date;
+		axiosRequestConfig.url = 'CentralAPI/SearchAvailableDates';
 		axiosRequestConfig.headers.authorization = 'JWT ' + headers.authorization;
 		axiosRequestConfig.headers.Cookie = this.reformatCookiesForAxios(headers.cookies);
+		axiosRequestConfig.params = {
+			maxResults: '30',
+			serviceId: url.serviceId,
+			startDate: date,
+		};
 
 		const { status, statusText, responseData, cookies } =
 			await this.israelPostRequest<IExpectedDatesResponse>(axiosRequestConfig);

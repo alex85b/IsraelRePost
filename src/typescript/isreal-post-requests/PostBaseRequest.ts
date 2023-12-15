@@ -1,4 +1,5 @@
-import axios, { AxiosError, AxiosResponse, AxiosInstance, AxiosRequestConfig } from 'axios';
+import axios, { AxiosResponse, AxiosRequestConfig, AxiosProxyConfig } from 'axios';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 
 export interface IExpectedServerResponse {
 	Success: boolean;
@@ -14,42 +15,34 @@ export interface IExpectedServerResponse {
 export abstract class PostBaseRequest {
 	protected customRequestConfig: CustomRequestConfig;
 
-	constructor(
-		timeout: number,
-		proxy?: {
-			proxyUsername: string;
-			proxyPassword: string;
-			proxyUrl: string;
-			proxyPort: string;
-		}
-	) {
-		this.customRequestConfig = new CustomRequestConfig(timeout);
-
-		if (proxy) {
-			this.customRequestConfig.setProxy(proxy);
-		}
+	constructor(timeout: number, proxyEndpoint?: string) {
+		this.customRequestConfig = new CustomRequestConfig(timeout, proxyEndpoint);
 	}
 
 	protected async israelPostRequest<SR extends IExpectedServerResponse>(
 		axiosRequestConfig: AxiosRequestConfig
 	) {
-		const israelPostResponse = await axios.request<
-			AxiosRequestConfig,
-			AxiosResponse<SR, AxiosRequestConfig>,
-			AxiosRequestConfig
-		>(axiosRequestConfig);
+		try {
+			const israelPostResponse = await axios.request<
+				AxiosRequestConfig,
+				AxiosResponse<SR, AxiosRequestConfig>,
+				AxiosRequestConfig
+			>(axiosRequestConfig);
 
-		const status = israelPostResponse.status;
-		const statusText = israelPostResponse.statusText;
-		const responseData = israelPostResponse.data;
-		const cookies = israelPostResponse.headers['set-cookie'];
+			const status = israelPostResponse.status;
+			const statusText = israelPostResponse.statusText;
+			const responseData = israelPostResponse.data;
+			const cookies = israelPostResponse.headers['set-cookie'];
 
-		return {
-			status: status,
-			statusText: statusText,
-			cookies: cookies,
-			responseData: responseData,
-		};
+			return {
+				status: status,
+				statusText: statusText,
+				cookies: cookies,
+				responseData: responseData,
+			};
+		} catch (error) {
+			throw new Error('[israelPostRequest] Error : ' + (error as Error).message);
+		}
 	}
 
 	protected reformatCookiesForAxios(cookies: { [key: string]: string }) {
@@ -68,13 +61,6 @@ export abstract class PostBaseRequest {
 // ###################################################################################################
 // ### Helper Class ##################################################################################
 // ###################################################################################################
-
-interface IProxy {
-	proxyUsername: string;
-	proxyPassword: string;
-	proxyUrl: string;
-	proxyPort: string;
-}
 
 // This is needed so every other class would know those keys exists.
 interface IPostAxiosRequestConfig extends AxiosRequestConfig {
@@ -98,22 +84,32 @@ interface IPostAxiosRequestConfig extends AxiosRequestConfig {
 		Cookie: string;
 	};
 	validateStatus: (status: number) => boolean;
+	withCredentials: true;
+	maxRedirects: 5;
 	timeout: number;
+	httpsAgent?: HttpsProxyAgent<string>;
 }
 
 class CustomRequestConfig {
 	private axiosRequestConfig: IPostAxiosRequestConfig;
-	constructor(timeout: number) {
+
+	constructor(timeout: number, proxyEndpoint?: string) {
+		let httpsAgent = undefined;
+		if (proxyEndpoint) {
+			httpsAgent = new HttpsProxyAgent(proxyEndpoint);
+		}
+
 		this.axiosRequestConfig = {
 			method: 'GET',
 			maxBodyLength: Infinity,
+			baseURL: 'https://central.qnomy.com',
 			headers: {
 				authority: 'central.qnomy.com',
 				accept: 'application/json, text/javascript, */*; q=0.01',
 				'accept-language': 'he-IL,he;q=0.9',
 				'application-api-key': 'CA4ED65C-DC64-4969-B47D-EF564E3763E7',
 				'application-name': 'PostIL',
-				authorization: '',
+				authorization: 'JWT null',
 				origin: 'https://israelpost.co.il',
 				'sec-ch-ua': '"Not.A/Brand";v="8", "Chromium";v="114", "Google Chrome";v="114"',
 				'sec-ch-ua-mobile': '?0',
@@ -125,20 +121,16 @@ class CustomRequestConfig {
 					'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
 				Cookie: '',
 			},
-			validateStatus: (status: number) => {
-				// Prevents Errors on "Bad" Status.
+			validateStatus(status) {
 				return true;
 			},
 			timeout: timeout,
+			withCredentials: true,
+			maxRedirects: 5,
+			httpsAgent: httpsAgent,
 		};
 	}
-	setProxy({ proxyUsername, proxyPassword, proxyUrl, proxyPort }: IProxy) {
-		this.axiosRequestConfig.proxy = {
-			auth: { username: proxyUsername, password: proxyPassword },
-			host: proxyUrl,
-			port: Number.parseInt(proxyPort),
-		};
-	}
+
 	getConfig() {
 		return { ...this.axiosRequestConfig } as IPostAxiosRequestConfig;
 	}

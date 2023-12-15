@@ -3,18 +3,6 @@ import { parseResponseCookies } from '../common/ParseCookies';
 import { PostBaseRequest } from './PostBaseRequest';
 
 export class PostUserRequest extends PostBaseRequest {
-	constructor(
-		timeout: number,
-		proxy?: {
-			proxyUsername: string;
-			proxyPassword: string;
-			proxyUrl: string;
-			proxyPort: string;
-		}
-	) {
-		super(timeout, proxy);
-	}
-
 	private parseUserResponse({
 		data,
 		cookies,
@@ -55,7 +43,7 @@ export class PostUserRequest extends PostBaseRequest {
 
 	async makeUserRequest() {
 		const axiosRequestConfig = this.getAxiosRequestConfig();
-		axiosRequestConfig.url = 'https://central.qnomy.com/CentralAPI/UserCreateAnonymous';
+		axiosRequestConfig.url = 'CentralAPI/UserCreateAnonymous';
 		axiosRequestConfig.headers.authorization = 'JWT null';
 
 		const { status, statusText, responseData, cookies } =
