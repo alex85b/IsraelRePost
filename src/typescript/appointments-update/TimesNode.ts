@@ -1,4 +1,3 @@
-import { AxiosProxyConfig } from 'axios';
 import { RequestCounter } from '../atomic-counter/RequestCounter';
 import { RequestsAllowed } from '../atomic-counter/RequestsAllowed';
 import { INewDateEntryRecord } from '../elastic/BranchModel';

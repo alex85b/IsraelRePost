@@ -37,7 +37,7 @@ export abstract class AbstractAtomicCounter<
 	 * Set a new shared memory buffer for the AtomicCounter.
 	 * @param memoryBuffer - The new shared memory buffer.
 	 */
-	protected setMemoryBuffer(memoryBuffer: SharedArrayBuffer) {
+	public setMemoryBuffer(memoryBuffer: SharedArrayBuffer) {
 		this.memoryBuffer = memoryBuffer;
 	}
 
@@ -54,11 +54,12 @@ export abstract class AbstractAtomicCounter<
 	 * @param setCounter - The value to set the counter to.
 	 * @returns The result of the store operation.
 	 */
-	protected resetCount(setCounter: number) {
+	public resetCount(setCounter: number) {
 		// Get the size of each element in the typed array
 		const elementSize = this.memoryView.BYTES_PER_ELEMENT;
 
 		// Calculate the valid range based on the element size
+		// 2 to the power of 8
 		const maxCounterValue = Math.pow(2, 8 * elementSize - 1) - 1;
 		const minCounterValue = -maxCounterValue - 1;
 
@@ -85,7 +86,7 @@ export abstract class AbstractAtomicCounter<
 	 * Atomically subtract a specified value from the counter.
 	 * @returns The result of the subtraction operation.
 	 */
-	protected subtractAndGet() {
+	public subtractAndGet() {
 		const subtractValue = 1;
 
 		// Use Atomics to atomically subtract the value from the memory view
@@ -96,7 +97,7 @@ export abstract class AbstractAtomicCounter<
 	 * Atomically add a specified value to the counter.
 	 * @returns The result of the addition operation.
 	 */
-	protected addAndGet() {
+	public addAndGet() {
 		const addValue = 1;
 
 		// Use Atomics to atomically add the value to the memory view

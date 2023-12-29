@@ -5,24 +5,29 @@ import { ProcessedBranches } from '../redis/ProcessedBranches';
 import { IHandlerFunction, MessagesHandler } from './messages/HandleThreadMessages';
 import { IMMessageHandlers } from './IpManager';
 import path from 'path';
-import { AxiosProxyConfig } from 'axios';
+import { ProxyEndpoint } from '../proxy-management/ProxyCollection';
 import { IpManagementWorker } from '../custom-worker/IpManagementWorker';
 
-// ContinuesUpdate -- creates w thread/s -->
-// --> IP Management -- creates w thread/s -->
-// --> Branch Updater: Performs Update.
-// Branch Updater <-- pop branch for update -- Redis Branches.
-// Branch Updater -- push branch after successful update --> Redis Done queue.
-
+/**
+ * Represents the first level of depth in the continuous update tree.
+ * Communicates directly with the second level: 'Ip Managers' Worker threads.
+ */
 export class ContinuesUpdate {
 	private IpManagers: { [key: number]: IpManagementWorker | null } = {};
 	private workerScriptPath;
 
+	/**
+	 * Constructor to initialize the ContinuesUpdate instance.
+	 * @param useProxy - A boolean indicating whether to use a proxy.
+	 */
 	constructor(private useProxy: boolean) {
 		this.workerScriptPath = path.join(__dirname, 'IpManager.js');
-		// console.log('[ContinuesUpdate][constructor] Worker Script Path: ', this.workerScriptPath);
 	}
 
+	/**
+	 * Method to set up queues for processing branches.
+	 * @returns An object containing information about the setup.
+	 */
 	private async setupQueues() {
 		const branchesModule = new BranchModule();
 
@@ -51,6 +56,10 @@ export class ContinuesUpdate {
 		return { notInQueues, processedBranches, unhandledBranches, enqueuedAmount };
 	}
 
+	/**
+	 * Method to set up message management handlers.
+	 * @returns An instance of MessagesHandler with configured handlers.
+	 */
 	private setupMessageManagement() {
 		const mHandler = new MessagesHandler<CUMessageHandlers>();
 
@@ -86,12 +95,17 @@ export class ContinuesUpdate {
 		return mHandler;
 	}
 
+	/**
+	 * Method to add an 'Ip Manager' worker thread instance to 'this.IpManagers'.
+	 * @param mHandler - An instance of MessagesHandler, for linking 'on message' events to handlers.
+	 * @param proxyEndpoint - Optional ProxyEndpoint data.
+	 */
 	private async addIpManager(
 		mHandler: MessagesHandler<CUMessageHandlers>,
-		aProxyConfig?: AxiosProxyConfig
+		proxyEndpoint?: ProxyEndpoint
 	) {
 		const ipManager = new IpManagementWorker(this.workerScriptPath, {
-			workerData: aProxyConfig,
+			workerData: { proxyEndpoint: proxyEndpoint },
 		});
 		if (ipManager.threadId !== undefined) {
 			ipManager.once('online', () => this.IpManagerOnline(ipManager));
@@ -107,24 +121,20 @@ export class ContinuesUpdate {
 		}
 	}
 
-	// Setup Ip Management to prevent excessive requesting.
+	/**
+	 * Method to set up Ip Management to prevent excessive requesting.
+	 */
 	private async setupIpManagement() {
 		// Setup functions for message handling.
 		const mHandler = this.setupMessageManagement();
 		if (this.useProxy) {
 			// Create Proxy Object, that contains proxy endpoint data.
-			const proxyObject = await new SmartProxyCollection().getProxyObject();
-			// const endpoints = proxyObject.endpoints;
+			const endpoints = await new SmartProxyCollection().getProxyObject();
 			// Create threads for each IP \ Proxy Endpoint resource.
 			// Initiate events for each thread.
-			// for (const endpoint of endpoints) {
-			// 	const aProxyConfig: AxiosProxyConfig = {
-			// 		host: endpoint.endPoint,
-			// 		port: Number.parseInt(endpoint.port),
-			// 		auth: { username: proxyObject.userName, password: proxyObject.password },
-			// 	};
-			// 	this.addIpManager(mHandler, aProxyConfig);
-			// }
+			for (const endpoint of endpoints) {
+				this.addIpManager(mHandler, endpoint);
+			}
 		} else {
 			// Create a single Ip Manager for a single Ip.
 			this.addIpManager(mHandler);
@@ -135,6 +145,10 @@ export class ContinuesUpdate {
 	// ### Setup Events Functions #############################
 	// ########################################################
 
+	/**
+	 * Event handling function for Ip Manager online event.
+	 * @param ipManagementWorker - An instance of IpManagementWorker.
+	 */
 	private async IpManagerOnline(ipManagementWorker: IpManagementWorker) {
 		console.log(`Continues Update noticed Ip Manager ${ipManagementWorker.threadId} is online`);
 		ipManagementWorker.postMessage({
@@ -142,15 +156,33 @@ export class ContinuesUpdate {
 		});
 	}
 
+	/**
+	 * Event handling function for Ip Manager error event.
+	 * @param threadId - The threadId of the Ip Manager.
+	 * @param error - The error object.
+	 */
 	private async IpManagerError(threadId: number, error: Error) {
 		console.log(`Continues Update noticed Ip Manager ${threadId} had error`);
 		console.log('Error: ', error);
 	}
 
+	/**
+	 * Event handling function for Ip Manager exit event.
+	 * @param threadId - The threadId of the Ip Manager.
+	 * @param code - The exit code.
+	 */
 	private async IpManagerExit(threadId: number, code: number) {
 		console.log(`Continues Update noticed Ip Manager ${threadId} has exited with code ${code}`);
 	}
 
+	// ########################################################
+	// ### Class Services #####################################
+	// ########################################################
+
+	/**
+	 * Test method to be used for setupIpManagement.
+	 * @returns A promise that resolves when the setup is complete.
+	 */
 	async test() {
 		return await this.setupIpManagement();
 	}

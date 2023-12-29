@@ -1,18 +1,17 @@
 import { parentPort, threadId, workerData } from 'worker_threads';
 import { MessagesHandler } from '../scrape-multithreaded/messages/HandleThreadMessages';
 import { IpManagerParentPort } from '../custom-parent/IpManagerParentPort';
-import { RequestsAllowed } from '../atomic-counter/RequestsAllowed';
-import { RequestCounter } from '../atomic-counter/RequestCounter';
+import { ProxyEndpoint } from '../proxy-management/ProxyCollection';
+import { APIRequestCounterData } from '../atomic-counter/ImplementCounters';
 
 const messagesHandler = new MessagesHandler<IBUMessageHandlers>();
 if (!parentPort) throw Error(`IpManager ${threadId ?? -1}: parent port is null \ undefined`);
 const ipManagerParentPort = new IpManagerParentPort(parentPort);
-const { axiosProxyConfig, requestCounterBuffer, requestsAllowedBuffer } =
-	ipManagerParentPort.extractData(workerData);
+const { proxyEndpoint, counterData } = ipManagerParentPort.extractData(workerData);
 
 // Shared Atomic Counters.
-const requestsAllowed = new RequestsAllowed({ arrayBuffer: requestsAllowedBuffer });
-const requestCounter = new RequestCounter({ reset: false, arrayBuffer: requestCounterBuffer });
+// const requestsAllowed = new RequestsAllowed({ arrayBuffer: requestsAllowedBuffer });
+// const requestCounter = new RequestCounter({ reset: false, arrayBuffer: requestCounterBuffer });
 
 // /**
 //  * This function checks if API request counter has not reached its limit,
@@ -33,9 +32,7 @@ const requestCounter = new RequestCounter({ reset: false, arrayBuffer: requestCo
 // 	}
 // };
 
-console.log(
-	`$Branch Updater ${threadId} received ${requestCounterBuffer} and ${requestsAllowedBuffer} buffers`
-);
+console.log(`$Branch Updater ${threadId} received buffers`, counterData);
 
 const listen = () => {
 	parentPort?.on('message', (message) => {
@@ -54,3 +51,12 @@ export type IBUMessageHandlers =
 	| 'stop-updates'
 	| 'end-updater'
 	| 'continue-updates';
+
+// ###################################################################################################
+// ### Interfaces ####################################################################################
+// ###################################################################################################
+
+export interface IBranchUpdaterWData {
+	proxyEndpoint: ProxyEndpoint | undefined;
+	counterData: APIRequestCounterData;
+}

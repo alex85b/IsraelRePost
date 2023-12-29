@@ -1,6 +1,5 @@
 import { MappingTypeMapping } from '@elastic/elasticsearch/lib/api/types';
 import { BaseElastic, IElasticSearchResponse } from './BaseElastic';
-import { Branch } from '../scrape-multithreaded/branch-record-object/Branch';
 
 export class BranchModule extends BaseElastic {
 	protected indexName: string = 'branches';

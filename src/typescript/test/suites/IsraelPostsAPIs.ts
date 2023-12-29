@@ -15,7 +15,8 @@ import { SmartProxyCollection } from '../../proxy-management/SmartProxyCollectio
 // ### Test Israel Post APIs #########################################################################
 // ###################################################################################################
 
-const testAPIs = async () => {
+const testAPIs = async (run: boolean) => {
+	if (!run) return;
 	console.log('[testAPIs] Start');
 
 	const branchModule = new BranchModule();

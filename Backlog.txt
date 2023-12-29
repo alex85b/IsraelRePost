@@ -1,0 +1,50 @@
+Left to do:
+
+1. Finish the 'Continues update -- Ip Manager -- Branch Updater' chain:
+
+    Todo: Gather Those two into one Object.
+    BRC = Batch-request-counter, shared atomic counter.
+    ARC = Allow-request-counter, shared atomic counter.
+
+    Qu = A queue to hold every sender of 'updater-depleted' message.
+
+    DRC = Depleted-request-counter, atomic counter (Not shared - Specific to Ip Manager).
+    MRC = Max-request-counter, atomic counter (Not shared - Specific to Ip Manager),
+          Initiated to 0 at the construction of Ip Manager.
+
+    Max-requests = Maximal amount of request before closure, Currently ~300.
+    Reset() = wait 60 seconds, then i <== Qu.length, then reset BRC and ARC DRC,
+              dequeue first i q from Qu: send 'Continue' to each q.
+    
+    1.1 Ip Manager has to notice the 'updater-depleted' message, then
+    
+        1.1.1 No more request can be made ==> MRC++ == Max-requests:
+              Close all Branch-Updaters, then,
+              Notify Continues Update 'Depleted', then
+              Close Ip Manager.
+
+        1.1.2 Can make more request ==> MRC++ < Max-requests:
+
+            1.1.2.1 'updater-depleted' message is valid (Truthful) ==> BRC == top limit:
+
+                1.1.2.1.1 This is the first 'updater-depleted' message in this batch ==>
+                          DRC++ == 0 : Enqueue sender to Qu, then do Reset().
+
+                1.1.2.1.2 This is NOT the first 'updater-depleted' message in this batch ==>
+                          DRC++ != 0: Enqueue sender to Qu.
+            
+            1.1.2.2 'updater-depleted' message is invalid (False) ==> BRC != top limit:
+                    Return 'Continue' to sender.
+
+    1.2 'Branch Updater' stops on 'Depleted' response from Updater.
+        1.2.1 'Branch Updater' notifies 'Ip Manager'.
+    
+    1.3 Upon 'Continue' response from 'Ip Manager', 'Branch Updater' has to continue Updater's action.
+        1.3.1 Updater has to continue from its stopping point.
+
+Ip Manager Counter Should:
+    1 : Count and Reset Counter of 'depleted' messages, to catch the first message.
+    2 : Count Remaining-Untouched Request-batches.
+
+Branch-Updater's Should:
+    3: Count Consumed Requests, of the request Batch.
