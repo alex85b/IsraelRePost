@@ -1,5 +1,4 @@
-import { IExpectedServerResponse } from '../api-requests/BranchRequest';
-import { PostBaseRequest } from './PostBaseRequest';
+import { IExpectedServerResponse, PostBaseRequest } from './PostBaseRequest';
 
 export class PostTimesRequest extends PostBaseRequest {
 	private parseDatesResponse(responseData: IExpectedTimesResponse): IPostTimesResponse[] {

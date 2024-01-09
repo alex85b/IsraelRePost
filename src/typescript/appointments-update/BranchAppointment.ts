@@ -1,16 +1,14 @@
 import { IBranchQnomycodePair, INewServiceRecord } from '../elastic/BranchModel';
 import { IErrorMapping } from '../elastic/ErrorModel';
-import { AxiosProxyConfig } from 'axios';
-import { RequestsAllowed } from '../atomic-counter/RequestsAllowed';
-import { RequestCounter } from '../atomic-counter/RequestCounter';
 import { IApiRequestNode } from './IApiRequestNode';
 import { UserNode } from './UserNode';
 import { ProxyEndpoint } from '../proxy-management/ProxyCollection';
+import { CountAPIRequest } from '../atomic-counter/ImplementCounters';
 
 /**
  * Responsible for creating updated object representing a post office Branch's appointments.
  */
-export class BranchAppointment {
+export class BranchAppointments {
 	// The structure of the appointment hierarchy is illustrated through comments for better understanding.
 
 	// Root (Branch)
@@ -41,8 +39,7 @@ export class BranchAppointment {
 	private qnomycode: number;
 
 	// Shared Atomic Counters, for request counting.
-	private requestCounter: RequestCounter;
-	private requestsAllowed: RequestsAllowed;
+	private requestCounter: CountAPIRequest;
 
 	// A proxy setting for simultaneously handling a large volume of updates.
 	private proxyEndpoint: ProxyEndpoint | undefined;
@@ -65,7 +62,6 @@ export class BranchAppointment {
 		this.branchId = options.branchCodePair.branchId;
 		this.qnomycode = options.branchCodePair.qnomycode;
 		this.requestCounter = options.requestCounter;
-		this.requestsAllowed = options.requestsAllowed;
 		this.proxyEndpoint = options.proxyEndpoint;
 	}
 
@@ -74,15 +70,16 @@ export class BranchAppointment {
 	 */
 	private setupStack() {
 		if (this.stack.length === 0) {
+			// Empty Stack --> Reset Error Flag.
+			this.encounteredApiErrors = false;
 			this.stack.push(
 				new UserNode({
 					memoryObjects: {
 						IsraelPostApiErrors: this.israelPostApiErrors,
 						updatedServices: this.updatedServices,
 					},
-					sharedCounters: {
+					sharedCounter: {
 						requestCounter: this.requestCounter,
-						requestsAllowed: this.requestsAllowed,
 					},
 					updateData: { proxyEndpoint: this.proxyEndpoint, qnomycode: this.qnomycode },
 				})
@@ -129,10 +126,7 @@ export class BranchAppointment {
 		}
 
 		// All the needed requests are done.
-		if (
-			this.israelPostApiErrors.userError !== '' ||
-			this.israelPostApiErrors.services.length > 0
-		) {
+		if (this.encounteredApiErrors) {
 			// There was at least one error during the update.
 			return 'Error';
 		}
@@ -144,7 +138,7 @@ export class BranchAppointment {
 	 * Gets the array of updated service records.
 	 * @returns The array of updated service records.
 	 */
-	getUpdatedAppointments() {
+	public getUpdatedAppointments() {
 		return this.updatedServices;
 	}
 
@@ -152,8 +146,41 @@ export class BranchAppointment {
 	 * Gets the object containing update-attempt errors.
 	 * @returns The object containing update-attempt errors.
 	 */
-	getUpdateErrors() {
+	public getUpdateErrors() {
 		return this.israelPostApiErrors;
+	}
+
+	public async performUpdate() {
+		return await this.generateUpdatedAppointments();
+	}
+
+	public printAppointments() {
+		console.log(`[Branch Appointments ${this.branchId}][Print Appointments] Start :`);
+		this.updatedServices.forEach((service) => {
+			console.log('serviceId : ', service.serviceId);
+			console.log('serviceName : ', service.serviceName);
+			service.dates.forEach((date) => {
+				console.log('calendarDate : ', date.calendarDate);
+				console.log('calendarId : ', date.calendarId);
+				console.log('hours : ', date.hours);
+			});
+		});
+		console.log('[Branch Appointments][Print Appointments] End.');
+	}
+
+	public printUpdateErrors() {
+		console.log(`[Branch Appointments ${this.branchId}][Print Update Errors] Start :`);
+		console.log('userError : ', this.israelPostApiErrors.userError);
+		this.israelPostApiErrors.services.forEach((service) => {
+			console.log('serviceId : ', service.serviceId);
+			console.log('serviceError : ', service.serviceError);
+			service.dates.forEach((date) => {
+				console.log('calendarId : ', date.calendarId);
+				console.log('datesError : ', date.datesError);
+				console.log('timesError : ', date.timesError);
+			});
+		});
+		console.log('[Branch Appointments][Print Update Errors] End.');
 	}
 }
 
@@ -164,6 +191,5 @@ export class BranchAppointment {
 export interface BranchAppointmentOptions {
 	branchCodePair: IBranchQnomycodePair;
 	proxyEndpoint?: ProxyEndpoint;
-	requestsAllowed: RequestsAllowed;
-	requestCounter: RequestCounter;
+	requestCounter: CountAPIRequest;
 }

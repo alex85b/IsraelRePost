@@ -1,5 +1,5 @@
-import { CUMessageHandlers } from '../scrape-multithreaded/ContinuesUpdate';
-import { IMMessageHandlers, IpMWorkerData } from '../scrape-multithreaded/IpManager';
+import { CUMessageHandlers } from '../continues-update/ContinuesUpdate';
+import { IMMessageHandlers, IpMWorkerData } from '../continues-update/IpManager';
 import { ACustomParentPort } from './ACustomParentPort';
 
 export class ContinuesUpdatePPort extends ACustomParentPort<IMMessageHandlers, CUMessageHandlers> {

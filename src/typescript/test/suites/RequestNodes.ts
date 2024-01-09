@@ -1,4 +1,5 @@
 import { IUserNodeData, UserNode } from '../../appointments-update/UserNode';
+import { APIRequestCounterData, CountAPIRequest } from '../../atomic-counter/ImplementCounters';
 import { RequestCounter } from '../../atomic-counter/RequestCounter';
 import { RequestsAllowed } from '../../atomic-counter/RequestsAllowed';
 import { BranchModule, INewServiceRecord } from '../../elastic/BranchModel';
@@ -12,12 +13,13 @@ import { SmartProxyCollection } from '../../proxy-management/SmartProxyCollectio
 export const testNodes = async (run: boolean) => {
 	if (!run) return;
 	console.log('[testNodes] Start');
+
+	const requestCounterData = new APIRequestCounterData(48);
+	const requestCounter = new CountAPIRequest(requestCounterData);
+
 	const branchModule = new BranchModule();
 	const allBranches = await branchModule.fetchAllBranches();
 	const someBranch = allBranches[91];
-
-	const requestsAllowed = new RequestsAllowed();
-	const requestCounter = new RequestCounter();
 
 	const proxyCollection = new SmartProxyCollection();
 	const endpoints = await proxyCollection.getProxyObject();
@@ -39,9 +41,8 @@ export const testNodes = async (run: boolean) => {
 			updatedServices: updatedServices,
 			IsraelPostApiErrors: IsraelPostApiErrors,
 		},
-		sharedCounters: {
+		sharedCounter: {
 			requestCounter: requestCounter,
-			requestsAllowed: requestsAllowed,
 		},
 	};
 	const requestUserNode = new UserNode(userNodeData);
@@ -62,7 +63,7 @@ export const testNodes = async (run: boolean) => {
 	const requestTimeNode = requestTimeNodes[0];
 
 	const timeNodeResponse = await requestTimeNode.getChildren();
-	console.log('timeNodeResponse : ', timeNodeResponse);
+	console.log('timeNodeResponse (Depleted|Errored|Done): ', timeNodeResponse);
 
 	console.log('updatedServices : ', updatedServices);
 	console.log('IsraelPostApiErrors : ', IsraelPostApiErrors);

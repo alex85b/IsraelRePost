@@ -1,9 +1,9 @@
-import puppeteer from "puppeteer-extra";
-import StealthPlugin from "puppeteer-extra-plugin-stealth";
-import { Page, Browser, Protocol, HTTPResponse } from "puppeteer";
-import cheerio from "cheerio"; // ? parse5 has better benchmark score. maybe switch to parse5.
-import { URLs } from "../common/urls";
-import { IBranch } from "../interfaces/IBranch";
+import puppeteer from 'puppeteer-extra';
+import StealthPlugin from 'puppeteer-extra-plugin-stealth';
+import { Page, Browser, Protocol, HTTPResponse } from 'puppeteer';
+import cheerio from 'cheerio'; // ? parse5 has better benchmark score. maybe switch to parse5.
+import { URLs } from '../common/urls';
+import { IBranch } from '../interfaces/IBranch';
 
 interface IXhrBranches {
 	branches: IBranch[];
@@ -32,16 +32,16 @@ export class PuppeteerBrowser {
 	}[] = [];
 
 	private branchesData: IXhrBranches | null = null;
-	private RequestVerificationToken: string = "";
+	private RequestVerificationToken: string = '';
 
-	constructor(private browserMode: boolean | "new", private navigationTimeout: number) {}
+	constructor(private browserMode: boolean | 'new', private navigationTimeout: number) {}
 
 	async generateBrowser(): Promise<void> {
 		if (this.browser === null) {
 			puppeteer.use(StealthPlugin());
 			this.browser = await puppeteer.launch({
 				headless: this.browserMode,
-				args: ["--no-sandbox", "--disable-setuid-sandbox"],
+				args: ['--no-sandbox', '--disable-setuid-sandbox'],
 				defaultViewport: null,
 			});
 		}
@@ -59,15 +59,15 @@ export class PuppeteerBrowser {
 
 				if (interceptBranches) {
 					await this.page.setRequestInterception(true);
-					this.page.on("request", (interceptedRequest) => {
+					this.page.on('request', (interceptedRequest) => {
 						interceptedRequest.continue();
 					});
 
-					this.page.on("response", async (response: HTTPResponse) => {
-						if (response.request().resourceType() === "xhr") {
+					this.page.on('response', async (response: HTTPResponse) => {
+						if (response.request().resourceType() === 'xhr') {
 							if (
 								response.url() ===
-								"https://israelpost.co.il/umbraco/Surface/Branches/LoadBranches"
+								'https://israelpost.co.il/umbraco/Surface/Branches/LoadBranches'
 							) {
 								this.branchesData = await response.json();
 							}
@@ -97,11 +97,11 @@ export class PuppeteerBrowser {
 	async extractHtmlToken(): Promise<string> {
 		if (this.page !== null) {
 			if (this.browser !== null) {
-				const htmlContent = (await this.page.content()) || "";
+				const htmlContent = (await this.page.content()) || '';
 				const $ = cheerio.load(htmlContent);
 				const RequestVerificationToken =
-					$('input[name="__RequestVerificationToken"]').val() || "";
-				if (typeof RequestVerificationToken === "string") {
+					$('input[name="__RequestVerificationToken"]').val() || '';
+				if (typeof RequestVerificationToken === 'string') {
 					this.RequestVerificationToken = RequestVerificationToken;
 				} else {
 					this.RequestVerificationToken = RequestVerificationToken[0];

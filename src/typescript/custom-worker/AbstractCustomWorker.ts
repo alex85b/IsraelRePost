@@ -1,5 +1,5 @@
 import { TransferListItem, Worker } from 'worker_threads';
-import { IMessage } from '../scrape-multithreaded/messages/HandleThreadMessages';
+import { IMessage } from '../continues-update/messages/HandleThreadMessages';
 
 /**
  * Abstract Custom Worker:
@@ -9,11 +9,15 @@ import { IMessage } from '../scrape-multithreaded/messages/HandleThreadMessages'
  * This should enforce specific messaging format From parent to worker.
  */
 
-export abstract class ACustomWorker<WH extends string, PH extends string> extends Worker {
+export abstract class AbstractCustomWorker<WH extends string, PH extends string> extends Worker {
 	// custom constructor isn't needed.
 
 	postMessage(value: IMessage<WH>, transferList?: readonly TransferListItem[] | undefined): void {
-		super.postMessage(value, transferList);
+		if (!transferList) {
+			super.postMessage(value);
+		} else {
+			super.postMessage(value, transferList);
+		}
 	}
 
 	// On messages from worker to its Parent's message handler.

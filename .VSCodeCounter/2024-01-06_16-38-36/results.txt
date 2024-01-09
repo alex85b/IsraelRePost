@@ -1,0 +1,137 @@
+Date : 2024-01-06 16:38:36
+Directory : c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src
+Total : 82 files,  3959 codes, 1680 comments, 869 blanks, all 6508 lines
+
+Languages
++------------+------------+------------+------------+------------+------------+
+| language   | files      | code       | comment    | blank      | total      |
++------------+------------+------------+------------+------------+------------+
+| TypeScript |         80 |      3,904 |      1,670 |        850 |      6,424 |
+| JavaScript |          2 |         55 |         10 |         19 |         84 |
++------------+------------+------------+------------+------------+------------+
+
+Directories
++--------------------------------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                                                                                       | files      | code       | comment    | blank      | total      |
++--------------------------------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                                                                                          |         82 |      3,959 |      1,680 |        869 |      6,508 |
+| . (Files)                                                                                                                                  |          2 |         55 |         10 |         19 |         84 |
+| typescript                                                                                                                                 |         80 |      3,904 |      1,670 |        850 |      6,424 |
+| typescript\api-requests                                                                                                                    |          5 |        523 |         43 |         56 |        622 |
+| typescript\appointments-update                                                                                                             |          6 |        449 |        179 |         85 |        713 |
+| typescript\atomic-counter                                                                                                                  |          5 |        250 |        172 |         74 |        496 |
+| typescript\common                                                                                                                          |          9 |         71 |         18 |         13 |        102 |
+| typescript\continues-update                                                                                                                |          4 |        299 |        227 |         92 |        618 |
+| typescript\continues-update (Files)                                                                                                        |          3 |        265 |        225 |         84 |        574 |
+| typescript\continues-update\messages                                                                                                       |          1 |         34 |          2 |          8 |         44 |
+| typescript\custom-parent                                                                                                                   |          4 |         52 |         52 |         22 |        126 |
+| typescript\custom-worker                                                                                                                   |          3 |         45 |         14 |         12 |         71 |
+| typescript\elastic                                                                                                                         |          4 |        575 |        655 |        145 |      1,375 |
+| typescript\interfaces                                                                                                                      |          8 |        132 |         10 |         11 |        153 |
+| typescript\interfaces (Files)                                                                                                              |          3 |         75 |         10 |          5 |         90 |
+| typescript\interfaces\api-responses                                                                                                        |          5 |         57 |          0 |          6 |         63 |
+| typescript\isreal-post-requests                                                                                                            |          5 |        383 |         49 |         80 |        512 |
+| typescript\middlewares                                                                                                                     |          1 |          8 |         13 |          5 |         26 |
+| typescript\proxy-management                                                                                                                |          3 |         70 |         14 |         19 |        103 |
+| typescript\puppeteer                                                                                                                       |          1 |        115 |          2 |         18 |        135 |
+| typescript\redis                                                                                                                           |          4 |        110 |         21 |         36 |        167 |
+| typescript\routes                                                                                                                          |          3 |        308 |         68 |         46 |        422 |
+| typescript\scrape                                                                                                                          |          1 |         43 |          2 |          6 |         51 |
+| typescript\scrape-multithreaded                                                                                                            |          2 |          0 |         75 |         16 |         91 |
+| typescript\test                                                                                                                            |         12 |        471 |         56 |        114 |        641 |
+| typescript\test\atomic-counter                                                                                                             |          1 |         78 |          0 |         22 |        100 |
+| typescript\test\implement-counter                                                                                                          |          1 |         66 |         13 |         16 |         95 |
+| typescript\test\proxy-collection                                                                                                           |          1 |         18 |          0 |          3 |         21 |
+| typescript\test\suites                                                                                                                     |          2 |        144 |          8 |         26 |        178 |
+| typescript\test\threads                                                                                                                    |          4 |        135 |         33 |         36 |        204 |
+| typescript\test\transferable                                                                                                               |          3 |         30 |          2 |         11 |         43 |
++--------------------------------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++--------------------------------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| filename                                                                                                                                   | language   | code       | comment    | blank      | total      |
++--------------------------------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\index.js                                                     | JavaScript |         18 |          2 |          9 |         29 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\test.js                                                      | JavaScript |         37 |          8 |         10 |         55 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\api-requests\BranchRequest.ts                     | TypeScript |        169 |         28 |         19 |        216 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\api-requests\DatesRequest.ts                      | TypeScript |         91 |          1 |          8 |        100 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\api-requests\ServicesRequest.ts                   | TypeScript |        109 |          0 |          9 |        118 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\api-requests\TimesRequest.ts                      | TypeScript |         76 |         13 |         12 |        101 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\api-requests\UserRequest.ts                       | TypeScript |         78 |          1 |          8 |         87 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\appointments-update\BranchAppointment.ts          | TypeScript |         90 |         59 |         21 |        170 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\appointments-update\DatesNode.ts                  | TypeScript |        113 |         40 |         17 |        170 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\appointments-update\IApiRequestNode.ts            | TypeScript |          3 |          1 |          1 |          5 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\appointments-update\ServicesNode.ts               | TypeScript |        105 |         40 |         18 |        163 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\appointments-update\TimesNode.ts                  | TypeScript |         57 |         18 |         13 |         88 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\appointments-update\UserNode.ts                   | TypeScript |         81 |         21 |         15 |        117 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\atomic-counter\AbstractAtomicCounter.ts           | TypeScript |         42 |         51 |         14 |        107 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\atomic-counter\AtomicCounter.ts                   | TypeScript |        103 |         57 |         27 |        187 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\atomic-counter\ImplementCounters.ts               | TypeScript |         66 |         29 |         18 |        113 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\atomic-counter\RequestCounter.ts                  | TypeScript |         18 |         17 |          7 |         42 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\atomic-counter\RequestsAllowed.ts                 | TypeScript |         21 |         18 |          8 |         47 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\common\Deley.ts                                   | TypeScript |          0 |          7 |          1 |          8 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\common\GetRandomIntInclusive.ts                   | TypeScript |          5 |          1 |          1 |          7 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\common\ParseCookies.ts                            | TypeScript |         18 |          1 |          1 |         20 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\common\ReadCertificates.ts                        | TypeScript |          0 |          6 |          2 |          8 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\common\SimpleRandomChars.ts                       | TypeScript |          9 |          0 |          3 |         12 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\common\SplitBranchesArray.ts                      | TypeScript |         12 |          0 |          2 |         14 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\common\StringFieldExistNonEmpty.ts                | TypeScript |          6 |          0 |          1 |          7 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\common\todays-date.ts                             | TypeScript |         18 |          3 |          1 |         22 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\common\urls.ts                                    | TypeScript |          3 |          0 |          1 |          4 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\continues-update\BranchUpdater.ts                 | TypeScript |         26 |          7 |         10 |         43 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\continues-update\ContinuesUpdate.ts               | TypeScript |        105 |         63 |         27 |        195 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\continues-update\IpManager.ts                     | TypeScript |        134 |        155 |         47 |        336 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\continues-update\messages\HandleThreadMessages.ts | TypeScript |         34 |          2 |          8 |         44 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\custom-parent\ACustomPPort.ts                     | TypeScript |          0 |         36 |          8 |         44 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\custom-parent\ACustomParentPort.ts                | TypeScript |         22 |         14 |          8 |         44 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\custom-parent\ContinuesUpdatePPort.ts             | TypeScript |         17 |          1 |          3 |         21 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\custom-parent\IpManagerParentPort.ts              | TypeScript |         13 |          1 |          3 |         17 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\custom-worker\ACustomWorker.ts                    | TypeScript |         29 |         14 |          8 |         51 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\custom-worker\BranchUpdaterWorker.ts              | TypeScript |          8 |          0 |          2 |         10 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\custom-worker\IpManagementWorker.ts               | TypeScript |          8 |          0 |          2 |         10 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\elastic\BaseElastic.ts                            | TypeScript |        256 |         39 |         50 |        345 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\elastic\BranchModel.ts                            | TypeScript |        237 |         29 |         26 |        292 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\elastic\ErrorModel.ts                             | TypeScript |         82 |         11 |         15 |        108 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\elastic\elstClient.ts                             | TypeScript |          0 |        576 |         54 |        630 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\interfaces\IApiRequest.ts                         | TypeScript |         11 |          0 |          1 |         12 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\interfaces\IBranch.ts                             | TypeScript |         64 |          1 |          1 |         66 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\interfaces\IBranchQueryResponse.ts                | TypeScript |          0 |          9 |          3 |         12 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\interfaces\api-responses\IGenericApiResponse.ts   | TypeScript |         18 |          0 |          2 |         20 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\interfaces\api-responses\ILocationGetServices.ts  | TypeScript |         17 |          0 |          1 |         18 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\interfaces\api-responses\ISearchAvailableDates.ts | TypeScript |          6 |          0 |          1 |          7 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\interfaces\api-responses\ISearchAvailableSlots.ts | TypeScript |          3 |          0 |          1 |          4 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\interfaces\api-responses\IUserCreateAnonymous.ts  | TypeScript |         13 |          0 |          1 |         14 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\isreal-post-requests\PostBaseRequest.ts           | TypeScript |        119 |          4 |         15 |        138 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\isreal-post-requests\PostDatesRequest.ts          | TypeScript |         65 |         12 |         16 |         93 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\isreal-post-requests\PostServiceRequest.ts        | TypeScript |         82 |         12 |         17 |        111 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\isreal-post-requests\PostTimesRequest.ts          | TypeScript |         55 |         12 |         17 |         84 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\isreal-post-requests\PostUserRequest.ts           | TypeScript |         62 |          9 |         15 |         86 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\middlewares\error-handler.ts                      | TypeScript |          8 |         13 |          5 |         26 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\proxy-management\ProxyCollection.ts               | TypeScript |         44 |         10 |         11 |         65 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\proxy-management\SmartProxyCollection.ts          | TypeScript |         13 |          2 |          4 |         19 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\proxy-management\WebShareCollection.ts            | TypeScript |         13 |          2 |          4 |         19 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\puppeteer\pptr-browser.ts                         | TypeScript |        115 |          2 |         18 |        135 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\redis\BaseRedisQueue.ts                           | TypeScript |         40 |          6 |         11 |         57 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\redis\BranchesToProcess.ts                        | TypeScript |         20 |          0 |          7 |         27 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\redis\ProcessedBranches.ts                        | TypeScript |         20 |          0 |          7 |         27 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\redis\RedisTest.ts                                | TypeScript |         30 |         15 |         11 |         56 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\routes\AllBranches.ts                             | TypeScript |         64 |          4 |          7 |         75 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\routes\TestLab.ts                                 | TypeScript |        226 |         43 |         30 |        299 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\routes\TimeSlots.ts                               | TypeScript |         18 |         21 |          9 |         48 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\scrape-multithreaded\CParentPort.ts               | TypeScript |          0 |         31 |          8 |         39 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\scrape-multithreaded\CWorker.ts                   | TypeScript |          0 |         44 |          8 |         52 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\scrape\FilterBranches.ts                          | TypeScript |         43 |          2 |          6 |         51 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\test\atomic-counter\BaseCounter.ts                | TypeScript |         78 |          0 |         22 |        100 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\test\implement-counter\TestImplementations.ts     | TypeScript |         66 |         13 |         16 |         95 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\test\proxy-collection\testProxyObjects.ts         | TypeScript |         18 |          0 |          3 |         21 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\test\suites\IsraelPostsAPIs.ts                    | TypeScript |         89 |          4 |         14 |        107 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\test\suites\RequestNodes.ts                       | TypeScript |         55 |          4 |         12 |         71 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\test\threads\conversing_d0.ts                     | TypeScript |         44 |         13 |         11 |         68 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\test\threads\conversing_d1.ts                     | TypeScript |         63 |         17 |         16 |         96 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\test\threads\conversing_d2.ts                     | TypeScript |         22 |          3 |          7 |         32 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\test\threads\e2e.ts                               | TypeScript |          6 |          0 |          2 |          8 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\test\transferable\NodeDepth1.ts                   | TypeScript |         14 |          1 |          5 |         20 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\test\transferable\NodeDepth2.ts                   | TypeScript |          4 |          1 |          3 |          8 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\test\transferable\Root.ts                         | TypeScript |         12 |          0 |          3 |         15 |
+| Total                                                                                                                                      |            |      3,959 |      1,680 |        869 |      6,508 |
++--------------------------------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+

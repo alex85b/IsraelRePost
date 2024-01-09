@@ -2,13 +2,13 @@ import Redis from 'ioredis';
 import * as dotenv from 'dotenv';
 import { IBranchQnomycodePair } from '../elastic/BranchModel';
 
-dotenv.config();
-
 export abstract class BaseRedisQueue {
 	protected redis: Redis;
 	protected abstract queueName: string;
+	private initialized: boolean = false;
 
 	constructor() {
+		dotenv.config();
 		// Create a new Redis instance with the provided Redis Cloud configuration
 		const data = {
 			// Redis Cloud hostname or IP.
@@ -25,11 +25,28 @@ export abstract class BaseRedisQueue {
 		this.redis = new Redis(data);
 	}
 
+	protected async exists() {
+		return await this.redis.exists(this.queueName);
+	}
+
+	private async init() {
+		if (!(await this.exists())) {
+			await this.redis.rpush(this.queueName, 'Init');
+			const dequeue = await this.redis.lpop(this.queueName);
+			if (dequeue != 'Init') {
+				throw Error(
+					`[Base Redis Queue :${this.queueName}][init] queue does not exist and initialization has failed`
+				);
+			}
+		}
+	}
+
 	protected async enqueue(data: any) {
 		return await this.redis.rpush(this.queueName, JSON.stringify(data));
 	}
 
 	protected async dequeue() {
+		// if (!this.initialized) await this.init();
 		const serializedItem = await this.redis.lpop(this.queueName);
 		if (!serializedItem) return null;
 		const deserializedItem: IBranchQnomycodePair = JSON.parse(serializedItem);
@@ -42,6 +59,7 @@ export abstract class BaseRedisQueue {
 	}
 
 	protected async bDequeueAll() {
+		if (!this.initialized) await this.init();
 		const dequeuedItems = await this.redis.lrange(this.queueName, 0, -1);
 		await this.redis.ltrim(this.queueName, 1, 0);
 		const deserializedItems: IBranchQnomycodePair[] = dequeuedItems.map((item) =>
@@ -51,6 +69,7 @@ export abstract class BaseRedisQueue {
 	}
 
 	protected async qSize() {
+		if (!this.initialized) await this.init();
 		return await this.redis.llen(this.queueName);
 	}
 }

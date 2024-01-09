@@ -1,8 +1,8 @@
-import { CUMessageHandlers } from '../scrape-multithreaded/ContinuesUpdate';
-import { IMMessageHandlers, IpMWorkerData } from '../scrape-multithreaded/IpManager';
-import { ACustomWorker } from './ACustomWorker';
+import { CUMessageHandlers } from '../continues-update/ContinuesUpdate';
+import { IMMessageHandlers, IpMWorkerData } from '../continues-update/IpManager';
+import { AbstractCustomWorker } from './AbstractCustomWorker';
 
-export class IpManagementWorker extends ACustomWorker<IMMessageHandlers, CUMessageHandlers> {
+export class IpManagementWorker extends AbstractCustomWorker<IMMessageHandlers, CUMessageHandlers> {
 	constructor(filename: string | URL, options: { workerData: IpMWorkerData }) {
 		super(filename, options);
 	}

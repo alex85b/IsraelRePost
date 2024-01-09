@@ -1,6 +1,5 @@
-import { IExpectedServerResponse } from '../api-requests/BranchRequest';
 import { parseResponseCookies } from '../common/ParseCookies';
-import { PostBaseRequest } from './PostBaseRequest';
+import { IExpectedServerResponse, PostBaseRequest } from './PostBaseRequest';
 
 export class PostUserRequest extends PostBaseRequest {
 	private parseUserResponse({

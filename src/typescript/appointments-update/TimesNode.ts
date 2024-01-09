@@ -9,6 +9,7 @@ import {
 	PostTimesRequest,
 } from '../isreal-post-requests/PostTimesRequest';
 import { ProxyEndpoint } from '../proxy-management/ProxyCollection';
+import { CountAPIRequest } from '../atomic-counter/ImplementCounters';
 
 export class TimesNode implements IApiRequestNode {
 	// A user request timeout value in milliseconds.
@@ -32,7 +33,7 @@ export class TimesNode implements IApiRequestNode {
 	 */
 	constructor(servicesNodeData: ITimesNodeData) {
 		this.memoryObjects = servicesNodeData.memoryObjects;
-		this.sharedCounters = servicesNodeData.sharedCounters;
+		this.sharedCounters = servicesNodeData.sharedCounter;
 		this.updateData = servicesNodeData.updateData;
 		this.currentRequest = new PostTimesRequest(
 			this.requestTimeout,
@@ -44,11 +45,9 @@ export class TimesNode implements IApiRequestNode {
 	async getChildren(): Promise<'Depleted' | 'Errored' | 'Done'> {
 		try {
 			// If No more requests allowed at this point - Terminate updating.
-			if (!this.sharedCounters.requestsAllowed.isAllowed()) {
+			if (!this.sharedCounters.requestCounter.isAllowed()) {
 				return 'Depleted';
 			}
-			// Count a new request.
-			this.sharedCounters.requestCounter.countRequest();
 
 			// Makes a times request to obtain necessary information.
 			const times: IPostTimesResponse[] = await this.currentRequest.makeTimesRequest(
@@ -80,8 +79,7 @@ export interface ITimesNodeData {
 		updatedDate: INewDateEntryRecord;
 		DateError: IDateError;
 	};
-	sharedCounters: {
-		requestCounter: RequestCounter;
-		requestsAllowed: RequestsAllowed;
+	sharedCounter: {
+		requestCounter: CountAPIRequest;
 	};
 }

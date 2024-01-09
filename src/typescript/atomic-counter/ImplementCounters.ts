@@ -7,7 +7,8 @@ import { AtomicCounter, setupMemory } from './AtomicCounter';
 /**
  * This will be used by Ip Manager in order to handle a 'depleted' message from Branch-updater.
  * 1. Verify if a 'depleted' message id valid.
- * 2.
+ * 2. Reset first-depleted counter.
+ * 3. Reset request-batch counter to batch-size.
  */
 export class VerifyDepletedMessage {
 	private countDepletedMessages: AtomicCounter;
@@ -38,7 +39,7 @@ export class VerifyDepletedMessage {
 	}
 
 	resetRequestCounter(batchSize: number) {
-		this.countDepletedMessages.resetCount(0);
+		this.countRequest.resetCount(batchSize);
 	}
 }
 
@@ -46,7 +47,7 @@ export class VerifyDepletedMessage {
  * This allows to track remaining request-batches in the total-request pool.
  * 1. Sets up a total-requests counter on contraction.
  * 2. Tries to decrease total-requests by provided batch-size.
- * 3. Allows to reset the batch-size by which total-requests are decreased.
+ * 3. Allows to change the size of the request-batch size.
  */
 export class CountRequestsBatch {
 	private countRequestsBatch: AtomicCounter;

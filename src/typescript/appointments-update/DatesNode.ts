@@ -1,5 +1,3 @@
-import { RequestCounter } from '../atomic-counter/RequestCounter';
-import { RequestsAllowed } from '../atomic-counter/RequestsAllowed';
 import { INewDateEntryRecord } from '../elastic/BranchModel';
 import { IDateError } from '../elastic/ErrorModel';
 import {
@@ -10,6 +8,7 @@ import {
 import { IApiRequestNode } from './IApiRequestNode';
 import { ITimesNodeData, TimesNode } from './TimesNode';
 import { ProxyEndpoint } from '../proxy-management/ProxyCollection';
+import { CountAPIRequest } from '../atomic-counter/ImplementCounters';
 
 /**
  * Represents a node responsible for handling API requests related to dates.
@@ -40,7 +39,7 @@ export class DatesNode implements IApiRequestNode {
 	constructor(datesNodeData: IDatesNodeData) {
 		// Initializes the DatesNode instance with the provided data.
 		this.memoryObjects = datesNodeData.memoryObjects;
-		this.sharedCounters = datesNodeData.sharedCounters;
+		this.sharedCounters = datesNodeData.sharedCounter;
 		this.updateData = datesNodeData.updateData;
 		this.currentRequest = new PostDatesRequest(
 			this.requestTimeout,
@@ -77,9 +76,8 @@ export class DatesNode implements IApiRequestNode {
 				DateError:
 					this.memoryObjects.DatesErrors[this.memoryObjects.DatesErrors.length - 1],
 			},
-			sharedCounters: {
+			sharedCounter: {
 				requestCounter: this.sharedCounters.requestCounter,
-				requestsAllowed: this.sharedCounters.requestsAllowed,
 			},
 		};
 		return timesNodeData;
@@ -93,11 +91,9 @@ export class DatesNode implements IApiRequestNode {
 		let returnThis: TimesNode[] = [];
 		try {
 			// If no more requests allowed at this point, terminate updating.
-			if (!this.sharedCounters.requestsAllowed.isAllowed()) {
+			if (!this.sharedCounters.requestCounter.isAllowed()) {
 				return 'Depleted';
 			}
-			// Count a new request.
-			this.sharedCounters.requestCounter.countRequest();
 
 			// Makes a dates request to obtain necessary information.
 			const dates: IPostDatesResponse[] = await this.currentRequest.makeDatesRequest(
@@ -162,8 +158,7 @@ export interface IDatesNodeData {
 		updatedDates: INewDateEntryRecord[];
 		DatesErrors: IDateError[];
 	};
-	sharedCounters: {
-		requestCounter: RequestCounter;
-		requestsAllowed: RequestsAllowed;
+	sharedCounter: {
+		requestCounter: CountAPIRequest;
 	};
 }

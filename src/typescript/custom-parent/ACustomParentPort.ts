@@ -1,14 +1,14 @@
 import { MessagePort, TransferListItem } from 'worker_threads';
-import { IMessage } from '../scrape-multithreaded/messages/HandleThreadMessages';
+import { IMessage } from '../continues-update/messages/HandleThreadMessages';
 
 /**
  * Abstract Custom Parent Port:
  * A custom abstract Wrapper of MessagePort,
  * Intended to replace ('worker_threads')'s 'parentPort'.
- * This enforces transfer of specific type of messages.
+ * This enforces a transfer of specific type of messages.
  * Messages from a parent to the child worker will be of the WH (Worker Handler) type.
  * Messages from the worker to worker's parent will be of the PH (Parent Handler) type.
- * This should enforce specific messaging format From parent to worker.
+ * This should enforce specific messaging format From a worker to his parent.
  */
 
 export abstract class ACustomParentPort<WH extends string, PH extends string> {

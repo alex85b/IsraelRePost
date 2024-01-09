@@ -64,27 +64,31 @@ export class ContinuesUpdate {
 		const mHandler = new MessagesHandler<CUMessageHandlers>();
 
 		const hManagerDepleted: IHandlerFunction<CUMessageHandlers, IMMessageHandlers> = ({
-			messageCallback,
-			senderId,
+			worker,
 		}) => {
-			if (!messageCallback)
-				throw Error('[manager-depleted] handler: messageCallback was not provided');
-			messageCallback({ handlerName: 'stop-endpoint' });
+			if (!worker) {
+				throw Error(
+					'[Continues Update][manager-depleted] handler: worker was not provided'
+				);
+			}
+			worker.postMessage({ handlerName: 'stop-endpoint' });
 			console.log(
-				`Continues Update noticed Ip Manager ${senderId ?? 'Unknown'} consumed 300 requests`
+				`Continues Update noticed Ip Manager ${
+					worker.threadId ?? 'Unknown'
+				} consumed 300 requests`
 			);
 		};
 
 		const hManagerDone: IHandlerFunction<CUMessageHandlers, IMMessageHandlers> = ({
-			messageCallback,
-			senderId,
+			worker,
 		}) => {
-			if (!messageCallback)
-				throw Error('[manager-depleted] handler: messageCallback was not provided');
-			messageCallback({ handlerName: 'stop-endpoint' });
+			if (!worker) {
+				throw Error('[Continues Update][manager-done] handler: worker was not provided');
+			}
+			worker.postMessage({ handlerName: 'stop-endpoint' });
 			console.log(
 				`Continues Update noticed Ip Manager ${
-					senderId ?? 'Unknown'
+					worker.threadId ?? 'Unknown'
 				} has no more branches to update`
 			);
 		};
@@ -109,12 +113,7 @@ export class ContinuesUpdate {
 		});
 		if (ipManager.threadId !== undefined) {
 			ipManager.once('online', () => this.IpManagerOnline(ipManager));
-			ipManager.once('message', (message) =>
-				mHandler.handle({
-					handlerName: message.handlerName,
-					handlerData: message.handlerData,
-				})
-			);
+			ipManager.once('message', (message) => mHandler.handle({ message, worker: ipManager }));
 			ipManager.once('error', (error) => this.IpManagerError(ipManager.threadId, error));
 			ipManager.once('exit', (code) => this.IpManagerExit(ipManager.threadId, code));
 			this.IpManagers[ipManager.threadId] = ipManager;
@@ -184,6 +183,7 @@ export class ContinuesUpdate {
 	 * @returns A promise that resolves when the setup is complete.
 	 */
 	async test() {
+		console.log(await this.setupQueues());
 		return await this.setupIpManagement();
 	}
 }

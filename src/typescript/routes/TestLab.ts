@@ -15,7 +15,7 @@ import { IPostDatesRequired, PostDatesRequest } from '../isreal-post-requests/Po
 import { IPostTimesRequired, PostTimesRequest } from '../isreal-post-requests/PostTimesRequest';
 import { SmartProxyCollection } from '../proxy-management/SmartProxyCollection';
 import { WebShareCollection } from '../proxy-management/WebShareCollection';
-import { ContinuesUpdate } from '../scrape-multithreaded/ContinuesUpdate';
+import { ContinuesUpdate } from '../continues-update/ContinuesUpdate';
 import { BranchesToProcess } from '../redis/BranchesToProcess';
 import { ProcessedBranches } from '../redis/ProcessedBranches';
 import { UserNode } from '../appointments-update/UserNode';

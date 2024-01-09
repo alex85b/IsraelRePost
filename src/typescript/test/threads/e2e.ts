@@ -1,4 +1,4 @@
-import { ContinuesUpdate } from '../../scrape-multithreaded/ContinuesUpdate';
+import { ContinuesUpdate } from '../../continues-update/ContinuesUpdate';
 
 export const testE2E = (run: boolean) => {
 	if (!run) return;

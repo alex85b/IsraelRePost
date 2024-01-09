@@ -1,6 +1,3 @@
-import { AxiosProxyConfig } from 'axios';
-import { RequestCounter } from '../atomic-counter/RequestCounter';
-import { RequestsAllowed } from '../atomic-counter/RequestsAllowed';
 import { INewServiceRecord } from '../elastic/BranchModel';
 import { IServiceError } from '../elastic/ErrorModel';
 import { IApiRequestNode } from './IApiRequestNode';
@@ -11,6 +8,7 @@ import {
 } from '../isreal-post-requests/PostServiceRequest';
 import { DatesNode, IDatesNodeData } from './DatesNode';
 import { ProxyEndpoint } from '../proxy-management/ProxyCollection';
+import { CountAPIRequest } from '../atomic-counter/ImplementCounters';
 
 /**
  * Represents a node responsible for handling API requests related to services.
@@ -41,7 +39,7 @@ export class ServicesNode implements IApiRequestNode {
 	constructor(servicesNodeData: IServicesNodeData) {
 		// Initializes the ServicesNode instance with the provided data.
 		this.memoryObjects = servicesNodeData.memoryObjects;
-		this.sharedCounters = servicesNodeData.sharedCounters;
+		this.sharedCounters = servicesNodeData.sharedCounter;
 		this.updateData = servicesNodeData.updateData;
 		this.currentRequest = new PostServiceRequest(
 			this.requestTimeout,
@@ -75,9 +73,8 @@ export class ServicesNode implements IApiRequestNode {
 					this.memoryObjects.servicesErrors[this.memoryObjects.servicesErrors.length - 1]
 						.dates,
 			},
-			sharedCounters: {
+			sharedCounter: {
 				requestCounter: this.sharedCounters.requestCounter,
-				requestsAllowed: this.sharedCounters.requestsAllowed,
 			},
 		};
 		return datesNodeData;
@@ -91,11 +88,9 @@ export class ServicesNode implements IApiRequestNode {
 		let returnThis: DatesNode[] = [];
 		try {
 			// If no more requests allowed at this point, terminate updating.
-			if (!this.sharedCounters.requestsAllowed.isAllowed()) {
+			if (!this.sharedCounters.requestCounter.isAllowed()) {
 				return 'Depleted';
 			}
-			// Count a new request.
-			this.sharedCounters.requestCounter.countRequest();
 
 			// Makes a service request to obtain necessary information.
 			const services: IPostServicesResponse[] = await this.currentRequest.makeServiceRequest(
@@ -155,8 +150,7 @@ export interface IServicesNodeData {
 		updatedServices: INewServiceRecord[];
 		servicesErrors: IServiceError[];
 	};
-	sharedCounters: {
-		requestCounter: RequestCounter;
-		requestsAllowed: RequestsAllowed;
+	sharedCounter: {
+		requestCounter: CountAPIRequest;
 	};
 }

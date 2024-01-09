@@ -1,6 +1,10 @@
 import { parentPort, workerData, threadId, TransferListItem, Worker } from 'worker_threads';
 import { CUMessageHandlers } from './ContinuesUpdate';
-import { IHandlerFunction, MessagesHandler } from './messages/HandleThreadMessages';
+import {
+	IHandlerFunction,
+	IMessageCallback,
+	MessagesHandler,
+} from './messages/HandleThreadMessages';
 import path from 'path';
 import { ContinuesUpdatePPort } from '../custom-parent/ContinuesUpdatePPort';
 import { BranchUpdaterWorker } from '../custom-worker/BranchUpdaterWorker';
@@ -17,6 +21,7 @@ import {
 // ###################################################################################################
 
 const branchUpdaters: { [key: number]: BranchUpdaterWorker } = {};
+const releaseQueue: BranchUpdaterWorker[] = [];
 const updaterScriptPath = path.join(__dirname, 'BranchUpdater.js');
 const messagesHandler = new MessagesHandler<IMMessageHandlers>();
 if (!parentPort) throw Error(`IpManager ${threadId ?? -1}: parent port is null \ undefined`);
@@ -65,7 +70,7 @@ const verifyDepletedMessage = new VerifyDepletedMessage(requestCounterData);
 const listen = () => {
 	cUpdate.on('message', async (message) => {
 		console.log(`#Ip Manager ${threadId} received ${message.handlerName} message`);
-		messagesHandler.handle({ handlerName: message.handlerName });
+		messagesHandler.handle({ message, parentPort: cUpdate });
 	});
 };
 
@@ -73,24 +78,26 @@ const listen = () => {
 // ### Functions that handle 'on message' events #####################################################
 // ###################################################################################################
 
-// These functions will be used to populate 'messagesHandler' object, that
+// These functions will be used to populate 'MessagesHandler' object, that
 // Handles all 'on message' events.
 
 // ########################################################
-// ### Handle Continues Updates (Parent) Messages #########
+// ### Handle Continues-Update's (Parent) Messages ########
 // ########################################################
 
 /**
  * Handles the 'start-endpoint' message \ event:
  * Creates 'Branch Updater' worker threads,
- * Provides said thread with a 'Proxy Endpoint'.
+ * Provides said thread with a 'Proxy Endpoint' string.
  */
 const hStartEndpoint: IHandlerFunction<IMMessageHandlers, CUMessageHandlers> = () => {
-	// Count first batch of requests.
+	// Count the first batch of requests.
 	const countResponse = countRequestsBatch.countConsumedRequests();
 	if (countResponse.status === 'stopped') {
 		console.error(countResponse);
-		throw Error('[Ip Manager][hStartEndpoint] cannot count first batch of requests');
+		throw Error(
+			`[Ip Manager: ${threadId}][hStartEndpoint] cannot count first batch of requests`
+		);
 	}
 
 	const endpoint = cUpdate.extractData(workerData);
@@ -103,65 +110,101 @@ const hStartEndpoint: IHandlerFunction<IMMessageHandlers, CUMessageHandlers> = (
 		addUpdater(requestCounterData, endpoint);
 	}
 };
-// Adds hStartEndpoint to the messagesHandler object.
+// Adds hStartEndpoint to the MessagesHandler object.
 messagesHandler.addMessageHandler('start-endpoint', hStartEndpoint);
 
 /**
  * Handles the 'stop-endpoint' message \ event:
  * Upon this event, Request every branch-updater worker thread to stop execution.
- *! Upon the last worker thread exist, This Ip Manager thread will be Terminated.
+ * Upon the last worker thread exist, This Ip-Manager thread will be Terminated.
  */
 const hStopEndpoint: IHandlerFunction<IMMessageHandlers, CUMessageHandlers> = () => {
 	console.log(`#Ip Manager ${threadId} received stop endpoint`);
 	for (let workerKey in branchUpdaters) {
-		branchUpdaters[workerKey].postMessage({ handlerName: 'stop-updates' });
+		branchUpdaters[workerKey].postMessage({ handlerName: 'end-updater' });
 	}
 };
 // Adds hStopEndpoint to the messagesHandler object.
 messagesHandler.addMessageHandler('stop-endpoint', hStopEndpoint);
 
 // ########################################################
-// ### Handle Branch Updater (Child) Messages #############
+// ### Handle Branch-Updater (Child) Messages #############
 // ########################################################
 
 /**
  * Handles an updater-done message:
  * Requests the sender worker thread to stop execution.
- * @param param0: A call-back that transmits a message back to the sender.
+ * @param param0: A Branch-update Worker that expects instructions.
  */
-const hUpdaterDone: IHandlerFunction<IMMessageHandlers, IBUMessageHandlers> = ({
-	messageCallback,
-}) => {
-	if (!messageCallback) throw Error();
-	messageCallback({ handlerName: 'end-updater' });
+const hUpdaterDone: IHandlerFunction<IMMessageHandlers, IBUMessageHandlers> = ({ worker }) => {
+	if (!worker)
+		throw Error(`[Ip Manager: ${threadId}][hStartEndpoint] hUpdaterDone received no worker`);
+	worker.postMessage({ handlerName: 'end-updater' });
 };
 messagesHandler.addMessageHandler('updater-done', hUpdaterDone);
 
 /**
  * Handles an updater-depleted message:
  * Requests the sender worker thread to stop execution.
- * @param param0: A call-back that transmits a message back to the sender.
+ * @param param0: A Branch-update Worker that expects instructions.
  */
 const hUpdaterDepleted: IHandlerFunction<IMMessageHandlers, IBUMessageHandlers> = ({
-	messageCallback,
+	worker,
+	parentPort,
 }) => {
-	if (!messageCallback) throw Error();
-	messageCallback({ handlerName: 'stop-updates' });
+	if (!worker || !parentPort)
+		throw Error(
+			`[Ip Manager: ${threadId}][hStartEndpoint] hUpdaterDepleted received no ${
+				worker === undefined
+					? parentPort === undefined
+						? 'worker and no parentPort'
+						: 'worker'
+					: 'parentPort'
+			}`
+		);
+
+	// Is 'depleted' message valid ?
+	const { isFirst, isValid, lowestBoundary } = verifyDepletedMessage.isValidDepleted();
+
+	// Not 'depleted' at all (request-batch is not depleted).
+	if (!lowestBoundary) {
+		// Signal to the branch-updater to continue (false alarm).
+		worker.postMessage({ handlerName: 'continue-updates' });
+	}
+
+	// Really 'depleted' but not the first.
+	if (lowestBoundary && !isFirst) {
+		// Add messageCallback to the release queue.
+		releaseQueue.push(worker);
+		// A continue-updates will be sent after reset.
+	}
+
+	// Message is valid: Both valid 'depleted' and the first 'depleted'.
+	if (isValid) {
+		// Check if a new request batch can be created.
+		const { status, value } = countRequestsBatch.countConsumedRequests();
+		if (status === 'success') {
+			// A new request-batch can be prepared, perform delayed reset.
+			setTimeout(() => {
+				resetBatchAndCounters(requestsPerMinute);
+			}, 61000);
+		} else {
+			// Cannot make new request-batch, maybe can make smaller batch.
+			if (value > 0) {
+				// A smaller request-batch can be made.
+				setTimeout(() => {
+					resetBatchAndCounters(value);
+				}, 61000);
+			}
+			// No more requests can be made from this endpoint.
+			// Close this thread and it's children.
+			for (let workerKey in branchUpdaters) {
+				branchUpdaters[workerKey].postMessage({ handlerName: 'end-updater' });
+			}
+		}
+	}
 };
 messagesHandler.addMessageHandler('updater-depleted', hUpdaterDepleted);
-
-// ! Maybe Redundant.
-/**
- * Handles an updater-request message:
- * An updater-request message represents a decrease of total available requests per IP.
- * This will count up to 'requestsPerMinute' -1, then trigger a wait of one minute,
- * Before allocating new batch of request-tokens to the Branch Updates worker threads.
- * @param param0: The worker thread id of the sender.
- */
-const hUpdaterRequest: IHandlerFunction<IMMessageHandlers, IBUMessageHandlers> = ({ senderId }) => {
-	console.log(`#Ip Manager ${threadId} noticed Branch Updater ${senderId} made a request`);
-};
-messagesHandler.addMessageHandler('updater-request', hUpdaterRequest);
 
 // ###################################################################################################
 // ### Functions to Handle Branch Updater (Child) Events #############################################
@@ -196,12 +239,6 @@ const updaterHadError = (bUpdaterWorker: BranchUpdaterWorker, error: Error) => {
 	if (Object.keys(branchUpdaters).length == 0) process.exit(0);
 };
 
-const updaterMadeRequest = (bUpdaterWorker: BranchUpdaterWorker) => {
-	console.log(
-		`#Ip Manager ${threadId} Noticed Branch Updater ${bUpdaterWorker.threadId} Made Request`
-	);
-};
-
 // ###################################################################################################
 // ### Create Branch Updaters Worker Thread ##########################################################
 // ###################################################################################################
@@ -224,7 +261,9 @@ const addUpdater = (counterData: APIRequestCounterData, proxyEndpoint?: ProxyEnd
 		bUpdater.once('online', () => updaterIsOnline(bUpdater));
 		bUpdater.once('exit', (code) => updaterHasExited(bUpdater, code));
 		bUpdater.once('error', (error) => updaterHadError(bUpdater, error));
-		bUpdater.on('message', (message) => messagesHandler.handle(message));
+		bUpdater.on('message', (message) =>
+			messagesHandler.handle({ message, worker: bUpdater, parentPort: cUpdate })
+		);
 		branchUpdaters[bUpdater.threadId] = bUpdater;
 	}
 };
@@ -255,6 +294,20 @@ const ipManagerDepleted = () => {
 };
 
 // ###################################################################################################
+// ### Helper Functions ##############################################################################
+// ###################################################################################################
+
+const resetBatchAndCounters = (batchSize: number) => {
+	// Reset request-batch counter to batch-size.
+	// This also blocks addition to 'releaseQueue'.
+	verifyDepletedMessage.resetRequestCounter(batchSize);
+	// Reset first-depleted counter.
+	verifyDepletedMessage.resetDepletedCounter();
+	// Return 'continue' message to all awaiting workers.
+	releaseQueue.forEach((worker) => worker.postMessage({ handlerName: 'continue-updates' }));
+};
+
+// ###################################################################################################
 // ### Launch \ Start listening ######################################################################
 // ###################################################################################################
 
@@ -277,5 +330,4 @@ export type IMMessageHandlers =
 	| 'start-endpoint'
 	| 'stop-endpoint'
 	| 'updater-done'
-	| 'updater-depleted'
-	| 'updater-request';
+	| 'updater-depleted';

@@ -1,6 +1,6 @@
-import { IMMessageHandlers } from '../scrape-multithreaded/IpManager';
+import { IMMessageHandlers } from '../continues-update/IpManager';
 import { ACustomParentPort } from './ACustomParentPort';
-import { IBUMessageHandlers, IBranchUpdaterWData } from '../scrape-multithreaded/BranchUpdater';
+import { IBUMessageHandlers, IBranchUpdaterWData } from '../continues-update/BranchUpdater';
 
 export class IpManagerParentPort extends ACustomParentPort<IBUMessageHandlers, IMMessageHandlers> {
 	// No custom constructor needed.
