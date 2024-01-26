@@ -1,8 +1,8 @@
 import express, { Request, Response, NextFunction } from 'express';
 import { URLs } from '../common/urls';
-import { PuppeteerBrowser } from '../puppeteer/pptr-browser';
+import { PuppeteerBrowser } from '../automation/puppeteer/pptr-browser';
 import { filterBranches } from '../scrape/FilterBranches';
-import { BranchModule } from '../elastic/BranchModel';
+import { BranchModule } from '../data/elastic/BranchModel';
 
 const router = express.Router();
 

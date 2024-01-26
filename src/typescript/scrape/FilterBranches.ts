@@ -1,4 +1,4 @@
-import { IDocumentBranch } from '../elastic/BranchModel';
+import { IDocumentBranch } from '../data/elastic/BranchModel';
 import { IBranch } from '../interfaces/IBranch';
 
 export interface IRequestBranchesResponse {

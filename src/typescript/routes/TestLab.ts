@@ -1,21 +1,24 @@
 import express, { Request, Response, NextFunction, response } from 'express';
-import { BranchModule, IDocumentBranch, ISingleBranchQueryResponse } from '../elastic/BranchModel';
-import { ErrorModule } from '../elastic/ErrorModel';
-import { PostUserRequest } from '../isreal-post-requests/PostUserRequest';
+import {
+	BranchModule,
+	IDocumentBranch,
+	INewServiceRecord,
+	ISingleBranchQueryResponse,
+} from '../data/elastic/BranchModel';
+import { ErrorModule, IErrorMapping, IServiceError } from '../data/elastic/ErrorModel';
+import { PostUserRequest } from '../api/isreal-post-requests/PostUserRequest';
 import {
 	IPostServiceRequired,
 	PostServiceRequest,
-} from '../isreal-post-requests/PostServiceRequest';
-import { IPostDatesRequired, PostDatesRequest } from '../isreal-post-requests/PostDatesRequest';
-import { IPostTimesRequired, PostTimesRequest } from '../isreal-post-requests/PostTimesRequest';
-import { SmartProxyCollection } from '../proxy-management/SmartProxyCollection';
-import { WebShareCollection } from '../proxy-management/WebShareCollection';
-import { ContinuesUpdate } from '../scrape-multithreaded/ContinuesUpdate';
-// import { bEnqueue, dequeue, enqueue, queueName, queueSize } from '../redis/RedisTest';
-import { BranchesToProcess } from '../redis/BranchesToProcess';
-import { ProcessedBranches } from '../redis/ProcessedBranches';
-import '../test/transferable/P';
-
+} from '../api/isreal-post-requests/PostServiceRequest';
+import { IPostDatesRequired, PostDatesRequest } from '../api/isreal-post-requests/PostDatesRequest';
+import { IPostTimesRequired, PostTimesRequest } from '../api/isreal-post-requests/PostTimesRequest';
+import { SmartProxyCollection } from '../data/proxy-management/SmartProxyCollection';
+import { WebShareCollection } from '../data/proxy-management/WebShareCollection';
+import { ContinuesUpdateRoot } from '../services/appointments-update/entry-point/ContinuesUpdateRoot';
+import { BranchesToProcess } from '../data/redis/BranchesToProcess';
+import { ProcessedBranches } from '../data/redis/ProcessedBranches';
+// import '../test/transferable/P';
 // import '../scrape-multithreaded/test/parent';
 
 const router = express.Router();
@@ -29,7 +32,6 @@ router.get('/api/scrape/testing', async (req: Request, res: Response, next: Next
 	try {
 		// const cUpdate = new ContinuesUpdate(true);
 		// cUpdate.test();
-
 		res.status(200).send(responses);
 	} catch (error) {
 		console.log(error);
@@ -42,7 +44,7 @@ router.get('/api/scrape/testing', async (req: Request, res: Response, next: Next
 // ###################################################################################################
 
 const ContinuesUpdateQPop = async (responses: any[]) => {
-	const updates = new ContinuesUpdate(false);
+	const updates = new ContinuesUpdateRoot(false);
 	const branchQueue = new BranchesToProcess();
 	const doneQueue = new ProcessedBranches();
 
@@ -82,17 +84,19 @@ const ContinuesUpdateQPop = async (responses: any[]) => {
 // ### Test Redis Queue - Basic ######################################################################
 // ###################################################################################################
 
-// const testRedisQueueBasic = async (responses: any[]) => {
-// 	responses.push({ queueName: queueName });
-// 	responses.push({ queueSize: await queueSize() });
-// 	// responses.push({ bulkEnqueue: await bEnqueue() });
-// 	// responses.push({ enqueue: await enqueue() });
-// 	responses.push({ dequeue: await dequeue() });
-// 	responses.push({ dequeue: await dequeue() });
-// 	responses.push({ dequeue: await dequeue() });
-// 	responses.push({ dequeue: await dequeue() });
-// 	return responses;
-// };
+// import { bEnqueue, dequeue, enqueue, queueName, queueSize } from '../redis/RedisTest';
+const testRedisQueueBasic = async (responses: any[]) => {
+	const { bEnqueue, dequeue, enqueue, queueName, queueSize } = require('../redis/RedisTest');
+	responses.push({ queueName: queueName });
+	responses.push({ queueSize: await queueSize() });
+	// responses.push({ bulkEnqueue: await bEnqueue() });
+	// responses.push({ enqueue: await enqueue() });
+	responses.push({ dequeue: await dequeue() });
+	responses.push({ dequeue: await dequeue() });
+	responses.push({ dequeue: await dequeue() });
+	responses.push({ dequeue: await dequeue() });
+	return responses;
+};
 
 // ###################################################################################################
 // ### Test Proxies ##################################################################################

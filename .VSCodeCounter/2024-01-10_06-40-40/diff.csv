@@ -1,0 +1,30 @@
+"filename", "language", "TypeScript", "JavaScript", "comment", "blank", "total"
+"c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\index.js", "JavaScript", 0, -18, -2, -9, -29
+"c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\test.js", "JavaScript", 0, -37, -8, -10, -55
+"c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\api-requests\BranchRequest.ts", "TypeScript", -169, 0, 169, 0, 0
+"c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\api-requests\DatesRequest.ts", "TypeScript", -91, 0, 91, 0, 0
+"c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\api-requests\ServicesRequest.ts", "TypeScript", -109, 0, 109, 0, 0
+"c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\api-requests\TimesRequest.ts", "TypeScript", -76, 0, 76, 0, 0
+"c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\api-requests\UserRequest.ts", "TypeScript", -78, 0, 78, 0, 0
+"c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\appointments-update\BranchAppointment.ts", "TypeScript", 22, 0, 1, 3, 26
+"c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\appointments-update\DatesNode.ts", "TypeScript", -4, 0, -1, 0, -5
+"c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\appointments-update\ServicesNode.ts", "TypeScript", -5, 0, -1, 0, -6
+"c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\appointments-update\TimesNode.ts", "TypeScript", -1, 0, -1, 0, -2
+"c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\appointments-update\UserNode.ts", "TypeScript", -4, 0, -1, 0, -5
+"c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\continues-update\BranchUpdater.ts", "TypeScript", 26, 0, 20, 8, 54
+"c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\continues-update\ContinuesUpdate.ts", "TypeScript", 1, 0, 0, 0, 1
+"c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\continues-update\IpManager.ts", "TypeScript", 35, 0, -35, -2, -2
+"c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\custom-parent\ACustomPPort.ts", "TypeScript", 0, 0, -36, -8, -44
+"c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\custom-worker\ACustomWorker.ts", "TypeScript", -29, 0, -14, -8, -51
+"c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\custom-worker\AbstractCustomWorker.ts", "TypeScript", 29, 0, 14, 8, 51
+"c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\custom-worker\BranchUpdaterWorker.ts", "TypeScript", 3, 0, 0, 0, 3
+"c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\interfaces\IApiRequest.ts", "TypeScript", -11, 0, 11, 0, 0
+"c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\interfaces\IBranchQueryResponse.ts", "TypeScript", 0, 0, -9, -3, -12
+"c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\isreal-post-requests\PostTimesRequest.ts", "TypeScript", -1, 0, 0, 0, -1
+"c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\isreal-post-requests\PostUserRequest.ts", "TypeScript", -1, 0, 0, 0, -1
+"c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\redis\BaseRedisQueue.ts", "TypeScript", 17, 0, 1, 1, 19
+"c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\scrape-multithreaded\CParentPort.ts", "TypeScript", 0, 0, -31, -8, -39
+"c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\scrape-multithreaded\CWorker.ts", "TypeScript", 0, 0, -44, -8, -52
+"c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\test\redis\testRedis.ts", "TypeScript", 15, 0, 0, 3, 18
+"c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\test\suites\RequestNodes.ts", "TypeScript", 0, 0, 0, 1, 1
+"Total", "-", -431, -55, 387, -32, -131
