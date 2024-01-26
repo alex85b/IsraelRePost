@@ -1,5 +1,5 @@
-import { SmartProxyCollection } from '../../proxy-management/SmartProxyCollection';
-import { WebShareCollection } from '../../proxy-management/WebShareCollection';
+import { SmartProxyCollection } from '../../data/proxy-management/SmartProxyCollection';
+import { WebShareCollection } from '../../data/proxy-management/WebShareCollection';
 
 export const webShareProxyObject = async (run: boolean) => {
 	if (!run) return;

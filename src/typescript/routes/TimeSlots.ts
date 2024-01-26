@@ -1,7 +1,7 @@
 import express, { Request, Response, NextFunction } from 'express';
 import dotenv from 'dotenv';
 import { splitBranchesArray } from '../common/SplitBranchesArray';
-import { BranchModule } from '../elastic/BranchModel';
+import { BranchModule } from '../data/elastic/BranchModel';
 
 dotenv.config();
 

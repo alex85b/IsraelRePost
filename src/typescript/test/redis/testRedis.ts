@@ -1,4 +1,4 @@
-import { BranchesToProcess } from '../../redis/BranchesToProcess';
+import { BranchesToProcess } from '../../data/redis/BranchesToProcess';
 
 export const testBranchesToProcess = async (run: boolean) => {
 	if (!run) return;

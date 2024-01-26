@@ -22,6 +22,7 @@ const {
 const { testE2E } = require('./js-build/test/threads/e2e');
 const { conversing } = require('./js-build/test/threads/conversing_d0');
 const { testBranchesToProcess, testProcessedBranches } = require('./js-build/test/redis/testRedis');
+const { TestAppointmentsWorkerLogic } = require('./js-build/test/workers/logic/TestAppointments');
 
 // IsraelPostsAPIs
 testAPIs(false);
@@ -52,7 +53,10 @@ countRequestsBatch(false);
 conversing(false);
 
 // threads/e2e
-testE2E(true);
+testE2E(false);
 
 // redis/testRedis
 testBranchesToProcess(false);
+
+// test/workers/logic/TestAppointments
+TestAppointmentsWorkerLogic(true);

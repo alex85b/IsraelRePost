@@ -1,6 +1,6 @@
 import { workerData, Worker } from 'worker_threads';
 import path from 'path';
-import { CountAPIRequest } from '../../atomic-counter/ImplementCounters';
+import { CountAPIRequest } from '../../services/appointments-update/components/atomic-counter/ImplementCounters';
 
 const requestCounterData = workerData.requestCounterData;
 

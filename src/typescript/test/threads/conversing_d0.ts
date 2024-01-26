@@ -2,11 +2,11 @@ import {
 	IHandlerFunction,
 	IMessage,
 	MessagesHandler,
-} from '../../continues-update/messages/HandleThreadMessages';
+} from '../../services/appointments-update/worker-messaging/HandleThreadMessages';
 import path from 'path';
-import { IpManagementWorker } from '../../custom-worker/IpManagementWorker';
-import { IMMessageHandlers } from '../../continues-update/IpManager';
-import { CUMessageHandlers } from '../../continues-update/ContinuesUpdate';
+import { IpManagementWorker } from '../../services/appointments-update/components/custom-worker/IpManagementWorker';
+import { IMMessageHandlers } from '../../services/appointments-update/worker-scripts/IpManagerWorkerScript';
+import { CUMessageHandlers } from '../../services/appointments-update/entry-point/ContinuesUpdateRoot';
 
 // A stop flag.
 let stop: boolean = false;

@@ -2,16 +2,19 @@ import {
 	IHandlerFunction,
 	IMessage,
 	MessagesHandler,
-} from '../../continues-update/messages/HandleThreadMessages';
+} from '../../services/appointments-update/worker-messaging/HandleThreadMessages';
 import path from 'path';
 import { parentPort } from 'worker_threads';
-import { CUMessageHandlers } from '../../continues-update/ContinuesUpdate';
-import { IMMessageHandlers } from '../../continues-update/IpManager';
-import { ContinuesUpdatePPort } from '../../custom-parent/ContinuesUpdatePPort';
-import { BranchAppointments } from '../../appointments-update/BranchAppointment';
-import { BranchUpdaterWorker } from '../../custom-worker/BranchUpdaterWorker';
-import { IBUMessageHandlers, IBranchUpdaterWData } from '../../continues-update/BranchUpdater';
-import { APIRequestCounterData } from '../../atomic-counter/ImplementCounters';
+import { CUMessageHandlers } from '../../services/appointments-update/entry-point/ContinuesUpdateRoot';
+import { IMMessageHandlers } from '../../services/appointments-update/worker-scripts/IpManagerWorkerScript';
+import { ContinuesUpdatePPort } from '../../services/appointments-update/components/custom-parent/ContinuesUpdatePPort';
+import { RetrieveBranchServices } from '../../api/chain-requests/RetrieveBranchServices';
+import { BranchUpdaterWorker } from '../../services/appointments-update/components/custom-worker/BranchUpdaterWorker';
+import {
+	IBUMessageHandlers,
+	IBranchUpdaterWData,
+} from '../../services/appointments-update/worker-scripts/AppointmentsWorkerScript';
+import { APIRequestCounterData } from '../../services/appointments-update/components/atomic-counter/ImplementCounters';
 
 if (parentPort === undefined) throw Error('[conversing_d1] parentPort is undefined');
 if (parentPort === null) throw Error('[conversing_d1] parentPort is null');

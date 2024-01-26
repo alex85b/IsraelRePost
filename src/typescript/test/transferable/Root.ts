@@ -1,6 +1,6 @@
 import { Worker } from 'worker_threads';
 import path from 'path';
-import { APIRequestCounterData } from '../../atomic-counter/ImplementCounters';
+import { APIRequestCounterData } from '../../services/appointments-update/components/atomic-counter/ImplementCounters';
 
 export const setupNodeDepth1 = (run: boolean) => {
 	if (!run) return;

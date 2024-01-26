@@ -1,4 +1,4 @@
-import { ISingleBranchQueryResponse } from '../elastic/BranchModel';
+import { ISingleBranchQueryResponse } from '../data/elastic/BranchModel';
 
 export const splitBranchesArray = (
 	branchesArray: ISingleBranchQueryResponse[],

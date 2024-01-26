@@ -4,25 +4,20 @@ import {
 	IDocumentBranch,
 	INewServiceRecord,
 	ISingleBranchQueryResponse,
-} from '../elastic/BranchModel';
-import { ErrorModule, IErrorMapping, IServiceError } from '../elastic/ErrorModel';
-import { PostUserRequest } from '../isreal-post-requests/PostUserRequest';
+} from '../data/elastic/BranchModel';
+import { ErrorModule, IErrorMapping, IServiceError } from '../data/elastic/ErrorModel';
+import { PostUserRequest } from '../api/isreal-post-requests/PostUserRequest';
 import {
 	IPostServiceRequired,
 	PostServiceRequest,
-} from '../isreal-post-requests/PostServiceRequest';
-import { IPostDatesRequired, PostDatesRequest } from '../isreal-post-requests/PostDatesRequest';
-import { IPostTimesRequired, PostTimesRequest } from '../isreal-post-requests/PostTimesRequest';
-import { SmartProxyCollection } from '../proxy-management/SmartProxyCollection';
-import { WebShareCollection } from '../proxy-management/WebShareCollection';
-import { ContinuesUpdate } from '../continues-update/ContinuesUpdate';
-import { BranchesToProcess } from '../redis/BranchesToProcess';
-import { ProcessedBranches } from '../redis/ProcessedBranches';
-import { UserNode } from '../appointments-update/UserNode';
-import { RequestsAllowed } from '../atomic-counter/RequestsAllowed';
-import { RequestCounter } from '../atomic-counter/RequestCounter';
-import { AxiosProxyConfig } from 'axios';
-import { ServicesNode } from '../appointments-update/ServicesNode';
+} from '../api/isreal-post-requests/PostServiceRequest';
+import { IPostDatesRequired, PostDatesRequest } from '../api/isreal-post-requests/PostDatesRequest';
+import { IPostTimesRequired, PostTimesRequest } from '../api/isreal-post-requests/PostTimesRequest';
+import { SmartProxyCollection } from '../data/proxy-management/SmartProxyCollection';
+import { WebShareCollection } from '../data/proxy-management/WebShareCollection';
+import { ContinuesUpdateRoot } from '../services/appointments-update/entry-point/ContinuesUpdateRoot';
+import { BranchesToProcess } from '../data/redis/BranchesToProcess';
+import { ProcessedBranches } from '../data/redis/ProcessedBranches';
 // import '../test/transferable/P';
 // import '../scrape-multithreaded/test/parent';
 
@@ -49,7 +44,7 @@ router.get('/api/scrape/testing', async (req: Request, res: Response, next: Next
 // ###################################################################################################
 
 const ContinuesUpdateQPop = async (responses: any[]) => {
-	const updates = new ContinuesUpdate(false);
+	const updates = new ContinuesUpdateRoot(false);
 	const branchQueue = new BranchesToProcess();
 	const doneQueue = new ProcessedBranches();
 

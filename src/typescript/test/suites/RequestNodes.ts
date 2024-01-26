@@ -1,10 +1,13 @@
-import { IUserNodeData, UserNode } from '../../appointments-update/UserNode';
-import { APIRequestCounterData, CountAPIRequest } from '../../atomic-counter/ImplementCounters';
-import { RequestCounter } from '../../atomic-counter/RequestCounter';
-import { RequestsAllowed } from '../../atomic-counter/RequestsAllowed';
-import { BranchModule, INewServiceRecord } from '../../elastic/BranchModel';
-import { IErrorMapping } from '../../elastic/ErrorModel';
-import { SmartProxyCollection } from '../../proxy-management/SmartProxyCollection';
+import { IUserNodeData, UserNode } from '../../api/requests-as-nodes/UserNode';
+import {
+	APIRequestCounterData,
+	CountAPIRequest,
+} from '../../services/appointments-update/components/atomic-counter/ImplementCounters';
+import { RequestCounter } from '../../services/appointments-update/components/atomic-counter/RequestCounter';
+import { RequestsAllowed } from '../../services/appointments-update/components/atomic-counter/RequestsAllowed';
+import { BranchModule, INewServiceRecord } from '../../data/elastic/BranchModel';
+import { IErrorMapping } from '../../data/elastic/ErrorModel';
+import { SmartProxyCollection } from '../../data/proxy-management/SmartProxyCollection';
 
 // ###################################################################################################
 // ### Test New Request-Nodes ########################################################################

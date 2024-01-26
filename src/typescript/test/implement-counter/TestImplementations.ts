@@ -2,7 +2,7 @@ import {
 	APIRequestCounterData,
 	VerifyDepletedMessage,
 	CountRequestsBatch,
-} from '../../atomic-counter/ImplementCounters';
+} from '../../services/appointments-update/components/atomic-counter/ImplementCounters';
 
 export const constructRequestData = (run: boolean) => {
 	if (!run) return;

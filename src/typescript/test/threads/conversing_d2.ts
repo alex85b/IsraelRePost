@@ -2,13 +2,13 @@ import {
 	IHandlerFunction,
 	IMessage,
 	MessagesHandler,
-} from '../../continues-update/messages/HandleThreadMessages';
+} from '../../services/appointments-update/worker-messaging/HandleThreadMessages';
 import path from 'path';
 import { parentPort } from 'worker_threads';
-import { CUMessageHandlers } from '../../continues-update/ContinuesUpdate';
-import { IMMessageHandlers } from '../../continues-update/IpManager';
-import { ContinuesUpdatePPort } from '../../custom-parent/ContinuesUpdatePPort';
-import { IpManagerParentPort } from '../../custom-parent/IpManagerParentPort';
+import { CUMessageHandlers } from '../../services/appointments-update/entry-point/ContinuesUpdateRoot';
+import { IMMessageHandlers } from '../../services/appointments-update/worker-scripts/IpManagerWorkerScript';
+import { ContinuesUpdatePPort } from '../../services/appointments-update/components/custom-parent/ContinuesUpdatePPort';
+import { IpManagerParentPort } from '../../services/appointments-update/components/custom-parent/IpManagerParentPort';
 
 if (parentPort === undefined) throw Error('[conversing_d1] parentPort is undefined');
 if (parentPort === null) throw Error('[conversing_d1] parentPort is null');

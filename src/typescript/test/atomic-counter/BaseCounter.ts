@@ -1,4 +1,4 @@
-import { AtomicCounter } from '../../atomic-counter/AtomicCounter';
+import { AtomicCounter } from '../../services/appointments-update/components/atomic-counter/AtomicCounter';
 
 export const constructCounter = (run: boolean) => {
 	if (!run) return;

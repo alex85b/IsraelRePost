@@ -1,15 +1,21 @@
-import { RequestCounter } from '../../atomic-counter/RequestCounter';
-import { RequestsAllowed } from '../../atomic-counter/RequestsAllowed';
-import { BranchModule, INewServiceRecord } from '../../elastic/BranchModel';
-import { IErrorMapping } from '../../elastic/ErrorModel';
-import { IPostDatesRequired, PostDatesRequest } from '../../isreal-post-requests/PostDatesRequest';
+import { RequestCounter } from '../../services/appointments-update/components/atomic-counter/RequestCounter';
+import { RequestsAllowed } from '../../services/appointments-update/components/atomic-counter/RequestsAllowed';
+import { BranchModule, INewServiceRecord } from '../../data/elastic/BranchModel';
+import { IErrorMapping } from '../../data/elastic/ErrorModel';
+import {
+	IPostDatesRequired,
+	PostDatesRequest,
+} from '../../api/isreal-post-requests/PostDatesRequest';
 import {
 	IPostServiceRequired,
 	PostServiceRequest,
-} from '../../isreal-post-requests/PostServiceRequest';
-import { IPostTimesRequired, PostTimesRequest } from '../../isreal-post-requests/PostTimesRequest';
-import { PostUserRequest } from '../../isreal-post-requests/PostUserRequest';
-import { SmartProxyCollection } from '../../proxy-management/SmartProxyCollection';
+} from '../../api/isreal-post-requests/PostServiceRequest';
+import {
+	IPostTimesRequired,
+	PostTimesRequest,
+} from '../../api/isreal-post-requests/PostTimesRequest';
+import { PostUserRequest } from '../../api/isreal-post-requests/PostUserRequest';
+import { SmartProxyCollection } from '../../data/proxy-management/SmartProxyCollection';
 
 // ###################################################################################################
 // ### Test Israel Post APIs #########################################################################
