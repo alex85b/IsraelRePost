@@ -1,47 +1,10 @@
 import { AtomicCounter, setupMemory } from './AtomicCounter';
+import { ICounterSetup, NaturalNumbersCounterSetup } from './CounterSetup';
+import { IIncrementalCounter, NaturalNumbersCounter } from './IncrementalCounter';
 
 /**
- * Classes that implement AtomicCounter, to provide thread-safe and asynchronous-safe counting.
+ * Classes that implement IIncrementalCounter, to prevent possible race conditions.
  */
-
-/**
- * This will be used by Ip Manager in order to handle a 'depleted' message from Branch-updater.
- * 1. Verify if a 'depleted' message id valid.
- * 2. Reset first-depleted counter.
- * 3. Reset request-batch counter to batch-size.
- */
-export class VerifyDepletedMessage {
-	private countDepletedMessages: AtomicCounter;
-	protected countRequest: AtomicCounter;
-
-	constructor(data: APIRequestCounterData) {
-		this.countDepletedMessages = new AtomicCounter(1);
-		this.countDepletedMessages.resetCount(0);
-		this.countRequest = new AtomicCounter(data.batchSize, data.buffer);
-	}
-
-	isValidDepleted() {
-		// If the request counter reached the boundary.
-		const atBoundary = this.countRequest.isAtBoundary().lowerBound;
-		// If this is the first depleted message.
-		let isFirst = false;
-		if (atBoundary)
-			isFirst = this.countDepletedMessages.addAndGet().status === 'success' ? true : false;
-		return {
-			isValid: atBoundary && isFirst,
-			lowestBoundary: atBoundary,
-			isFirst: isFirst,
-		};
-	}
-
-	resetDepletedCounter() {
-		this.countDepletedMessages.resetCount(0);
-	}
-
-	resetRequestCounter(batchSize: number) {
-		this.countRequest.resetCount(batchSize);
-	}
-}
 
 /**
  * This allows to track remaining request-batches in the total-request pool.
@@ -49,6 +12,9 @@ export class VerifyDepletedMessage {
  * 2. Tries to decrease total-requests by provided batch-size.
  * 3. Allows to change the size of the request-batch size.
  */
+
+export interface ICountRequestBatch {}
+
 export class CountRequestsBatch {
 	private countRequestsBatch: AtomicCounter;
 
@@ -62,7 +28,9 @@ export class CountRequestsBatch {
 	}
 
 	countConsumedRequests() {
-		return this.countRequestsBatch.subtractAndGet(this.batchSize);
+		const qwe = this.countRequestsBatch.subtractAndGet(this.batchSize);
+		const { status, value } = qwe;
+		return qwe;
 	}
 }
 
@@ -92,13 +60,14 @@ export class CountAPIRequest {
 	protected countRequest: AtomicCounter;
 
 	constructor(data: APIRequestCounterData) {
-		this.countRequest = new AtomicCounter(data.batchSize, data.buffer);
+		this.countRequest = new AtomicCounter(data.batchSize);
 	}
 
 	isAllowed() {
 		const response = this.countRequest.subtractAndGet();
-		if (response.status === 'success') return true;
-		return false;
+		// console.log('[CountAPIRequest][isAllowed] .subtractAndGet() : ', response);
+		if (response.status === 'success') return { allowed: true, requestLeft: response.value };
+		return { allowed: false, requestLeft: response.value };
 	}
 }
 

@@ -1,0 +1,73 @@
+Date : 2024-02-10 16:28:03
+Directory : c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\test
+Total : 29 files,  1058 codes, 166 comments, 238 blanks, all 1462 lines
+
+Languages
++------------+------------+------------+------------+------------+------------+
+| language   | files      | code       | comment    | blank      | total      |
++------------+------------+------------+------------+------------+------------+
+| TypeScript |         29 |      1,058 |        166 |        238 |      1,462 |
++------------+------------+------------+------------+------------+------------+
+
+Directories
++----------------------------------------------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                                                                                                     | files      | code       | comment    | blank      | total      |
++----------------------------------------------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                                                                                                        |         29 |      1,058 |        166 |        238 |      1,462 |
+| async-mutex                                                                                                                                              |          4 |        105 |          0 |         25 |        130 |
+| async-mutex\base-mutex                                                                                                                                   |          2 |         57 |          0 |         13 |         70 |
+| async-mutex\consumed-batch                                                                                                                               |          2 |         48 |          0 |         12 |         60 |
+| atomic-counter                                                                                                                                           |          6 |        280 |          3 |         63 |        346 |
+| atomic-counter (Files)                                                                                                                                   |          2 |        124 |          0 |         32 |        156 |
+| atomic-counter\count-request                                                                                                                             |          2 |         78 |          1 |         16 |         95 |
+| atomic-counter\reset-on-depleted                                                                                                                         |          2 |         78 |          2 |         15 |         95 |
+| concepts                                                                                                                                                 |          1 |          0 |          0 |          1 |          1 |
+| debunked                                                                                                                                                 |          1 |          0 |         90 |          8 |         98 |
+| debunked\worker-setup                                                                                                                                    |          1 |          0 |         90 |          8 |         98 |
+| handlers                                                                                                                                                 |          5 |        263 |         22 |         46 |        331 |
+| handlers\massage-handlers                                                                                                                                |          5 |        263 |         22 |         46 |        331 |
+| handlers\massage-handlers\Appointments                                                                                                                   |          2 |        120 |         18 |         20 |        158 |
+| handlers\massage-handlers\IpManagers                                                                                                                     |          3 |        143 |          4 |         26 |        173 |
+| implement-counter                                                                                                                                        |          1 |         62 |          8 |         15 |         85 |
+| proxy-collection                                                                                                                                         |          1 |         18 |          0 |          3 |         21 |
+| redis                                                                                                                                                    |          1 |         15 |          0 |          3 |         18 |
+| suites                                                                                                                                                   |          2 |        147 |          8 |         27 |        182 |
+| threads                                                                                                                                                  |          4 |        138 |         33 |         36 |        207 |
+| transferable                                                                                                                                             |          3 |         30 |          2 |         11 |         43 |
++----------------------------------------------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++----------------------------------------------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| filename                                                                                                                                                 | language   | code       | comment    | blank      | total      |
++----------------------------------------------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\test\async-mutex\base-mutex\ConsumerStub.ts                     | TypeScript |          8 |          0 |          4 |         12 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\test\async-mutex\base-mutex\TestAsyncMutex.ts                   | TypeScript |         49 |          0 |          9 |         58 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\test\async-mutex\consumed-batch\ConsumerStub.ts                 | TypeScript |          8 |          0 |          4 |         12 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\test\async-mutex\consumed-batch\TestCountConsumedBatch.ts       | TypeScript |         40 |          0 |          8 |         48 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\test\atomic-counter\BaseCounter.ts                              | TypeScript |         78 |          0 |         22 |        100 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\test\atomic-counter\TestNaturalNumbersCounter.ts                | TypeScript |         46 |          0 |         10 |         56 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\test\atomic-counter\count-request\ConsumerStub.ts               | TypeScript |         26 |          1 |          6 |         33 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\test\atomic-counter\count-request\TestCountApiRequest.ts        | TypeScript |         52 |          0 |         10 |         62 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\test\atomic-counter\reset-on-depleted\ConsumerStub.ts           | TypeScript |         26 |          2 |          5 |         33 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\test\atomic-counter\reset-on-depleted\TestResetOnDepleted.ts    | TypeScript |         52 |          0 |         10 |         62 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\test\concepts\mutexCounter.ts                                   | TypeScript |          0 |          0 |          1 |          1 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\test\debunked\worker-setup\WorkerThreadConstructors.ts          | TypeScript |          0 |         90 |          8 |         98 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\test\handlers\massage-handlers\Appointments\StubAppointments.ts | TypeScript |         53 |          2 |          9 |         64 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\test\handlers\massage-handlers\Appointments\TestAppointments.ts | TypeScript |         67 |         16 |         11 |         94 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\test\handlers\massage-handlers\IpManagers\StubAppointments.ts   | TypeScript |         54 |          0 |          8 |         62 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\test\handlers\massage-handlers\IpManagers\StubIpManager.ts      | TypeScript |         73 |          2 |         10 |         85 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\test\handlers\massage-handlers\IpManagers\TestIpManagers.ts     | TypeScript |         16 |          2 |          8 |         26 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\test\implement-counter\TestImplementations.ts                   | TypeScript |         62 |          8 |         15 |         85 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\test\proxy-collection\testProxyObjects.ts                       | TypeScript |         18 |          0 |          3 |         21 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\test\redis\testRedis.ts                                         | TypeScript |         15 |          0 |          3 |         18 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\test\suites\IsraelPostsAPIs.ts                                  | TypeScript |         91 |          4 |         13 |        108 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\test\suites\RequestNodes.ts                                     | TypeScript |         56 |          4 |         14 |         74 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\test\threads\conversing_d0.ts                                   | TypeScript |         44 |         13 |         11 |         68 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\test\threads\conversing_d1.ts                                   | TypeScript |         66 |         17 |         16 |         99 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\test\threads\conversing_d2.ts                                   | TypeScript |         22 |          3 |          7 |         32 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\test\threads\e2e.ts                                             | TypeScript |          6 |          0 |          2 |          8 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\test\transferable\NodeDepth1.ts                                 | TypeScript |         14 |          1 |          5 |         20 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\test\transferable\NodeDepth2.ts                                 | TypeScript |          4 |          1 |          3 |          8 |
+| c:\Users\AlexanderB\Desktop\My Content\Projects\IsraelRePost\IsraelRePost\src\typescript\test\transferable\Root.ts                                       | TypeScript |         12 |          0 |          3 |         15 |
+| Total                                                                                                                                                    |            |      1,058 |        166 |        238 |      1,462 |
++----------------------------------------------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+

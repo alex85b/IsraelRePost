@@ -22,7 +22,25 @@ const {
 const { testE2E } = require('./js-build/test/threads/e2e');
 const { conversing } = require('./js-build/test/threads/conversing_d0');
 const { testBranchesToProcess, testProcessedBranches } = require('./js-build/test/redis/testRedis');
-const { TestAppointmentsWorkerLogic } = require('./js-build/test/workers/logic/TestAppointments');
+const {
+	TestAppointments,
+} = require('./js-build/test/handlers/massage-handlers/Appointments/TestAppointments');
+const {
+	TestIpManagers,
+} = require('./js-build/test/handlers/massage-handlers/IpManagers/TestIpManagers');
+const {
+	TestNaturalNumbersCounter,
+} = require('./js-build/test/atomic-counter/TestNaturalNumbersCounter');
+const { testMutexCounter } = require('./js-build/test/async-mutex/base-mutex/TestAsyncMutex');
+const {
+	testCountConsumedBatch,
+} = require('./js-build/test/async-mutex/consumed-batch/TestCountConsumedBatch');
+const {
+	testVerifyDepletedMessage,
+} = require('./js-build/test/atomic-counter/reset-on-depleted/TestResetOnDepleted');
+const {
+	testCountApiRequest,
+} = require('./js-build/test/atomic-counter/count-request/TestCountApiRequest');
 
 // IsraelPostsAPIs
 testAPIs(false);
@@ -58,5 +76,23 @@ testE2E(false);
 // redis/testRedis
 testBranchesToProcess(false);
 
-// test/workers/logic/TestAppointments
-TestAppointmentsWorkerLogic(true);
+// massage-handlers/Appointments/TestAppointments
+TestAppointments(false);
+
+// IpManagers/TestIpManagers
+TestIpManagers(false);
+
+// /atomic-counter/TestThreadSafeCounter'
+TestNaturalNumbersCounter(false);
+
+// async-mutex/base-mutex/TestAsyncMutex
+testMutexCounter(false);
+
+// async-mutex/consumed-batch/TestCountConsumedBatch
+testCountConsumedBatch(false);
+
+// atomic-counter/reset-on-depleted/TestResetOnDepleted
+testVerifyDepletedMessage(false);
+
+// atomic-counter/count-request/TestCountApiRequest
+testCountApiRequest(true);

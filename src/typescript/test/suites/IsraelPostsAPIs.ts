@@ -1,5 +1,3 @@
-import { RequestCounter } from '../../services/appointments-update/components/atomic-counter/RequestCounter';
-import { RequestsAllowed } from '../../services/appointments-update/components/atomic-counter/RequestsAllowed';
 import { BranchModule, INewServiceRecord } from '../../data/elastic/BranchModel';
 import { IErrorMapping } from '../../data/elastic/ErrorModel';
 import {
@@ -28,9 +26,6 @@ const testAPIs = async (run: boolean) => {
 	const branchModule = new BranchModule();
 	const allBranches = await branchModule.fetchAllBranches();
 	const someBranch = allBranches[91];
-
-	const requestsAllowed = new RequestsAllowed();
-	const requestCounter = new RequestCounter();
 
 	const updatedServices: INewServiceRecord[] = [];
 	const IsraelPostApiErrors: IErrorMapping = {

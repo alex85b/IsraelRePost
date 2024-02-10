@@ -1,6 +1,5 @@
 import {
 	APIRequestCounterData,
-	VerifyDepletedMessage,
 	CountRequestsBatch,
 } from '../../services/appointments-update/components/atomic-counter/ImplementCounters';
 
@@ -16,16 +15,7 @@ export const constructRequestData = (run: boolean) => {
 export const CountDepletedMessages = (run: boolean) => {
 	if (!run) return;
 	console.log('[Count Depleted Messages] Start');
-	const requestCounterData = new APIRequestCounterData(48);
-	const depletedMessages = new VerifyDepletedMessage(requestCounterData);
-	console.log('[depletedMessages] requestCounterData : ', requestCounterData);
-	// console.log('[depletedMessages] isValidDepleted : ', depletedMessages.());
-	console.log('[depletedMessages] isValidDepleted : ', depletedMessages.isValidDepleted());
-
-	// console.log('[depletedMessages] isFirstDepleted : ', depletedMessages.isFirstDepleted());
-	// console.log('[depletedMessages] resetCounter : ', depletedMessages.resetDepletedCounter());
-	// console.log('[depletedMessages] isFirstDepleted : ', depletedMessages.isFirstDepleted());
-	// console.log('[depletedMessages] isFirstDepleted : ', depletedMessages.isFirstDepleted());
+	console.log('[Count Depleted Messages] NOT IMPLEMENTED');
 	console.log('[Count Depleted Messages] End');
 };
 

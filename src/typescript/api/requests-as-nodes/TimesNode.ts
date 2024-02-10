@@ -1,5 +1,3 @@
-import { RequestCounter } from '../../services/appointments-update/components/atomic-counter/RequestCounter';
-import { RequestsAllowed } from '../../services/appointments-update/components/atomic-counter/RequestsAllowed';
 import { INewDateEntryRecord } from '../../data/elastic/BranchModel';
 import { IDateError } from '../../data/elastic/ErrorModel';
 import { IApiRequestNode } from './IApiRequestNode';

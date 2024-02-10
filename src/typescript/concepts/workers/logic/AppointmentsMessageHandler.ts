@@ -12,12 +12,12 @@ import { ErrorModule } from '../../../data/elastic/ErrorModel';
 import { ProxyEndpoint } from '../../../data/proxy-management/ProxyCollection';
 import { BranchesToProcess } from '../../../data/redis/BranchesToProcess';
 import {
-	HandlerData,
 	HandlerFunction,
 	HandlerFunctionCollection,
 	MessagesHandler,
 } from '../messaging/WorkerMessages';
-import { IpManagerWorkerHandlers } from './IpManagerMessageHandler';
+import { IpManagerMessageHandlers } from './IpManagerMessageHandler';
+import { ACustomParentPort } from '../../../services/appointments-update/components/custom-parent/ACustomParentPort';
 
 // ################################################################################################
 // ### Class ######################################################################################
@@ -25,20 +25,21 @@ import { IpManagerWorkerHandlers } from './IpManagerMessageHandler';
 
 export class AppointmentsMessageHandler extends MessagesHandler<
 	AppointmentsMessageHandlers,
-	IpManagerWorkerHandlers
+	IpManagerMessageHandlers
 > {
 	private proxyEndpoint;
 	private countRequests;
-	private branchesToProcess = new BranchesToProcess();
+	private branchesToProcess;
 	private retrieveBranchServices: BranchServicesObject;
 	private elasticBranches;
 	private elasticErrors;
 	private thisWorkerID;
 	private isStopped;
+	private parentPort;
 
 	protected functionCollection: HandlerFunctionCollection<
 		AppointmentsMessageHandlers,
-		IpManagerWorkerHandlers
+		IpManagerMessageHandlers
 	> = {
 		'start-updates': undefined,
 		'end-updater': undefined,
@@ -46,7 +47,7 @@ export class AppointmentsMessageHandler extends MessagesHandler<
 		'stop-updates': undefined,
 	};
 
-	constructor({ counterData, proxyEndpoint, thisWorkerID }: AppointmentsHandlerData) {
+	constructor({ counterData, proxyEndpoint, thisWorkerID, parentPort }: AppointmentsHandlerData) {
 		super();
 		this.proxyEndpoint = proxyEndpoint;
 		this.countRequests = new CountAPIRequest(counterData);
@@ -55,12 +56,16 @@ export class AppointmentsMessageHandler extends MessagesHandler<
 		this.thisWorkerID = thisWorkerID;
 		this.isStopped = false;
 		this.retrieveBranchServices = { object: undefined, status: 'Not-Initialized' };
+		this.parentPort = parentPort;
+		this.branchesToProcess = new BranchesToProcess();
 
-		if (!this.branchesToProcess || !this.countRequests) {
+		if (!this.branchesToProcess || !this.countRequests || !this.parentPort) {
 			throw Error(
 				`[Appointments Message Handler: ${this.thisWorkerID}][constructor] received no${
 					this.branchesToProcess ? '' : ' branchesToProcess'
-				}${this.countRequests ? '' : ' requestCounter'}`
+				}${this.countRequests ? '' : ' requestCounter'}${
+					this.parentPort ? '' : ' parentPort'
+				}`
 			);
 		}
 
@@ -73,6 +78,8 @@ export class AppointmentsMessageHandler extends MessagesHandler<
 
 	private hStartUpdates: HandlerFunction<AppointmentsMessageHandlers, IMMessageHandlers> =
 		async () => {
+			// While no stop request received -
+			// Perform Updates of Branch-appointments.
 			while (!this.isStopped) {
 				const updateResult = await this.performAppointmentsUpdate({
 					retrieveBranchServices: this.retrieveBranchServices,
@@ -83,7 +90,7 @@ export class AppointmentsMessageHandler extends MessagesHandler<
 					elasticErrors: this.elasticErrors,
 					proxyEndpoint: this.proxyEndpoint,
 				});
-
+				// Handle Update-attempt results.
 				switch (updateResult) {
 					case 'next-branch':
 						console.log(
@@ -94,6 +101,8 @@ export class AppointmentsMessageHandler extends MessagesHandler<
 					case 'updater-depleted':
 					case 'updater-done':
 					default:
+						// Notify parent that no more updates can be made.
+						this.parentPort.postMessage({ handlerName: updateResult });
 						return updateResult;
 				}
 			}
@@ -102,6 +111,8 @@ export class AppointmentsMessageHandler extends MessagesHandler<
 	private hContinueUpdates: HandlerFunction<AppointmentsMessageHandlers, IMMessageHandlers> =
 		async () => {
 			this.isStopped = false;
+			// While no stop request received -
+			// Perform Updates of Branch-appointments.
 			while (!this.isStopped) {
 				const updateResult = await this.performAppointmentsUpdate({
 					retrieveBranchServices: this.retrieveBranchServices,
@@ -112,7 +123,7 @@ export class AppointmentsMessageHandler extends MessagesHandler<
 					elasticErrors: this.elasticErrors,
 					proxyEndpoint: this.proxyEndpoint,
 				});
-
+				// Handle Update-attempt results.
 				switch (updateResult) {
 					case 'next-branch':
 						console.log(
@@ -123,6 +134,8 @@ export class AppointmentsMessageHandler extends MessagesHandler<
 					case 'updater-depleted':
 					case 'updater-done':
 					default:
+						// Notify parent that no more updates can be made.
+						this.parentPort.postMessage({ handlerName: updateResult });
 						return updateResult;
 				}
 			}
@@ -189,7 +202,7 @@ export class AppointmentsMessageHandler extends MessagesHandler<
 		console.log(
 			`[Appointments Message Handler: ${thisWorkerID}][perform Appointments Update] status: ${status}`
 		);
-		let validResponse: IMMessageHandlers | undefined;
+		let validResponse: IpManagerMessageHandlers | undefined;
 		switch (status) {
 			case 'Depleted':
 				retrieveBranchServices.status = 'Depleted';
@@ -232,6 +245,7 @@ export type AppointmentsHandlerData = {
 	proxyEndpoint: ProxyEndpoint | undefined;
 	counterData: APIRequestCounterData;
 	thisWorkerID: number;
+	parentPort: ACustomParentPort<AppointmentsMessageHandlers, IpManagerMessageHandlers>;
 };
 
 export type AppointmentsMessageHandlers =
