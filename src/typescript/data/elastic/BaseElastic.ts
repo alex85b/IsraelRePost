@@ -4,7 +4,7 @@ import fs from 'fs';
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import * as https from 'https';
 
-export abstract class BaseElastic {
+export abstract class BaseElastic implements IBaseElasticServices {
 	protected abstract indexMapping: MappingTypeMapping;
 	protected abstract indexName: string;
 	protected customRequestConfig: CustomRequestConfig;
@@ -76,7 +76,7 @@ export abstract class BaseElastic {
 		};
 	}
 
-	protected async searchIndex<RE extends IElasticSearchResponse>(query: any) {
+	async searchIndex<RE extends IElasticSearchResponse>(query: any) {
 		const axiosRequestConfig = this.customRequestConfig.getConfig();
 		axiosRequestConfig.url = `/${this.indexName}/_search`;
 		axiosRequestConfig.method = 'GET';
@@ -93,7 +93,7 @@ export abstract class BaseElastic {
 		};
 	}
 
-	protected async bulkAdd(bulkedDocuments: any) {
+	async bulkAdd(bulkedDocuments: any) {
 		const axiosRequestConfig = this.customRequestConfig.getConfig();
 		axiosRequestConfig.url = '_bulk';
 		axiosRequestConfig.method = 'POST';
@@ -142,7 +142,7 @@ export abstract class BaseElastic {
 		return elasticResponse.data?.acknowledged;
 	}
 
-	protected async addUpdateRecord(documentId: number, record: any) {
+	async addUpdateRecord(documentId: number, record: any) {
 		const axiosRequestConfig = this.customRequestConfig.getConfig();
 		axiosRequestConfig.method = 'POST';
 		axiosRequestConfig.url = `/${this.indexName}/_doc/${documentId}`;
@@ -162,7 +162,7 @@ export abstract class BaseElastic {
 		};
 	}
 
-	protected async deleteRecordsByQ(query: any) {
+	async deleteRecordsByQ(query: any) {
 		const axiosRequestConfig = this.customRequestConfig.getConfig();
 		axiosRequestConfig.method = 'POST';
 		axiosRequestConfig.url = `/${this.indexName}/_delete_by_query`;
@@ -182,7 +182,7 @@ export abstract class BaseElastic {
 		};
 	}
 
-	protected async updateRecordByQ(query: any, script: any) {
+	async updateRecordByQ(query: any, script: any) {
 		const axiosRequestConfig = this.customRequestConfig.getConfig();
 		axiosRequestConfig.method = 'POST';
 		axiosRequestConfig.url = `/${this.indexName}/_update_by_query`;
@@ -208,6 +208,48 @@ export abstract class BaseElastic {
 // ###################################################################################################
 // ### Interfaces ####################################################################################
 // ###################################################################################################
+
+// ##############################################
+// ### Services #################################
+// ##############################################
+
+interface IBaseElasticServices {
+	searchIndex: <RE extends IElasticSearchResponse>(
+		query: any
+	) => Promise<{
+		hitsAmount: number;
+		data: RE | null;
+	}>;
+	bulkAdd: (bulkedDocuments: any) => Promise<{
+		status: number;
+		statusText: string;
+		data: IElasticBulkResponse | null;
+	}>;
+	pingIndex: () => Promise<number>;
+	deleteIndex: () => Promise<boolean | undefined>;
+	createIndex: () => Promise<boolean | undefined>;
+	addUpdateRecord: (
+		documentId: number,
+		record: any
+	) => Promise<{
+		status: number;
+		statusText: string;
+		data: IElasticCrUpRecordResponse | null;
+	}>;
+	deleteRecordsByQ: (query: any) => Promise<{
+		status: number;
+		statusText: string;
+		data: IElasticDeleteByQResponse | null;
+	}>;
+	updateRecordByQ: (
+		query: any,
+		script: any
+	) => Promise<{
+		status: number;
+		statusText: string;
+		data: IElasticUpdateByQResponse | null;
+	}>;
+}
 
 // ##############################################
 // ### Search Response ##########################

@@ -2,22 +2,14 @@ import {
 	RetrieveBranchServicesOptions,
 	RetrieveBranchServices,
 } from '../../../api/chain-requests/RetrieveBranchServices';
-import {
-	APIRequestCounterData,
-	CountAPIRequest,
-} from '../../../services/appointments-update/components/atomic-counter/ImplementCounters';
-import { IMMessageHandlers } from '../../../services/appointments-update/worker-scripts/IpManagerWorkerScript';
 import { BranchModule } from '../../../data/elastic/BranchModel';
-import { ErrorModule } from '../../../data/elastic/ErrorModel';
+import { ErrorIndexService } from '../../../data/elastic/ErrorIndexService';
 import { ProxyEndpoint } from '../../../data/proxy-management/ProxyCollection';
 import { BranchesToProcess } from '../../../data/redis/BranchesToProcess';
-import {
-	HandlerFunction,
-	HandlerFunctionCollection,
-	MessagesHandler,
-} from '../messaging/WorkerMessages';
+import { HandlerFunctionCollection, MessagesHandler } from '../messaging/WorkerMessages';
 import { IpManagerMessageHandlers } from './IpManagerMessageHandler';
 import { ACustomParentPort } from '../../../services/appointments-update/components/custom-parent/ACustomParentPort';
+import { ILimitRequests } from '../../../services/appointments-update/components/request-regulator/LimitRequests';
 
 // ################################################################################################
 // ### Class ######################################################################################
@@ -28,7 +20,7 @@ export class AppointmentsMessageHandler extends MessagesHandler<
 	IpManagerMessageHandlers
 > {
 	private proxyEndpoint;
-	private countRequests;
+	private requestLimiter: ILimitRequests;
 	private branchesToProcess;
 	private retrieveBranchServices: BranchServicesObject;
 	private elasticBranches;
@@ -41,50 +33,14 @@ export class AppointmentsMessageHandler extends MessagesHandler<
 		AppointmentsMessageHandlers,
 		IpManagerMessageHandlers
 	> = {
-		'start-updates': undefined,
-		'end-updater': undefined,
-		'continue-updates': undefined,
-		'stop-updates': undefined,
-	};
-
-	constructor({ counterData, proxyEndpoint, thisWorkerID, parentPort }: AppointmentsHandlerData) {
-		super();
-		this.proxyEndpoint = proxyEndpoint;
-		this.countRequests = new CountAPIRequest(counterData);
-		this.elasticBranches = new BranchModule();
-		this.elasticErrors = new ErrorModule();
-		this.thisWorkerID = thisWorkerID;
-		this.isStopped = false;
-		this.retrieveBranchServices = { object: undefined, status: 'Not-Initialized' };
-		this.parentPort = parentPort;
-		this.branchesToProcess = new BranchesToProcess();
-
-		if (!this.branchesToProcess || !this.countRequests || !this.parentPort) {
-			throw Error(
-				`[Appointments Message Handler: ${this.thisWorkerID}][constructor] received no${
-					this.branchesToProcess ? '' : ' branchesToProcess'
-				}${this.countRequests ? '' : ' requestCounter'}${
-					this.parentPort ? '' : ' parentPort'
-				}`
-			);
-		}
-
-		this.setupMessageHandlers();
-	}
-
-	// ################################
-	// ### message handlers ###########
-	// ################################
-
-	private hStartUpdates: HandlerFunction<AppointmentsMessageHandlers, IMMessageHandlers> =
-		async () => {
+		'start-updates': async () => {
 			// While no stop request received -
 			// Perform Updates of Branch-appointments.
 			while (!this.isStopped) {
 				const updateResult = await this.performAppointmentsUpdate({
 					retrieveBranchServices: this.retrieveBranchServices,
 					branchesToProcess: this.branchesToProcess,
-					requestCounter: this.countRequests,
+					requestLimiter: this.requestLimiter,
 					thisWorkerID: this.thisWorkerID,
 					elasticBranches: this.elasticBranches,
 					elasticErrors: this.elasticErrors,
@@ -101,15 +57,17 @@ export class AppointmentsMessageHandler extends MessagesHandler<
 					case 'updater-depleted':
 					case 'updater-done':
 					default:
-						// Notify parent that no more updates can be made.
-						this.parentPort.postMessage({ handlerName: updateResult });
 						return updateResult;
 				}
 			}
-		};
-
-	private hContinueUpdates: HandlerFunction<AppointmentsMessageHandlers, IMMessageHandlers> =
-		async () => {
+		},
+		'end-updater': () => {
+			console.log(
+				`[Appointments Message Handler: ${this.thisWorkerID}][hEndUpdater] hEndUpdater`
+			);
+			process.exit(0);
+		},
+		'continue-updates': async () => {
 			this.isStopped = false;
 			// While no stop request received -
 			// Perform Updates of Branch-appointments.
@@ -117,7 +75,7 @@ export class AppointmentsMessageHandler extends MessagesHandler<
 				const updateResult = await this.performAppointmentsUpdate({
 					retrieveBranchServices: this.retrieveBranchServices,
 					branchesToProcess: this.branchesToProcess,
-					requestCounter: this.countRequests,
+					requestLimiter: this.requestLimiter,
 					thisWorkerID: this.thisWorkerID,
 					elasticBranches: this.elasticBranches,
 					elasticErrors: this.elasticErrors,
@@ -139,36 +97,36 @@ export class AppointmentsMessageHandler extends MessagesHandler<
 						return updateResult;
 				}
 			}
-		};
-
-	private hEndUpdater: HandlerFunction<AppointmentsMessageHandlers, IMMessageHandlers> = () => {
-		console.log(
-			`[Appointments Message Handler: ${this.thisWorkerID}][hEndUpdater] hEndUpdater`
-		);
-		process.exit(0);
+		},
+		'stop-updates': () => {
+			console.log(
+				`[Appointments Message Handler: ${this.thisWorkerID}][hStopUpdater] hStopUpdater`
+			);
+			this.isStopped = true;
+		},
 	};
 
-	private hStopUpdater: HandlerFunction<AppointmentsMessageHandlers, IMMessageHandlers> = () => {
-		console.log(
-			`[Appointments Message Handler: ${this.thisWorkerID}][hStopUpdater] hStopUpdater`
-		);
-		this.isStopped = true;
-	};
-
-	// ################################
-	// ### Helper Functions ###########
-	// ################################
-
-	private setupMessageHandlers() {
-		this.addMessageHandler('start-updates', this.hStartUpdates);
-		this.addMessageHandler('continue-updates', this.hContinueUpdates);
-		this.addMessageHandler('end-updater', this.hEndUpdater);
-		this.addMessageHandler('stop-updates', this.hStopUpdater);
+	constructor({
+		parentPort,
+		proxyEndpoint,
+		requestLimiter,
+		thisWorkerID,
+	}: AppointmentsHandlerData) {
+		super();
+		this.proxyEndpoint = proxyEndpoint;
+		this.requestLimiter = requestLimiter;
+		this.elasticBranches = new BranchModule();
+		this.elasticErrors = new ErrorIndexService();
+		this.thisWorkerID = thisWorkerID;
+		this.isStopped = false;
+		this.retrieveBranchServices = { object: undefined, status: 'Not-Initialized' };
+		this.parentPort = parentPort;
+		this.branchesToProcess = new BranchesToProcess();
 	}
 
 	private async performAppointmentsUpdate({
 		branchesToProcess,
-		requestCounter,
+		requestLimiter,
 		retrieveBranchServices,
 		thisWorkerID,
 		elasticBranches,
@@ -183,11 +141,10 @@ export class AppointmentsMessageHandler extends MessagesHandler<
 			console.log(
 				`[Appointments Message Handler: ${thisWorkerID}][perform Appointments Update] branchId: ${branchId}`
 			);
-
 			// Construct BranchAppointments (data then class).
 			const branchAppointmentOptions: RetrieveBranchServicesOptions = {
 				branchCodePair: { branchId, qnomycode },
-				requestCounter,
+				requestLimiter,
 				proxyEndpoint,
 			};
 			retrieveBranchServices.object = new RetrieveBranchServices(branchAppointmentOptions);
@@ -229,11 +186,9 @@ export class AppointmentsMessageHandler extends MessagesHandler<
 				return 'next-branch';
 		}
 	}
-
 	// ################################
 	// ### Class behavior #############
 	// ################################
-
 	// inherited from super().
 }
 
@@ -243,7 +198,7 @@ export class AppointmentsMessageHandler extends MessagesHandler<
 
 export type AppointmentsHandlerData = {
 	proxyEndpoint: ProxyEndpoint | undefined;
-	counterData: APIRequestCounterData;
+	requestLimiter: ILimitRequests;
 	thisWorkerID: number;
 	parentPort: ACustomParentPort<AppointmentsMessageHandlers, IpManagerMessageHandlers>;
 };
@@ -262,13 +217,9 @@ type BranchServicesObject = {
 type PerformUpdateData = {
 	branchesToProcess: BranchesToProcess;
 	retrieveBranchServices: BranchServicesObject;
-	requestCounter: CountAPIRequest;
+	requestLimiter: ILimitRequests;
 	thisWorkerID: number;
 	elasticBranches: BranchModule;
-	elasticErrors: ErrorModule;
+	elasticErrors: ErrorIndexService;
 	proxyEndpoint: ProxyEndpoint | undefined;
 };
-
-// ################################################################################################
-// ### Interface ##################################################################################
-// ################################################################################################

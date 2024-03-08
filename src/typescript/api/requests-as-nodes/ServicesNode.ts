@@ -1,14 +1,14 @@
 import { INewServiceRecord } from '../../data/elastic/BranchModel';
-import { IServiceError } from '../../data/elastic/ErrorModel';
+import { IServiceError } from '../../data/elastic/ErrorIndexService';
 import { IApiRequestNode } from './IApiRequestNode';
 import {
 	IPostServiceRequired,
 	IPostServicesResponse,
 	PostServiceRequest,
-} from '../isreal-post-requests/PostServiceRequest';
+} from '../apiCalls/ServiceRequest';
 import { DatesNode, IDatesNodeData } from './DatesNode';
 import { ProxyEndpoint } from '../../data/proxy-management/ProxyCollection';
-import { CountAPIRequest } from '../../services/appointments-update/components/atomic-counter/ImplementCounters';
+import { ILimitRequests } from '../../services/appointments-update/components/request-regulator/LimitRequests';
 
 /**
  * Represents a node responsible for handling API requests related to services.
@@ -74,7 +74,7 @@ export class ServicesNode implements IApiRequestNode {
 						.dates,
 			},
 			sharedCounter: {
-				requestCounter: this.sharedCounters.requestCounter,
+				requestLimiter: this.sharedCounters.requestLimiter,
 			},
 		};
 		return datesNodeData;
@@ -88,7 +88,7 @@ export class ServicesNode implements IApiRequestNode {
 		let returnThis: DatesNode[] = [];
 		try {
 			// If no more requests allowed at this point, terminate updating.
-			if (!this.sharedCounters.requestCounter.isAllowed()) {
+			if (!this.sharedCounters.requestLimiter.isAllowed().allowed) {
 				return 'Depleted';
 			}
 
@@ -151,6 +151,6 @@ export interface IServicesNodeData {
 		servicesErrors: IServiceError[];
 	};
 	sharedCounter: {
-		requestCounter: CountAPIRequest;
+		requestLimiter: ILimitRequests;
 	};
 }

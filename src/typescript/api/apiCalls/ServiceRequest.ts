@@ -1,4 +1,4 @@
-import { IExpectedServerResponse, PostBaseRequest } from './PostBaseRequest';
+import { IExpectedServerResponse, PostBaseRequest } from './BaseRequest';
 
 export class PostServiceRequest extends PostBaseRequest {
 	private parseServiceResponse(responseData: IExpectedServiceResponse): IPostServicesResponse[] {

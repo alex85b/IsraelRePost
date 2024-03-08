@@ -3,12 +3,11 @@ import {
 	NaturalNumbersCounterSetup,
 } from '../../services/appointments-update/components/atomic-counter/CounterSetup';
 import {
-	CountResponse,
 	NaturalNumbersCounter,
 	IIncrementalCounter,
 } from '../../services/appointments-update/components/atomic-counter/IncrementalCounter';
 
-export const TestNaturalNumbersCounter = (run: boolean) => {
+export const testNaturalNumbersCounter = (run: boolean) => {
 	if (!run) return;
 	console.log('[Test Thread Safe Counter] Start');
 

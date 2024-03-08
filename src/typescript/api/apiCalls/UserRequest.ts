@@ -1,5 +1,5 @@
 import { parseResponseCookies } from '../../common/ParseCookies';
-import { IExpectedServerResponse, PostBaseRequest } from './PostBaseRequest';
+import { IExpectedServerResponse, PostBaseRequest } from './BaseRequest';
 
 export class PostUserRequest extends PostBaseRequest {
 	private parseUserResponse({

@@ -1,17 +1,21 @@
 import { Mutex } from 'async-mutex';
 
 // #############################################################################################
-// ### Contracts ###############################################################################
+// ### LimitRequestsBatch ######################################################################
 // #############################################################################################
 
-export type CountBatchResponse = {
-	status: 'stopped' | 'success';
-	value: number;
+// ########################################
+// ### Contracts ##########################
+// ########################################
+
+export type IsBatchAllowedResponse = {
+	allowed: boolean;
+	requestLeft: number;
 };
 
-export interface ICountConsumedBatch {
+export interface ILimitRequestsBatch {
 	setBatchSize(batchSize: number): Promise<void>;
-	countConsumedBatch(): Promise<CountBatchResponse>;
+	isAllowed(): Promise<IsBatchAllowedResponse>;
 }
 
 // #############################################################################################
@@ -25,7 +29,7 @@ export interface ICountConsumedBatch {
  * 3. Allows to change the size of the request-batch size.
  */
 
-export class ConsumeRequestBatch implements ICountConsumedBatch {
+export class LimitPerHour implements ILimitRequestsBatch {
 	private mute: Mutex;
 
 	constructor(private totalRequests: number, private batchSize: number) {
@@ -39,16 +43,16 @@ export class ConsumeRequestBatch implements ICountConsumedBatch {
 		});
 	}
 
-	async countConsumedBatch() {
-		const returnThis: CountBatchResponse = {
-			status: 'stopped',
-			value: this.totalRequests,
+	async isAllowed() {
+		const returnThis: IsBatchAllowedResponse = {
+			allowed: false,
+			requestLeft: this.totalRequests,
 		};
 		await this.mute.acquire().then((release) => {
 			if (this.totalRequests - this.batchSize > -1) {
 				this.totalRequests = this.totalRequests - this.batchSize;
-				returnThis.status = 'success';
-				returnThis.value = this.totalRequests;
+				returnThis.allowed = true;
+				returnThis.requestLeft = this.totalRequests;
 			}
 			release();
 		});

@@ -1,8 +1,16 @@
-import { ICounterSetup, NaturalNumbersCounterSetup } from './CounterSetup';
-import { IIncrementalCounter, NaturalNumbersCounter } from './IncrementalCounter';
+import {
+	BoundaryAwareIncrementalCounter,
+	IBoundaryAwareCounter,
+} from '../atomic-counter/BoundaryAwareCounter';
+import {
+	IArrayCounterSetup,
+	ICounterSetup,
+	NaturalNumbersCounterSetup,
+} from '../atomic-counter/CounterSetup';
+import { IIncrementalCounter, NaturalNumbersCounter } from '../atomic-counter/IncrementalCounter';
 
 // #############################################################################################
-// ### IResetOnDepleted ########################################################################
+// ### ResetRequestLimiter #####################################################################
 // #############################################################################################
 
 // ########################################
@@ -15,10 +23,11 @@ export type DepletedCheckResponse = {
 	aboveRequestLimit: boolean;
 };
 
-export interface IResetOnDepleted {
-	isValidDepleted(requestLimit: number): DepletedCheckResponse;
-	resetDepletedCounter(): void;
-	resetRequestCounter(): void;
+// IResetRequestLimiter
+export interface IResetRequestLimiter {
+	isValidDepleted(): DepletedCheckResponse;
+	resetDepletedFlag(): void;
+	resetRequestBatch(): void;
 }
 
 // ########################################
@@ -32,22 +41,22 @@ export interface IResetOnDepleted {
  * 3. Reset request-batch counter to batch-size.
  */
 
-export class VerifyDepletedMessage implements IResetOnDepleted {
+export class ResetLimitPerMinute implements IResetRequestLimiter {
 	private countDepletedMessages: IIncrementalCounter;
-	private countRequest: IIncrementalCounter;
+	private countRequest: IBoundaryAwareCounter;
 	private maxDepletedMessages = 50;
 	private safetyMargin = this.maxDepletedMessages;
 
-	constructor(data: ICounterSetup) {
+	constructor(data: IArrayCounterSetup) {
 		this.countDepletedMessages = new NaturalNumbersCounter(
 			new NaturalNumbersCounterSetup({
 				counterRange: { bottom: 0, top: this.maxDepletedMessages + this.safetyMargin },
 			})
 		);
-		this.countRequest = new NaturalNumbersCounter(data);
+		this.countRequest = new BoundaryAwareIncrementalCounter(data);
 	}
 
-	isValidDepleted(requestLimit: number) {
+	isValidDepleted() {
 		/*
 		A valid-depleted is both:
 		Request-counter has passed request limit, and
@@ -56,7 +65,7 @@ export class VerifyDepletedMessage implements IResetOnDepleted {
 		let aboveRequestLimit = false;
 
 		// Check if Request-counter has passed request limit.
-		if (this.countRequest.peak().value > requestLimit) {
+		if (this.countRequest.peak().value > this.countRequest.getBoundary()) {
 			aboveRequestLimit = true;
 			// If this is the first depleted message.
 			if (this.countDepletedMessages.increment().value === 1) {
@@ -71,11 +80,11 @@ export class VerifyDepletedMessage implements IResetOnDepleted {
 		};
 	}
 
-	resetDepletedCounter() {
+	resetDepletedFlag() {
 		this.countDepletedMessages.reset(0);
 	}
 
-	resetRequestCounter() {
-		this.countRequest.reset(0);
+	resetRequestBatch() {
+		this.countRequest.setCounterValue(0);
 	}
 }

@@ -1,7 +1,7 @@
 import { MappingTypeMapping } from '@elastic/elasticsearch/lib/api/types';
 import { BaseElastic, IElasticSearchResponse } from './BaseElastic';
 
-export class ErrorModule extends BaseElastic {
+export class ErrorIndexService extends BaseElastic {
 	protected indexName: string = 'errors';
 	protected indexMapping: MappingTypeMapping = {
 		dynamic: 'strict',
@@ -104,4 +104,17 @@ export interface IDateError {
 	calendarId: string;
 	datesError: string;
 	timesError: string;
+}
+
+// ##############################################
+// ### Error Index Service ######################
+// ##############################################
+
+interface IErrorIndexService {
+	fetchAllErrors: () => Promise<ISingleErrorQueryResponse[]>;
+	updateAddError: (
+		errorRecord: IErrorMapping,
+		branchIndex: number
+	) => Promise<string | undefined>;
+	deleteAllErrors: () => Promise<{ deleted: number }>;
 }

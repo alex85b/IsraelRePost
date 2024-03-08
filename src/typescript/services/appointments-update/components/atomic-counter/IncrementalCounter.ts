@@ -29,8 +29,8 @@ export class NaturalNumbersCounter implements IIncrementalCounter {
 
 	constructor(counterSetup: ICounterSetup) {
 		this.counterData = counterSetup.getCounterData();
-		this.current = 0;
-		this.previous = 0;
+		this.current = -1;
+		this.previous = -2;
 	}
 
 	getLimits(): { max: number; min: number } {
@@ -54,11 +54,11 @@ export class NaturalNumbersCounter implements IIncrementalCounter {
 	reset(value: number): CountResponse {
 		this.current = Atomics.store(this.counterData.memoryView, 0, value);
 		this.previous = this.current;
-		return { actualValue: this.current, value: this.current + 1, valueInMemory: this.previous };
+		return { actualValue: this.current, value: this.current, valueInMemory: this.previous };
 	}
 
 	clearMemory() {
 		this.current = 0;
-		this.previous = this.current;
+		this.previous = -1;
 	}
 }

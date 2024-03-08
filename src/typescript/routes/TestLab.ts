@@ -5,14 +5,11 @@ import {
 	INewServiceRecord,
 	ISingleBranchQueryResponse,
 } from '../data/elastic/BranchModel';
-import { ErrorModule, IErrorMapping, IServiceError } from '../data/elastic/ErrorModel';
-import { PostUserRequest } from '../api/isreal-post-requests/PostUserRequest';
-import {
-	IPostServiceRequired,
-	PostServiceRequest,
-} from '../api/isreal-post-requests/PostServiceRequest';
-import { IPostDatesRequired, PostDatesRequest } from '../api/isreal-post-requests/PostDatesRequest';
-import { IPostTimesRequired, PostTimesRequest } from '../api/isreal-post-requests/PostTimesRequest';
+import { ErrorIndexService, IErrorMapping, IServiceError } from '../data/elastic/ErrorIndexService';
+import { PostUserRequest } from '../api/apiCalls/UserRequest';
+import { IPostServiceRequired, PostServiceRequest } from '../api/apiCalls/ServiceRequest';
+import { IPostDatesRequired, PostDatesRequest } from '../api/apiCalls/DatesRequest';
+import { IPostTimesRequired, PostTimesRequest } from '../api/apiCalls/TimesRequest';
 import { SmartProxyCollection } from '../data/proxy-management/SmartProxyCollection';
 import { WebShareCollection } from '../data/proxy-management/WebShareCollection';
 import { ContinuesUpdateRoot } from '../services/appointments-update/entry-point/ContinuesUpdateRoot';
@@ -116,7 +113,7 @@ const testProxies = async (responses: any[]) => {
 
 const testElastic = async (responses: any[]) => {
 	const branchModule = new BranchModule();
-	const errorModule = new ErrorModule();
+	const errorModule = new ErrorIndexService();
 	const allBranches = await branchModule.fetchAllBranches();
 	const someBranch = allBranches[10];
 

@@ -1,48 +1,53 @@
 // One of the functions of Appointment Message Handler is to send-back messages,
 // To its parent - Ip Manager.
-// This Test is written from a point of view of Ip Manager.
+// This Test is written from a "point of view" of Ip Manager.
 
-import { AppointmentsUpdaterWorker } from '../../../../concepts/ports/worker-ports/AppointmentsUpdaterWorker';
-import { NaturalNumbersCounterSetup } from '../../../../services/appointments-update/components/atomic-counter/CounterSetup';
 import {
-	APIRequestCounterData,
-	CountRequestsBatch,
-} from '../../../../services/appointments-update/components/atomic-counter/ImplementCounters';
-// import {} from '../Appointments/StubAppointments';
+	IArrayCounterSetup,
+	ICounterSetup,
+	NaturalNumbersArraySetup,
+	NaturalNumbersCounterSetup,
+} from '../../../../services/appointments-update/components/atomic-counter/CounterSetup';
 
 import path from 'path';
-import { VerifyDepletedMessage } from '../../../../services/appointments-update/components/atomic-counter/ResetOnDepleted';
+import {
+	IResetRequestLimiter,
+	ResetLimitPerMinute,
+} from '../../../../services/appointments-update/components/request-regulator/ResetRequestLimiter';
+import {
+	ILimitRequests,
+	LimitPerMinute,
+} from '../../../../services/appointments-update/components/request-regulator/LimitRequests';
+import {
+	ILimitRequestsBatch,
+	LimitPerHour,
+} from '../../../../services/appointments-update/components/request-regulator/LimitRequestsBatch';
+import { AppointmentsUpdaterWorker } from '../../../../concepts/ports/worker-ports/AppointmentsUpdaterWorker';
 
 const setupData = () => {
-	// How many requests should be held in reserve.
-	const safetyMargin = 0;
-	// Total Requests that can be made pen hour Minus a safety margin.
-	const requestsPerHour = 30 - safetyMargin; // Should be 298
 	/*
-	The total amount of requests that can be made in one minute,
-	This will be used as a batch,
-	The next batch will be delivered after a minute after the last request is 'Consumed',
-	Meaning after the counter drops to 0.
-	*/
-	const requestsPerMinute = 20 - safetyMargin; // Should be 48
-	// An estimation of how much requests an update branch-appointments should consume.
-	const avgRequestsPerBranch = 8; // TODO: For each branch, Fetch this data instead of relaying on avg.
-	// Data for shared request counters.
-	const requestCounterData = new APIRequestCounterData(requestsPerMinute);
-	// Ip Manager's Counters.
-	const countRequestsBatch = new CountRequestsBatch(requestsPerHour, requestsPerMinute);
-	const verifyDepletedMessage = new VerifyDepletedMessage(
-		new NaturalNumbersCounterSetup({ counterRange: { bottom: 0, top: requestsPerMinute } })
-	);
+	Requests Limits*/
+	const requestsPerHour = 60;
+	const requestsPerMinute = 20;
 
+	// Ip Manager's request regulators.
+	const counterSetup = new NaturalNumbersArraySetup({
+		counterRangeAndLength: { bottom: 0, length: 2, top: 0 },
+	});
+	const batchLimiter: ILimitRequestsBatch = new LimitPerHour(requestsPerHour, requestsPerMinute);
+	const requestLimiter: ILimitRequests = new LimitPerMinute(counterSetup);
+	console.log(
+		'[Test Appointments][Setup Data] setRequestsLimit(requestsPerMinute) : ',
+		requestLimiter.setRequestsLimit(requestsPerMinute)
+	);
+	const restOnDepleted: IResetRequestLimiter = new ResetLimitPerMinute(counterSetup);
 	return {
-		safetyMargin,
+		counterSetup,
 		requestsPerHour,
 		requestsPerMinute,
-		avgRequestsPerBranch,
-		requestCounterData,
-		countRequestsBatch,
-		verifyDepletedMessage,
+		batchLimiter,
+		requestLimiter,
+		restOnDepleted,
 	};
 };
 
@@ -51,13 +56,12 @@ export const TestAppointments = async (run: boolean) => {
 	console.log('[Test Appointments] Start');
 
 	const {
-		avgRequestsPerBranch,
-		countRequestsBatch,
-		requestCounterData,
+		counterSetup,
 		requestsPerHour,
 		requestsPerMinute,
-		safetyMargin,
-		verifyDepletedMessage,
+		batchLimiter,
+		requestLimiter,
+		restOnDepleted,
 	} = setupData();
 
 	let depletedRefreshFlag = true;
@@ -65,26 +69,29 @@ export const TestAppointments = async (run: boolean) => {
 	// Setup an Appointments Stub.
 	const appointmentsStub = new AppointmentsUpdaterWorker(
 		path.join(__dirname, '..', 'Appointments', 'StubAppointments.js'),
-		{ workerData: { counterData: requestCounterData, proxyEndpoint: undefined } }
+		{ workerData: { CounterData: counterSetup.getCounterData(), proxyEndpoint: undefined } }
 	);
 
 	appointmentsStub.on('message', (message) => {
 		console.log('[TestAppointments] message : ', message);
 		if (depletedRefreshFlag) {
 			depletedRefreshFlag = false;
-			verifyDepletedMessage.resetRequestCounter();
+			restOnDepleted.resetRequestBatch();
 			appointmentsStub.postMessage({ handlerName: 'continue-updates' });
 		} else {
 			appointmentsStub.postMessage({ handlerName: 'end-updater' });
 		}
 	});
+
 	appointmentsStub.on('online', () => {
 		console.log('[TestAppointments] appointmentsStub is online');
 		appointmentsStub.postMessage({ handlerName: 'start-updates' });
 	});
+
 	appointmentsStub.on('error', (error) => {
 		console.log('[TestAppointments] error : ', error);
 	});
+
 	appointmentsStub.on('exit', (code) => {
 		console.log('[TestAppointments] exit-code : ', code);
 	});

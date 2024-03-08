@@ -1,39 +1,46 @@
-import { IExpectedServerResponse, PostBaseRequest } from './PostBaseRequest';
+import { getTodayDateObject } from '../../common/todays-date';
+import { IExpectedServerResponse, PostBaseRequest } from './BaseRequest';
 
-export class PostTimesRequest extends PostBaseRequest {
-	private parseDatesResponse(responseData: IExpectedTimesResponse): IPostTimesResponse[] {
+export class PostDatesRequest extends PostBaseRequest {
+	private parseDatesResponse(responseData: IExpectedDatesResponse): IPostDatesResponse[] {
 		const failReasons: string[] = [];
 		const { Results } = responseData;
 
 		if (Array.isArray(Results) && Results.length > 0) {
-			const time = Results[0].Time;
-			if (typeof time !== 'number') {
-				failReasons.push('time is not a number');
+			const calendarDate = Results[0].calendarDate;
+			const calendarId = Results[0].calendarId;
+			if (typeof calendarDate !== 'string') {
+				failReasons.push('calendarDate is not a string');
+			} else if (calendarDate.length === 0) {
+				failReasons.push('calendarDate is empty');
+			}
+			if (typeof calendarId !== 'number') {
+				failReasons.push('calendarId is not a number');
 			}
 		}
 
 		if (failReasons.length > 0) {
-			throw new Error(`[Parse Dates Response][Failures ${failReasons.join(';')}]`);
+			throw new Error(`[Parse Service Response][Failures ${failReasons.join(';')}]`);
 		}
 
 		return Results;
 	}
 
-	async makeTimesRequest(required: IPostTimesRequired) {
+	async makeDatesRequest(required: IPostDatesRequired) {
 		const { headers, url } = required;
-
+		const { date } = getTodayDateObject();
 		const axiosRequestConfig = this.getAxiosRequestConfig();
-		axiosRequestConfig.url = 'CentralAPI/SearchAvailableSlots';
+		axiosRequestConfig.url = 'CentralAPI/SearchAvailableDates';
 		axiosRequestConfig.headers.authorization = 'JWT ' + headers.authorization;
 		axiosRequestConfig.headers.Cookie = this.reformatCookiesForAxios(headers.cookies);
 		axiosRequestConfig.params = {
-			CalendarId: url.CalendarId,
-			ServiceId: url.ServiceId,
-			dayPart: url.dayPart,
+			maxResults: '30',
+			serviceId: url.serviceId,
+			startDate: date,
 		};
 
 		const { status, statusText, responseData, cookies } =
-			await this.israelPostRequest<IExpectedTimesResponse>(axiosRequestConfig);
+			await this.israelPostRequest<IExpectedDatesResponse>(axiosRequestConfig);
 
 		if (status < 200 || status > 299) {
 			throw new Error(`[Make Service Request][Status: ${status}][Status Text ${statusText}]`);
@@ -51,9 +58,10 @@ export class PostTimesRequest extends PostBaseRequest {
 // ### Israel Post Data Response ################
 // ##############################################
 
-export interface IExpectedTimesResponse extends IExpectedServerResponse {
+export interface IExpectedDatesResponse extends IExpectedServerResponse {
 	Results: {
-		Time: number;
+		calendarDate: string;
+		calendarId: number;
 	}[];
 }
 
@@ -61,21 +69,23 @@ export interface IExpectedTimesResponse extends IExpectedServerResponse {
 // ### 'Make Server Request' Response ###########
 // ##############################################
 
-export interface IPostTimesResponse {
-	Time: number;
+export interface IPostDatesResponse {
+	calendarDate: string;
+	calendarId: number;
 }
 
 // ##############################################
 // ### Required Data For Request ################
 // ##############################################
 
-export interface IPostTimesRequired {
-	url: { CalendarId: string; ServiceId: string; dayPart: string };
+export interface IPostDatesRequired {
+	url: { serviceId: string };
 	headers: {
 		authorization: string;
 		cookies: {
 			ARRAffinity: string;
 			ARRAffinitySameSite: string;
+			CentralJWTCookie: string;
 			GCLB: string;
 		};
 	};

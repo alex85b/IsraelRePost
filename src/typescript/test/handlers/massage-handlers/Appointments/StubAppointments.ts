@@ -1,58 +1,41 @@
-import { workerData, parentPort } from 'worker_threads';
+import { parentPort, workerData } from 'worker_threads';
+import { IpManagerParentPort } from '../../../../concepts/ports/parent-ports/IpManagerParentPort';
 import {
 	AppointmentsHandlerData,
 	AppointmentsMessageHandler,
 } from '../../../../concepts/workers/logic/AppointmentsMessageHandler';
-import {
-	APIRequestCounterData,
-	CountRequestsBatch,
-} from '../../../../services/appointments-update/components/atomic-counter/ImplementCounters';
-import { IpManagerParentPort } from '../../../../concepts/ports/parent-ports/IpManagerParentPort';
-import { NaturalNumbersCounterSetup } from '../../../../services/appointments-update/components/atomic-counter/CounterSetup';
-import { VerifyDepletedMessage } from '../../../../services/appointments-update/components/atomic-counter/ResetOnDepleted';
+import { LimitPerMinute } from '../../../../services/appointments-update/components/request-regulator/LimitRequests';
+import { NaturalNumbersArraySetup } from '../../../../services/appointments-update/components/atomic-counter/CounterSetup';
 
 const setup = () => {
-	const requestsPerMinute = 20;
-	const requestsPerHour = 40;
-
 	if (!parentPort) throw Error('[Stub Appointments][setup] parentPort is null or undefined ');
 	const ipManagerParentPort = new IpManagerParentPort(parentPort);
-	// Data for shared request counters.
-	const requestCounterData = new APIRequestCounterData(requestsPerMinute);
+	const { proxyEndpoint, CounterData } = ipManagerParentPort.extractData(workerData);
 
-	// Ip Manager's Counters.
-	const countRequestsBatch = new CountRequestsBatch(requestsPerHour, requestsPerMinute);
-	const verifyDepletedMessage = new VerifyDepletedMessage(
-		new NaturalNumbersCounterSetup({ counterRange: { bottom: 0, top: requestsPerMinute } })
-	);
+	console.log('[Stub Appointments][setup] proxyEndpoint : ', proxyEndpoint);
+	console.log('[Stub Appointments][setup] counterSetup : ', CounterData);
 
 	const appointmentsLogicData: AppointmentsHandlerData = {
 		proxyEndpoint: undefined,
-		counterData: requestCounterData,
+		requestLimiter: new LimitPerMinute(
+			new NaturalNumbersArraySetup({ readyData: CounterData })
+		),
 		thisWorkerID: 1,
 		parentPort: ipManagerParentPort,
 	};
+
 	const appointmentsMessageHandler = new AppointmentsMessageHandler(appointmentsLogicData);
 
 	return {
-		requestsPerMinute,
-		requestsPerHour,
 		ipManagerParentPort,
-		countRequestsBatch,
-		verifyDepletedMessage,
+		proxyEndpoint,
 		appointmentsMessageHandler,
 	};
 };
 
 const listen = async () => {
-	const {
-		appointmentsMessageHandler,
-		countRequestsBatch,
-		ipManagerParentPort,
-		requestsPerHour,
-		requestsPerMinute,
-		verifyDepletedMessage,
-	} = setup();
+	const { ipManagerParentPort, proxyEndpoint, appointmentsMessageHandler } = setup();
+	console.log('[StubAppointments][listen] setup() performed');
 
 	ipManagerParentPort.on('message', async (message) => {
 		console.log('[Stub Appointments][listen] message : ', message);

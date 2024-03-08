@@ -6,19 +6,16 @@ import {} from './StubIpManager';
 
 import path from 'path';
 
-const setupData = () => {
-	return {};
-};
-
 export const TestIpManagers = async (run: boolean) => {
 	if (!run) return;
 	console.log('[Test Ip Managers] Start');
-	const {} = setupData();
 
+	// Construct a Ip Manager Script Stub.
 	const stubIpManager = new IpManagementWorker(path.join(__dirname, 'StubIpManager.js'), {
 		workerData: { proxyEndpoint: undefined },
 	});
 
+	// Signal the stubIpManager worker to start.
 	stubIpManager.postMessage({ handlerName: 'start-endpoint' });
 
 	console.log('[Test Ip Managers] End');

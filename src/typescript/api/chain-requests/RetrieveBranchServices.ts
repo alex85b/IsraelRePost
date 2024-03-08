@@ -1,9 +1,9 @@
 import { IBranchQnomycodePair, INewServiceRecord } from '../../data/elastic/BranchModel';
-import { IErrorMapping } from '../../data/elastic/ErrorModel';
+import { IErrorMapping } from '../../data/elastic/ErrorIndexService';
 import { IApiRequestNode } from '../requests-as-nodes/IApiRequestNode';
 import { UserNode } from '../requests-as-nodes/UserNode';
 import { ProxyEndpoint } from '../../data/proxy-management/ProxyCollection';
-import { CountAPIRequest } from '../../services/appointments-update/components/atomic-counter/ImplementCounters';
+import { ILimitRequests } from '../../services/appointments-update/components/request-regulator/LimitRequests';
 
 /**
  * Responsible for creating updated object representing a post office Branch's appointments.
@@ -39,7 +39,7 @@ export class RetrieveBranchServices {
 	private qnomycode: number;
 
 	// Shared Atomic Counters, for request counting.
-	private requestCounter: CountAPIRequest;
+	private requestLimiter: ILimitRequests;
 
 	// A proxy setting for simultaneously handling a large volume of updates.
 	private proxyEndpoint: ProxyEndpoint | undefined;
@@ -61,7 +61,7 @@ export class RetrieveBranchServices {
 		// Initializes the RetrieveBranchServices instance with the provided options.
 		this.branchId = options.branchCodePair.branchId;
 		this.qnomycode = options.branchCodePair.qnomycode;
-		this.requestCounter = options.requestCounter;
+		this.requestLimiter = options.requestLimiter;
 		this.proxyEndpoint = options.proxyEndpoint;
 	}
 
@@ -90,7 +90,7 @@ export class RetrieveBranchServices {
 						updatedServices: this.updatedServices,
 					},
 					sharedCounter: {
-						requestCounter: this.requestCounter,
+						requestLimiter: this.requestLimiter,
 					},
 					updateData: { proxyEndpoint: this.proxyEndpoint, qnomycode: this.qnomycode },
 				})
@@ -208,11 +208,11 @@ export class RetrieveBranchServices {
 }
 
 // ###################################################################################################
-// ### Interface #####################################################################################
+// ### Contracts #####################################################################################
 // ###################################################################################################
 
-export interface RetrieveBranchServicesOptions {
+export type RetrieveBranchServicesOptions = {
 	branchCodePair: IBranchQnomycodePair;
 	proxyEndpoint?: ProxyEndpoint;
-	requestCounter: CountAPIRequest;
-}
+	requestLimiter: ILimitRequests;
+};

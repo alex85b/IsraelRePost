@@ -1,10 +1,10 @@
 import { Worker } from 'worker_threads';
 import path from 'path';
-import { ConsumeRequestBatch } from '../../../services/appointments-update/components/critical-couner/CountConsumedBatch';
+import { LimitPerHour } from '../../../services/appointments-update/components/request-regulator/LimitRequestsBatch';
 
-const consumeRequestBatch = new ConsumeRequestBatch(8, 3);
+const consumeRequestBatch = new LimitPerHour(8, 3);
 
-export const testCountConsumedBatch = async (run: boolean) => {
+export const testLimitPerHour = async (run: boolean) => {
 	if (!run) return;
 	console.log('[Test Count Consumed Batch] Start');
 
@@ -22,7 +22,7 @@ export const testCountConsumedBatch = async (run: boolean) => {
 			if (typeof message == 'string' && message == 'request') {
 				console.log(
 					`[Test Count Consumed Batch][Worker ${worker.threadId}] countConsumedBatch: `,
-					await consumeRequestBatch.countConsumedBatch()
+					await consumeRequestBatch.isAllowed()
 				);
 			}
 		});

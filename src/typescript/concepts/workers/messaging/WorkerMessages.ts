@@ -25,14 +25,14 @@ export type HandlerFunctionCollection<TH extends string, SH extends string> = {
 	[key in TH]: HandlerFunction<TH, SH> | undefined;
 };
 
-interface MessagesHandlerInterface<TH extends string, SH extends string> {
+interface IMessagesHandler<TH extends string, SH extends string> {
 	handle(data: HandlerData<TH, SH>): HandlerFunctionOutput<SH>;
 }
 
 // TH: Target Handler, the target handler-function name.
 // SH: Source Handler, the source handler-function name.
 export abstract class MessagesHandler<TH extends string, SH extends string>
-	implements MessagesHandlerInterface<TH, SH>
+	implements IMessagesHandler<TH, SH>
 {
 	// protected abstract functionMapping: Map<TH, HandlerFunction<TH, any>>;
 	protected abstract functionCollection: HandlerFunctionCollection<TH, SH>;

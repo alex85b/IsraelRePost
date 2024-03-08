@@ -1,13 +1,9 @@
 import { INewDateEntryRecord } from '../../data/elastic/BranchModel';
-import { IDateError } from '../../data/elastic/ErrorModel';
+import { IDateError } from '../../data/elastic/ErrorIndexService';
 import { IApiRequestNode } from './IApiRequestNode';
-import {
-	IPostTimesRequired,
-	IPostTimesResponse,
-	PostTimesRequest,
-} from '../isreal-post-requests/PostTimesRequest';
+import { IPostTimesRequired, IPostTimesResponse, PostTimesRequest } from '../apiCalls/TimesRequest';
 import { ProxyEndpoint } from '../../data/proxy-management/ProxyCollection';
-import { CountAPIRequest } from '../../services/appointments-update/components/atomic-counter/ImplementCounters';
+import { ILimitRequests } from '../../services/appointments-update/components/request-regulator/LimitRequests';
 
 export class TimesNode implements IApiRequestNode {
 	// A user request timeout value in milliseconds.
@@ -43,7 +39,7 @@ export class TimesNode implements IApiRequestNode {
 	async getChildren(): Promise<'Depleted' | 'Errored' | 'Done'> {
 		try {
 			// If No more requests allowed at this point - Terminate updating.
-			if (!this.sharedCounters.requestCounter.isAllowed()) {
+			if (!this.sharedCounters.requestLimiter.isAllowed().allowed) {
 				return 'Depleted';
 			}
 
@@ -78,6 +74,6 @@ export interface ITimesNodeData {
 		DateError: IDateError;
 	};
 	sharedCounter: {
-		requestCounter: CountAPIRequest;
+		requestLimiter: ILimitRequests;
 	};
 }

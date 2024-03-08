@@ -1,31 +1,30 @@
 import { parentPort, threadId, workerData } from 'worker_threads';
-import { NaturalNumbersCounterSetup } from '../../../services/appointments-update/components/atomic-counter/CounterSetup';
+import { NaturalNumbersArraySetup } from '../../../services/appointments-update/components/atomic-counter/CounterSetup';
 import {
-	CountAPIRequest,
-	ICountRequest,
-} from '../../../services/appointments-update/components/atomic-counter/CountRequest';
+	LimitPerMinute,
+	ILimitRequests,
+} from '../../../services/appointments-update/components/request-regulator/LimitRequests';
 
-// Setup
+// Setup.
 if (!workerData) throw Error(`[ConsumerStub ${threadId ?? 'no-id'}] workerData is undefined`);
 const { counterData } = workerData;
 if (!counterData) throw Error(`[ConsumerStub ${threadId ?? 'no-id'}] counterSetup is undefined`);
 if (!parentPort) throw Error(`[Consumer Stub: ${threadId}] parentPort is Undefined`);
 
-const counterSetup = new NaturalNumbersCounterSetup({
-	readyData: counterData,
-});
+// console.log(`[ConsumerStub ${threadId ?? 'no-id'}] counterData : `, counterData);
 
-const countAPIRequest: ICountRequest = new CountAPIRequest(counterSetup);
+const arrayCounterSetup = new NaturalNumbersArraySetup({ readyData: counterData });
+// console.log(`[ConsumerStub ${threadId ?? 'no-id'}] arrayCounterSetup : `, arrayCounterSetup);
+
+const requestLimiter: ILimitRequests = new LimitPerMinute(arrayCounterSetup);
+// console.log(`[ConsumerStub ${threadId ?? 'no-id'}] requestLimiter : `, requestLimiter);
 
 parentPort.on('message', (message) => {
 	console.log(`[Consumer Stub: ${threadId}] message: `, message);
 
 	if (typeof message == 'string' && message == 'test') {
-		const result = countAPIRequest.isAllowed(5);
-		console.log(
-			`[ConsumerStub ${threadId ?? 'no-id'}] countAPIRequest.isAllowed(5) : `,
-			result
-		);
+		const result = requestLimiter.isAllowed();
+		console.log(`[ConsumerStub ${threadId ?? 'no-id'}] requestLimiter.isAllowed : `, result);
 		if (result.allowed) parentPort!.postMessage('request');
 		else parentPort!.postMessage('depleted');
 	}
