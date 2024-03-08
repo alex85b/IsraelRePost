@@ -5,7 +5,7 @@ export class SmartProxyCollection extends ProxyCollection {
 	// Custom constructor is not needed.
 
 	async getProxyObject(): Promise<ProxyEndpoints> {
-		const smartProxyFilePath = path.join(__dirname, '..', '..', '..', 'SmartProxy.txt');
+		const smartProxyFilePath = path.join(__dirname, '..', '..', '..', '..', 'SmartProxy.txt');
 		const { password, userName } = this.readProxyAuth('PROX_SMRT_USR', 'PROX_SMRT_PAS');
 		const endpoints = await this.generateEndpointsFromFile(smartProxyFilePath);
 

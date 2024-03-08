@@ -1,20 +1,9 @@
-import { RequestCounter } from '../../services/appointments-update/components/atomic-counter/RequestCounter';
-import { RequestsAllowed } from '../../services/appointments-update/components/atomic-counter/RequestsAllowed';
 import { BranchModule, INewServiceRecord } from '../../data/elastic/BranchModel';
-import { IErrorMapping } from '../../data/elastic/ErrorModel';
-import {
-	IPostDatesRequired,
-	PostDatesRequest,
-} from '../../api/isreal-post-requests/PostDatesRequest';
-import {
-	IPostServiceRequired,
-	PostServiceRequest,
-} from '../../api/isreal-post-requests/PostServiceRequest';
-import {
-	IPostTimesRequired,
-	PostTimesRequest,
-} from '../../api/isreal-post-requests/PostTimesRequest';
-import { PostUserRequest } from '../../api/isreal-post-requests/PostUserRequest';
+import { IErrorMapping } from '../../data/elastic/ErrorIndexService';
+import { IPostDatesRequired, PostDatesRequest } from '../../api/apiCalls/DatesRequest';
+import { IPostServiceRequired, PostServiceRequest } from '../../api/apiCalls/ServiceRequest';
+import { IPostTimesRequired, PostTimesRequest } from '../../api/apiCalls/TimesRequest';
+import { PostUserRequest } from '../../api/apiCalls/UserRequest';
 import { SmartProxyCollection } from '../../data/proxy-management/SmartProxyCollection';
 
 // ###################################################################################################
@@ -28,9 +17,6 @@ const testAPIs = async (run: boolean) => {
 	const branchModule = new BranchModule();
 	const allBranches = await branchModule.fetchAllBranches();
 	const someBranch = allBranches[91];
-
-	const requestsAllowed = new RequestsAllowed();
-	const requestCounter = new RequestCounter();
 
 	const updatedServices: INewServiceRecord[] = [];
 	const IsraelPostApiErrors: IErrorMapping = {

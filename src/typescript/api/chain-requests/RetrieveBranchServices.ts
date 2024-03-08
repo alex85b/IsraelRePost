@@ -1,9 +1,9 @@
 import { IBranchQnomycodePair, INewServiceRecord } from '../../data/elastic/BranchModel';
-import { IErrorMapping } from '../../data/elastic/ErrorModel';
+import { IErrorMapping } from '../../data/elastic/ErrorIndexService';
 import { IApiRequestNode } from '../requests-as-nodes/IApiRequestNode';
 import { UserNode } from '../requests-as-nodes/UserNode';
 import { ProxyEndpoint } from '../../data/proxy-management/ProxyCollection';
-import { CountAPIRequest } from '../../services/appointments-update/components/atomic-counter/ImplementCounters';
+import { ILimitRequests } from '../../services/appointments-update/components/request-regulator/LimitRequests';
 
 /**
  * Responsible for creating updated object representing a post office Branch's appointments.
@@ -39,7 +39,7 @@ export class RetrieveBranchServices {
 	private qnomycode: number;
 
 	// Shared Atomic Counters, for request counting.
-	private requestCounter: CountAPIRequest;
+	private requestLimiter: ILimitRequests;
 
 	// A proxy setting for simultaneously handling a large volume of updates.
 	private proxyEndpoint: ProxyEndpoint | undefined;
@@ -61,7 +61,7 @@ export class RetrieveBranchServices {
 		// Initializes the RetrieveBranchServices instance with the provided options.
 		this.branchId = options.branchCodePair.branchId;
 		this.qnomycode = options.branchCodePair.qnomycode;
-		this.requestCounter = options.requestCounter;
+		this.requestLimiter = options.requestLimiter;
 		this.proxyEndpoint = options.proxyEndpoint;
 	}
 
@@ -90,7 +90,7 @@ export class RetrieveBranchServices {
 						updatedServices: this.updatedServices,
 					},
 					sharedCounter: {
-						requestCounter: this.requestCounter,
+						requestLimiter: this.requestLimiter,
 					},
 					updateData: { proxyEndpoint: this.proxyEndpoint, qnomycode: this.qnomycode },
 				})
@@ -170,7 +170,7 @@ export class RetrieveBranchServices {
 	}
 
 	public async performUpdate(branchCodePair?: IBranchQnomycodePair) {
-		console.log('[performUpdate]');
+		console.log('[Retrieve Branch Services][performUpdate]');
 		if (branchCodePair) {
 			this.resetMemory(branchCodePair);
 		}
@@ -178,7 +178,7 @@ export class RetrieveBranchServices {
 	}
 
 	public printAppointments() {
-		console.log(`[Branch Appointments ${this.branchId}][Print Appointments] Start :`);
+		console.log(`[Retrieve Branch Services ${this.branchId}][Print Appointments] Start :`);
 		this.updatedServices.forEach((service) => {
 			console.log('serviceId : ', service.serviceId);
 			console.log('serviceName : ', service.serviceName);
@@ -188,11 +188,11 @@ export class RetrieveBranchServices {
 				console.log('hours : ', date.hours);
 			});
 		});
-		console.log('[Branch Appointments][Print Appointments] End.');
+		console.log('[Retrieve Branch Services][Print Appointments] End.');
 	}
 
 	public printUpdateErrors() {
-		console.log(`[Branch Appointments ${this.branchId}][Print Update Errors] Start :`);
+		console.log(`[Retrieve Branch Services ${this.branchId}][Print Update Errors] Start :`);
 		console.log('userError : ', this.israelPostApiErrors.userError);
 		this.israelPostApiErrors.services.forEach((service) => {
 			console.log('serviceId : ', service.serviceId);
@@ -203,16 +203,16 @@ export class RetrieveBranchServices {
 				console.log('timesError : ', date.timesError);
 			});
 		});
-		console.log('[Branch Appointments][Print Update Errors] End.');
+		console.log('[Retrieve Branch Services][Print Update Errors] End.');
 	}
 }
 
 // ###################################################################################################
-// ### Interface #####################################################################################
+// ### Contracts #####################################################################################
 // ###################################################################################################
 
-export interface RetrieveBranchServicesOptions {
+export type RetrieveBranchServicesOptions = {
 	branchCodePair: IBranchQnomycodePair;
 	proxyEndpoint?: ProxyEndpoint;
-	requestCounter: CountAPIRequest;
-}
+	requestLimiter: ILimitRequests;
+};

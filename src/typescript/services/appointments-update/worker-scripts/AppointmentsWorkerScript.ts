@@ -2,10 +2,6 @@ import { parentPort, threadId, workerData, MessagePort } from 'worker_threads';
 import { IHandlerFunction, MessagesHandler } from '../worker-messaging/HandleThreadMessages';
 import { IpManagerParentPort } from '../components/custom-parent/IpManagerParentPort';
 import { ProxyEndpoint } from '../../../data/proxy-management/ProxyCollection';
-import {
-	APIRequestCounterData,
-	CountAPIRequest,
-} from '../components/atomic-counter/ImplementCounters';
 import { BranchesToProcess } from '../../../data/redis/BranchesToProcess';
 import {
 	RetrieveBranchServices,
@@ -14,8 +10,14 @@ import {
 import { IMMessageHandlers } from './IpManagerWorkerScript';
 import { ACustomParentPort } from '../components/custom-parent/ACustomParentPort';
 import { BranchModule } from '../../../data/elastic/BranchModel';
-import { ErrorModule } from '../../../data/elastic/ErrorModel';
+import { ErrorIndexService } from '../../../data/elastic/ErrorIndexService';
 import { AppointmentsHandlerData } from '../../../concepts/workers/logic/AppointmentsMessageHandler';
+import { ILimitRequests } from '../components/request-regulator/LimitRequests';
+import {
+	CounterData,
+	IArrayCounterSetup,
+	ICounterSetup,
+} from '../components/atomic-counter/CounterSetup';
 
 // ###################################################################################################
 // ### Setup #########################################################################################
@@ -24,12 +26,12 @@ import { AppointmentsHandlerData } from '../../../concepts/workers/logic/Appoint
 const messagesHandler = new MessagesHandler<IBUMessageHandlers>();
 if (!parentPort) throw Error(`IpManager ${threadId ?? -1}: parent port is null \ undefined`);
 const ipManager = new IpManagerParentPort(parentPort);
-const { proxyEndpoint, counterData } = ipManager.extractData(workerData);
+// const { proxyEndpoint, counterData } = ipManager.extractData(workerData);
 
 // const branchUpdater = new BranchUpdater({ counterData, parentPort: ipManager, proxyEndpoint });
 
-console.log(`$Branch Updater ${threadId} received counterData`, counterData);
-console.log(`$Branch Updater ${threadId} received proxyEndpoint`, proxyEndpoint);
+// console.log(`$Branch Updater ${threadId} received counterData`, counterData);
+// console.log(`$Branch Updater ${threadId} received proxyEndpoint`, proxyEndpoint);
 
 // ###################################################################################################
 // ### Listens to Ip-Manager's instructions ##########################################################
@@ -90,48 +92,48 @@ messagesHandler.addMessageHandler('continue-updates', () => {});
 interface IPerformUpdateData {
 	branchesToProcess: BranchesToProcess;
 	branchAppointments?: RetrieveBranchServices; // If not provided, a new one will be constructed.
-	requestCounter: CountAPIRequest;
+	// requestCounter: CountAPIRequest;
 	parentPort: ACustomParentPort<IBUMessageHandlers, IMMessageHandlers>;
 }
 
 const performUpdate = async (performUpdateData: IPerformUpdateData) => {
-	const { branchesToProcess, branchAppointments, requestCounter, parentPort } = performUpdateData;
+	// const { branchesToProcess, branchAppointments, requestCounter, parentPort } = performUpdateData;
 	let updaterClass: RetrieveBranchServices | undefined;
 
-	if (branchAppointments) {
-		// BranchAppointments has been provided, recovering after a 'Depleted' scenario.
-		updaterClass = branchAppointments;
-	} else {
-		// A brand new update.
-		// Fetch a Branch data, to perform appointments update.
-		const updateBranch = await branchesToProcess.dequeueBranch();
-		if (!updateBranch) return 'updater-done'; // No more branches.
-		const { branchId, qnomycode } = updateBranch;
+	// if (branchAppointments) {
+	// 	// BranchAppointments has been provided, recovering after a 'Depleted' scenario.
+	// 	updaterClass = branchAppointments;
+	// } else {
+	// 	// A brand new update.
+	// 	// Fetch a Branch data, to perform appointments update.
+	// 	const updateBranch = await branchesToProcess.dequeueBranch();
+	// 	if (!updateBranch) return 'updater-done'; // No more branches.
+	// 	const { branchId, qnomycode } = updateBranch;
 
-		// Construct BranchAppointments (data then class).
-		const branchAppointmentOptions: RetrieveBranchServicesOptions = {
-			branchCodePair: { branchId, qnomycode },
-			requestCounter,
-		};
-		updaterClass = new RetrieveBranchServices(branchAppointmentOptions);
-	} // At this point i should have updater class ready.
+	// // Construct BranchAppointments (data then class).
+	// const branchAppointmentOptions: RetrieveBranchServicesOptions = {
+	// 	branchCodePair: { branchId, qnomycode },
+	// 	requestCounter,
+	// };
+	// updaterClass = new RetrieveBranchServices(branchAppointmentOptions);
+	// } // At this point i should have updater class ready.
 
-	// Perform an Update of branch's appointments and \ or errors.
-	const status = await updaterClass.performUpdate();
-	console.log(`$Branch Updater ${threadId} performed update. Status:${status}`);
-	updaterClass.printAppointments();
-	updaterClass.printUpdateErrors();
-	switch (status) {
-		case 'Depleted':
-			return 'Depleted';
-		case 'Done':
-			// Write updated-appointment to Database (Currently Elastic).
+	// // Perform an Update of branch's appointments and \ or errors.
+	// const status = await updaterClass.performUpdate();
+	// console.log(`$Branch Updater ${threadId} performed update. Status:${status}`);
+	// updaterClass.printAppointments();
+	// updaterClass.printUpdateErrors();
+	// switch (status) {
+	// 	case 'Depleted':
+	// 		return 'Depleted';
+	// 	case 'Done':
+	// 		// Write updated-appointment to Database (Currently Elastic).
 
-			break;
-		case 'Error':
-			// Write update-errors to Database (Currently Elastic).
-			break;
-	}
+	// 		break;
+	// 	case 'Error':
+	// 		// Write update-errors to Database (Currently Elastic).
+	// 		break;
+	// }
 };
 
 // ###################################################################################################
@@ -154,10 +156,15 @@ export type IBUMessageHandlers =
 // ### Interfaces ####################################################################################
 // ###################################################################################################
 
-export interface IBranchUpdaterWData {
+// export interface IBranchUpdaterWData {
+// 	proxyEndpoint: ProxyEndpoint | undefined;
+// 	counterData: APIRequestCounterData;
+// }
+
+export type AppointmentsWorkerData = {
 	proxyEndpoint: ProxyEndpoint | undefined;
-	counterData: APIRequestCounterData;
-}
+	CounterData: CounterData;
+};
 
 // ###################################################################################################
 // ### Class #########################################################################################

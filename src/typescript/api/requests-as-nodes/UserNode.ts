@@ -1,11 +1,11 @@
 import { INewServiceRecord } from '../../data/elastic/BranchModel';
-import { IErrorMapping } from '../../data/elastic/ErrorModel';
+import { IErrorMapping } from '../../data/elastic/ErrorIndexService';
 import { IApiRequestNode } from './IApiRequestNode';
 import { ServicesNode } from './ServicesNode';
-import { PostUserRequest } from '../isreal-post-requests/PostUserRequest';
-import { IPostServiceRequired } from '../isreal-post-requests/PostServiceRequest';
+import { PostUserRequest } from '../apiCalls/UserRequest';
+import { IPostServiceRequired } from '../apiCalls/ServiceRequest';
 import { ProxyEndpoint } from '../../data/proxy-management/ProxyCollection';
-import { CountAPIRequest } from '../../services/appointments-update/components/atomic-counter/ImplementCounters';
+import { ILimitRequests } from '../../services/appointments-update/components/request-regulator/LimitRequests';
 
 // Represents a node in the API request tree related to user data.
 export class UserNode implements IApiRequestNode {
@@ -21,7 +21,7 @@ export class UserNode implements IApiRequestNode {
 	// Holds the data that will be saved to Elastic at the end of updating the branch's appointments.
 	private memoryObjects;
 
-	// Holds two shared atomic counters for tracking API requests.
+	// Holds shared atomic counters for tracking API requests.
 	private sharedCounters;
 
 	// Holds the data needed for performing the 'currentRequest'.
@@ -43,7 +43,10 @@ export class UserNode implements IApiRequestNode {
 		let returnThis: ServicesNode[] = [];
 		try {
 			// If No more requests allowed at this point - Terminate updating.
-			if (!this.sharedCounters.requestCounter.isAllowed()) {
+			const isAllowed = this.sharedCounters.requestLimiter.isAllowed();
+			console.log('[UserNode][getChildren] isAllowed() : ', isAllowed);
+
+			if (!isAllowed.allowed) {
 				return 'Depleted';
 			}
 
@@ -96,7 +99,7 @@ export class UserNode implements IApiRequestNode {
 // ###################################################################################################
 
 // Represents the data structure expected for constructing a UserNode instance.
-export interface IUserNodeData {
+export type IUserNodeData = {
 	updateData: {
 		proxyEndpoint: ProxyEndpoint | undefined;
 		qnomycode: number; // This is a location code.
@@ -106,6 +109,6 @@ export interface IUserNodeData {
 		IsraelPostApiErrors: IErrorMapping;
 	};
 	sharedCounter: {
-		requestCounter: CountAPIRequest;
+		requestLimiter: ILimitRequests;
 	};
-}
+};

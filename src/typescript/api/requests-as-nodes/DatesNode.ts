@@ -1,14 +1,10 @@
 import { INewDateEntryRecord } from '../../data/elastic/BranchModel';
-import { IDateError } from '../../data/elastic/ErrorModel';
-import {
-	IPostDatesRequired,
-	IPostDatesResponse,
-	PostDatesRequest,
-} from '../isreal-post-requests/PostDatesRequest';
+import { IDateError } from '../../data/elastic/ErrorIndexService';
+import { IPostDatesRequired, IPostDatesResponse, PostDatesRequest } from '../apiCalls/DatesRequest';
 import { IApiRequestNode } from './IApiRequestNode';
 import { ITimesNodeData, TimesNode } from './TimesNode';
 import { ProxyEndpoint } from '../../data/proxy-management/ProxyCollection';
-import { CountAPIRequest } from '../../services/appointments-update/components/atomic-counter/ImplementCounters';
+import { ILimitRequests } from '../../services/appointments-update/components/request-regulator/LimitRequests';
 
 /**
  * Represents a node responsible for handling API requests related to dates.
@@ -77,7 +73,7 @@ export class DatesNode implements IApiRequestNode {
 					this.memoryObjects.DatesErrors[this.memoryObjects.DatesErrors.length - 1],
 			},
 			sharedCounter: {
-				requestCounter: this.sharedCounters.requestCounter,
+				requestLimiter: this.sharedCounters.requestLimiter,
 			},
 		};
 		return timesNodeData;
@@ -91,7 +87,7 @@ export class DatesNode implements IApiRequestNode {
 		let returnThis: TimesNode[] = [];
 		try {
 			// If no more requests allowed at this point, terminate updating.
-			if (!this.sharedCounters.requestCounter.isAllowed()) {
+			if (!this.sharedCounters.requestLimiter.isAllowed().allowed) {
 				return 'Depleted';
 			}
 
@@ -163,6 +159,6 @@ export interface IDatesNodeData {
 		DatesErrors: IDateError[];
 	};
 	sharedCounter: {
-		requestCounter: CountAPIRequest;
+		requestLimiter: ILimitRequests;
 	};
 }

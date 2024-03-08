@@ -6,11 +6,12 @@ import { ContinuesUpdatePPort } from '../components/custom-parent/ContinuesUpdat
 import { BranchUpdaterWorker } from '../components/custom-worker/BranchUpdaterWorker';
 import { IBUMessageHandlers } from './AppointmentsWorkerScript';
 import { ProxyEndpoint } from '../../../data/proxy-management/ProxyCollection';
-import {
-	APIRequestCounterData,
-	CountRequestsBatch,
-	VerifyDepletedMessage,
-} from '../components/atomic-counter/ImplementCounters';
+// import {
+// 	APIRequestCounterData,
+// 	CountRequestsBatch,
+// } from '../components/atomic-counter/ImplementCounters';
+import { NaturalNumbersCounterSetup } from '../components/atomic-counter/CounterSetup';
+// import { VerifyDepletedMessage } from '../components/request-regulator/ResetRequestLimiter';
 
 // ###################################################################################################
 // ### Setup #########################################################################################
@@ -48,11 +49,13 @@ const avgRequestsPerBranch = 8; // TODO: For each branch, Fetch this data instea
 const amountOfUpdaters = 1; // False - for testing.
 
 // Data for shared request counters.
-const requestCounterData = new APIRequestCounterData(requestsPerMinute);
+// const requestCounterData = new APIRequestCounterData(requestsPerMinute);
 
 // Ip Manager's Counters.
-const countRequestsBatch = new CountRequestsBatch(requestsPerHour, requestsPerMinute);
-const verifyDepletedMessage = new VerifyDepletedMessage(requestCounterData);
+// const countRequestsBatch = new CountRequestsBatch(requestsPerHour, requestsPerMinute);
+// const verifyDepletedMessage = new VerifyDepletedMessage(
+// 	new NaturalNumbersCounterSetup({ counterRange: { bottom: 0, top: 0 } })
+// );
 
 // ###################################################################################################
 // ### Listens to Continues-Update's instructions ####################################################
@@ -88,13 +91,13 @@ const listen = () => {
  */
 const hStartEndpoint: IHandlerFunction<IMMessageHandlers, CUMessageHandlers> = () => {
 	// Count the first batch of requests.
-	const countResponse = countRequestsBatch.countConsumedRequests();
-	if (countResponse.status === 'stopped') {
-		console.error(countResponse);
-		throw Error(
-			`[Ip Manager: ${threadId}][hStartEndpoint] cannot count first batch of requests`
-		);
-	}
+	// const countResponse = countRequestsBatch.countConsumedRequests();
+	// if (countResponse.status === 'stopped') {
+	// 	console.error(countResponse);
+	// 	throw Error(
+	// 		`[Ip Manager: ${threadId}][hStartEndpoint] cannot count first batch of requests`
+	// 	);
+	// }
 
 	const endpoint = cUpdate.extractData(workerData);
 	if (endpoint) {
@@ -103,7 +106,7 @@ const hStartEndpoint: IHandlerFunction<IMMessageHandlers, CUMessageHandlers> = (
 		console.log(`#Ip Manager ${threadId} received no endpoint`);
 	}
 	for (let index = 0; index < amountOfUpdaters; index++) {
-		addUpdater(requestCounterData, endpoint);
+		// addUpdater(requestCounterData, endpoint);
 	}
 };
 // Adds hStartEndpoint to the MessagesHandler object.
@@ -148,57 +151,53 @@ const hUpdaterDepleted: IHandlerFunction<IMMessageHandlers, IBUMessageHandlers> 
 	worker,
 	parentPort,
 }) => {
-	if (!worker || !parentPort)
-		throw Error(
-			`[Ip Manager: ${threadId}][hStartEndpoint] hUpdaterDepleted received no ${
-				worker === undefined
-					? parentPort === undefined
-						? 'worker and no parentPort'
-						: 'worker'
-					: 'parentPort'
-			}`
-		);
-
-	// Is 'depleted' message valid ?
-	const { isFirst, isValid, lowestBoundary } = verifyDepletedMessage.isValidDepleted();
-
-	// Not 'depleted' at all (request-batch is not depleted).
-	if (!lowestBoundary) {
-		// Signal to the branch-updater to continue (false alarm).
-		worker.postMessage({ handlerName: 'continue-updates' });
-	}
-
-	// Really 'depleted' but not the first.
-	if (lowestBoundary && !isFirst) {
-		// Add messageCallback to the release queue.
-		releaseQueue.push(worker);
-		// A continue-updates will be sent after reset.
-	}
-
-	// Message is valid: Both valid 'depleted' and the first 'depleted'.
-	if (isValid) {
-		// Check if a new request batch can be created.
-		const { status, value } = countRequestsBatch.countConsumedRequests();
-		if (status === 'success') {
-			// A new request-batch can be prepared, perform delayed reset.
-			setTimeout(() => {
-				resetBatchAndCounters(requestsPerMinute);
-			}, 61000);
-		} else {
-			// Cannot make new request-batch, maybe can make smaller batch.
-			if (value > 0) {
-				// A smaller request-batch can be made.
-				setTimeout(() => {
-					resetBatchAndCounters(value);
-				}, 61000);
-			}
-			// No more requests can be made from this endpoint.
-			// Close this thread and it's children.
-			for (let workerKey in branchUpdaters) {
-				branchUpdaters[workerKey].postMessage({ handlerName: 'end-updater' });
-			}
-		}
-	}
+	// if (!worker || !parentPort)
+	// 	throw Error(
+	// 		`[Ip Manager: ${threadId}][hStartEndpoint] hUpdaterDepleted received no ${
+	// 			worker === undefined
+	// 				? parentPort === undefined
+	// 					? 'worker and no parentPort'
+	// 					: 'worker'
+	// 				: 'parentPort'
+	// 		}`
+	// 	);
+	// // Is 'depleted' message valid ?
+	// const { isFirst, isValid, lowestBoundary } = verifyDepletedMessage.isValidDepleted();
+	// // Not 'depleted' at all (request-batch is not depleted).
+	// if (!lowestBoundary) {
+	// 	// Signal to the branch-updater to continue (false alarm).
+	// 	worker.postMessage({ handlerName: 'continue-updates' });
+	// }
+	// // Really 'depleted' but not the first.
+	// if (lowestBoundary && !isFirst) {
+	// 	// Add messageCallback to the release queue.
+	// 	releaseQueue.push(worker);
+	// 	// A continue-updates will be sent after reset.
+	// }
+	// // Message is valid: Both valid 'depleted' and the first 'depleted'.
+	// if (isValid) {
+	// 	// Check if a new request batch can be created.
+	// 	const { status, value } = countRequestsBatch.countConsumedRequests();
+	// 	if (status === 'success') {
+	// 		// A new request-batch can be prepared, perform delayed reset.
+	// 		setTimeout(() => {
+	// 			resetBatchAndCounters(requestsPerMinute);
+	// 		}, 61000);
+	// 	} else {
+	// 		// Cannot make new request-batch, maybe can make smaller batch.
+	// 		if (value > 0) {
+	// 			// A smaller request-batch can be made.
+	// 			setTimeout(() => {
+	// 				resetBatchAndCounters(value);
+	// 			}, 61000);
+	// 		}
+	// 		// No more requests can be made from this endpoint.
+	// 		// Close this thread and it's children.
+	// 		for (let workerKey in branchUpdaters) {
+	// 			branchUpdaters[workerKey].postMessage({ handlerName: 'end-updater' });
+	// 		}
+	// 	}
+	// }
 };
 messagesHandler.addMessageHandler('updater-depleted', hUpdaterDepleted);
 
@@ -246,23 +245,23 @@ const updaterHadError = (bUpdaterWorker: BranchUpdaterWorker, error: Error) => {
  * Adds a Child Worker Thread to perform: branch appointments update.
  * @param proxy Optional, a definition of 'ProxyEndpoint'
  */
-const addUpdater = (counterData: APIRequestCounterData, proxyEndpoint?: ProxyEndpoint) => {
-	const bUpdater = new BranchUpdaterWorker(updaterScriptPath, {
-		workerData: {
-			proxyEndpoint,
-			counterData,
-		},
-	});
-	if (bUpdater.threadId !== undefined) {
-		bUpdater.once('online', () => updaterIsOnline(bUpdater));
-		bUpdater.once('exit', (code) => updaterHasExited(bUpdater, code));
-		bUpdater.once('error', (error) => updaterHadError(bUpdater, error));
-		bUpdater.on('message', (message) =>
-			messagesHandler.handle({ message, worker: bUpdater, parentPort: cUpdate })
-		);
-		branchUpdaters[bUpdater.threadId] = bUpdater;
-	}
-};
+// const addUpdater = (counterData: APIRequestCounterData, proxyEndpoint?: ProxyEndpoint) => {
+// 	const bUpdater = new BranchUpdaterWorker(updaterScriptPath, {
+// 		workerData: {
+// 			proxyEndpoint,
+// 			counterData,
+// 		},
+// 	});
+// 	if (bUpdater.threadId !== undefined) {
+// 		bUpdater.once('online', () => updaterIsOnline(bUpdater));
+// 		bUpdater.once('exit', (code) => updaterHasExited(bUpdater, code));
+// 		bUpdater.once('error', (error) => updaterHadError(bUpdater, error));
+// 		bUpdater.on('message', (message) =>
+// 			messagesHandler.handle({ message, worker: bUpdater, parentPort: cUpdate })
+// 		);
+// 		branchUpdaters[bUpdater.threadId] = bUpdater;
+// 	}
+// };
 
 // ###################################################################################################
 // ### Outgoing 'Signal' Functions ###################################################################
@@ -294,13 +293,13 @@ const ipManagerDepleted = () => {
 // ###################################################################################################
 
 const resetBatchAndCounters = (batchSize: number) => {
-	// Reset request-batch counter to batch-size.
-	// This also blocks addition to 'releaseQueue'.
-	verifyDepletedMessage.resetRequestCounter(batchSize);
-	// Reset first-depleted counter.
-	verifyDepletedMessage.resetDepletedCounter();
-	// Return 'continue' message to all awaiting workers.
-	releaseQueue.forEach((worker) => worker.postMessage({ handlerName: 'continue-updates' }));
+	// // Reset request-batch counter to batch-size.
+	// // This also blocks addition to 'releaseQueue'.
+	// verifyDepletedMessage.resetRequestCounter(batchSize);
+	// // Reset first-depleted counter.
+	// verifyDepletedMessage.resetDepletedCounter();
+	// // Return 'continue' message to all awaiting workers.
+	// releaseQueue.forEach((worker) => worker.postMessage({ handlerName: 'continue-updates' }));
 };
 
 // ###################################################################################################
