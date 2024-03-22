@@ -1,4 +1,4 @@
-import { IDocumentBranch } from './branchServicesIndexing';
+import { IDocumentBranch } from './BranchServicesIndexing';
 
 export const bulkBranchDocuments = (bulkData: {
 	addBranches: IDocumentBranch[];
