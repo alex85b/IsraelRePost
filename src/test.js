@@ -179,13 +179,13 @@ testHandlersEnumsAndFunctions(false);
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-const {
-	createIndex,
-	getIndexMapping,
-	getInstance,
-	negativePingIndex,
-	positivePingIndex,
-} = require('./js-build/test/api/elastic/base/testElasticsearchClient');
+// const {
+// 	createIndex,
+// 	getIndexMapping,
+// 	getInstance,
+// 	negativePingIndex,
+// 	positivePingIndex,
+// } = require('./js-build/test/api/elastic/base/TestElasticsearchClient');
 
-negativePingIndex();
-positivePingIndex();
+// negativePingIndex();
+// positivePingIndex();

@@ -1,7 +1,7 @@
 import path from 'path';
 import fs from 'fs';
 
-import { ERR_RESOURCE_MISSING } from '../../../shared/constants/errorCodes';
+import { ERR_RESOURCE_MISSING } from '../../../shared/constants/ErrorCodes';
 
 const MODULE_NAME = 'Elasticsearch Utils';
 

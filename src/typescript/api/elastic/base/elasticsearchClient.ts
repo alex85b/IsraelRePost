@@ -2,7 +2,7 @@ import { MappingTypeMapping } from '@elastic/elasticsearch/lib/api/types';
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import * as https from 'https';
 
-import { ELASTIC_BASE_URL } from '../../../shared/constants/apiEndpoints';
+import { ELASTIC_BASE_URL } from '../../../shared/constants/ApiEndpoints';
 import { getAuthenticationData } from './ElasticsearchUtils';
 
 // ###################################################################################################

@@ -9,7 +9,7 @@ import {
 	queryAllBranches,
 	queryBranchesWithoutServices,
 	allBranchesExcludingQuery,
-} from '../../shared/constants/indices/branchIndex';
+} from '../../shared/constants/indices/BranchIndex';
 import { bulkBranchDocuments } from './IndexingUtils';
 
 export class BranchServicesIndexing {
