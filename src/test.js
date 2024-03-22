@@ -174,5 +174,18 @@ const {
 	testHandlersEnumsAndFunctions,
 } = require('./js-build/test/messaging/handlers/HandlerFunctionConcept');
 testHandlersAsStringType(false);
-testHandlersAsEnums(true);
+testHandlersAsEnums(false);
 testHandlersEnumsAndFunctions(false);
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+const {
+	createIndex,
+	getIndexMapping,
+	getInstance,
+	negativePingIndex,
+	positivePingIndex,
+} = require('./js-build/test/api/elastic/base/testElasticsearchClient');
+
+negativePingIndex();
+positivePingIndex();
