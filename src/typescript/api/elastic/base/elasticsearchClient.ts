@@ -3,7 +3,7 @@ import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import * as https from 'https';
 
 import { ELASTIC_BASE_URL } from '../../../shared/constants/apiEndpoints';
-import { getAuthenticationData } from './elasticsearchUtils';
+import { getAuthenticationData } from './ElasticsearchUtils';
 
 // ###################################################################################################
 // ### Singleton ElasticsearchClient #################################################################
@@ -244,7 +244,7 @@ export class ElasticsearchClient implements IElasticsearchClient {
 // ### Interfaces ####################################################################################
 // ###################################################################################################
 
-interface IElasticsearchClient {
+export interface IElasticsearchClient {
 	pingIndex(requestData: { indexName: string }): Promise<number>;
 
 	searchIndex<R extends IElasticSearchResponse>(requestData: {

@@ -1,4 +1,4 @@
-import { ElasticsearchClient } from '../../../../api/elastic/base/elasticsearchClient';
+import { ElasticsearchClient } from '../../../../api/elastic/base/ElasticsearchClient';
 import { branchIndexName } from '../../../../shared/constants/indices/branchIndex';
 import { testIndexMapping, testIndexName } from '../../../../shared/constants/indices/testIndex';
 
