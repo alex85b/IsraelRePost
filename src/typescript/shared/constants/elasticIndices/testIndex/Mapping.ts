@@ -1,8 +1,6 @@
 import { MappingTypeMapping } from '@elastic/elasticsearch/lib/api/types';
 
-export const testIndexName: string = 'test';
-
-export const testIndexMapping: MappingTypeMapping = {
+export const TEST_INDEX_MAPPING: MappingTypeMapping = {
 	dynamic: 'strict',
 	properties: {
 		field1: { type: 'text' },

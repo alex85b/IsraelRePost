@@ -3,13 +3,13 @@ import {
 	IElasticSearchResponse,
 	IElasticsearchClient,
 } from './base/ElasticsearchClient';
+import { BRANCH_INDEX_MAPPING } from '../../shared/constants/elasticIndices/branch/Mapping';
+import { BRANCH_INDEX_NAME } from '../../shared/constants/elasticIndices/branch/Index';
 import {
-	branchIndexName,
-	branchIndexMapping,
-	queryAllBranches,
-	queryBranchesWithoutServices,
-	allBranchesExcludingQuery,
-} from '../../shared/constants/indices/BranchIndex';
+	QUERY_ALL_BRANCHES,
+	QUERY_ALL_BRANCHES_EXCLUDING,
+	QUERY_BRANCHES_WITHOUT_SERVICES,
+} from '../../shared/constants/elasticIndices/branch/Queries';
 import { bulkBranchDocuments } from './IndexingUtils';
 
 export class BranchServicesIndexing {
@@ -21,16 +21,16 @@ export class BranchServicesIndexing {
 
 	async fetchAllBranches() {
 		const results = await this.eClient.searchIndex<IQueryBranches>({
-			indexName: branchIndexName,
-			query: queryAllBranches,
+			indexName: BRANCH_INDEX_NAME,
+			query: QUERY_ALL_BRANCHES,
 		});
 		return results.data?.hits?.hits ?? [];
 	}
 
 	async branchesWithoutServices() {
 		const results = await this.eClient.searchIndex<IQueryBranches>({
-			indexName: branchIndexName,
-			query: queryBranchesWithoutServices,
+			indexName: BRANCH_INDEX_NAME,
+			query: QUERY_BRANCHES_WITHOUT_SERVICES,
 		});
 		return results.data?.hits?.hits ?? [];
 	}

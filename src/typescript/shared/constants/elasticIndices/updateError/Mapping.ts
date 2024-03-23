@@ -1,8 +1,6 @@
 import { MappingTypeMapping } from '@elastic/elasticsearch/lib/api/types';
 
-export const updateErrorIndexName: string = 'errors';
-
-export const updateErrorIndexMapping: MappingTypeMapping = {
+export const UPDATE_ERROR_INDEX_MAPPING: MappingTypeMapping = {
 	dynamic: 'strict',
 	properties: {
 		userError: { type: 'text' },

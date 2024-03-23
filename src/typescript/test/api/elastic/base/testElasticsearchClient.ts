@@ -1,8 +1,9 @@
 import { ElasticsearchClient } from '../../../../api/elastic/base/ElasticsearchClient';
-import { branchIndexName } from '../../../../shared/constants/indices/BranchIndex';
-import { testIndexMapping, testIndexName } from '../../../../shared/constants/indices/TestIndex';
+import { BRANCH_INDEX_NAME } from '../../../../shared/constants/elasticIndices/branch/Index';
+import { TEST_INDEX_MAPPING } from '../../../../shared/constants/elasticIndices/testIndex/Mapping';
+import { TEST_INDEX_NAME } from '../../../../shared/constants/elasticIndices/testIndex/Index';
 
-console.log('** testElasticsearchClient **');
+console.log('** Test Elasticsearch Client **');
 
 export const getInstance = async () => {
 	console.log('** (1) ElasticsearchClient.getInstance **');
@@ -15,7 +16,7 @@ export const getInstance = async () => {
 export const positivePingIndex = async () => {
 	console.log('** (2) ElasticsearchClient.pingIndex - Positive **');
 	const eClient = await getInstance();
-	const response = await eClient.pingIndex({ indexName: branchIndexName });
+	const response = await eClient.pingIndex({ indexName: BRANCH_INDEX_NAME });
 	console.log('[pingIndex][Positive] : ', response);
 };
 
@@ -29,7 +30,7 @@ export const negativePingIndex = async () => {
 export const getIndexMapping = async () => {
 	console.log('** (3) ElasticsearchClient.getIndexMapping **');
 	const eClient = await getInstance();
-	const response = await eClient.getIndexMapping({ indexName: branchIndexName });
+	const response = await eClient.getIndexMapping({ indexName: BRANCH_INDEX_NAME });
 	console.log('[getIndexMapping] : ', response);
 };
 
@@ -37,8 +38,8 @@ export const createIndex = async () => {
 	console.log('** (4) ElasticsearchClient.createIndex **');
 	const eClient = await getInstance();
 	const response = await eClient.createIndex({
-		indexName: testIndexName,
-		indexMapping: testIndexMapping,
+		indexName: TEST_INDEX_NAME,
+		indexMapping: TEST_INDEX_MAPPING,
 	});
 	console.log('[createIndex] : ', response);
 };
