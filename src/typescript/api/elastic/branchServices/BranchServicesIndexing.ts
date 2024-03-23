@@ -2,15 +2,15 @@ import {
 	ElasticsearchClient,
 	IElasticSearchResponse,
 	IElasticsearchClient,
-} from './base/ElasticsearchClient';
-import { BRANCH_INDEX_MAPPING } from '../../shared/constants/elasticIndices/branch/Mapping';
-import { BRANCH_INDEX_NAME } from '../../shared/constants/elasticIndices/branch/Index';
+} from '../base/ElasticsearchClient';
+import { BRANCH_INDEX_MAPPING } from '../../../shared/constants/elasticIndices/branch/Mapping';
+import { BRANCH_INDEX_NAME } from '../../../shared/constants/elasticIndices/branch/Index';
 import {
 	QUERY_ALL_BRANCHES,
 	QUERY_ALL_BRANCHES_EXCLUDING,
 	QUERY_BRANCHES_WITHOUT_SERVICES,
-} from '../../shared/constants/elasticIndices/branch/Queries';
-import { bulkBranchDocuments } from './IndexingUtils';
+} from './BranchServicesQueries';
+import { bulkBranchDocuments } from './BranchServicesUtils';
 
 export class BranchServicesIndexing {
 	private eClient: IElasticsearchClient;
@@ -35,20 +35,22 @@ export class BranchServicesIndexing {
 		return results.data?.hits?.hits ?? [];
 	}
 
-	// async getQnomyCodesExcluding(requestData: {
-	// 	excludeBranchIds: string[];
-	// }): Promise<IBranchQnomycodePair[]> {
-	// 	const results = await this.eClient.searchIndex<IQueryBranches>({
-	// 		indexName: branchIndexName,
-	// 		query: buildAllBranchesExcludingQuery(requestData.excludeBranchIds),
-	// 	});
+	async getQnomyCodesExcluding(requestData: {
+		excludeBranchIds: string[];
+	}): Promise<IBranchQnomycodePair[]> {
+		// TODO
+		QUERY_ALL_BRANCHES_EXCLUDING;
+		const results = await this.eClient.searchIndex<IQueryBranches>({
+			indexName: BRANCH_INDEX_NAME,
+			query: QUERY_ALL_BRANCHES_EXCLUDING,
+		});
 
-	// 	const branches = results.data?.hits?.hits ?? [];
+		const branches = results.data?.hits?.hits ?? [];
 
-	// 	return branches.map((branch) => {
-	// 		return { branchId: branch._id, qnomycode: branch._source.qnomycode };
-	// 	});
-	// }
+		return branches.map((branch) => {
+			return { branchId: branch._id, qnomycode: branch._source.qnomycode };
+		});
+	}
 
 	// async bulkAddBranches(requestData: { addBranches: IDocumentBranch[] }) {
 	// 	// prepare bulk request data.

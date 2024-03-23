@@ -193,7 +193,9 @@ const {
 const {
 	construct,
 	fetchAllBranches,
+	branchesWithoutServices,
 } = require('./js-build/test/api/elastic/TestBranchServicesIndexing');
 
-// construct();
+construct();
 fetchAllBranches();
+branchesWithoutServices();
