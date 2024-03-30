@@ -49,14 +49,15 @@ export class ElasticsearchClient implements IElasticsearchClient {
 				AxiosResponse<R, AxiosRequestConfig>
 			>(axiosRequestConfig);
 
-			if (checkStatus && (axiosResponse.status > 299 || axiosResponse.status < 200)) {
-				if (axiosResponse.data) console.error('Error response: ', axiosResponse.data);
-				if (axiosResponse.statusText)
-					console.error('Error StatusText: ', axiosResponse.statusText);
-				throw new Error(
-					`[Base Elastic][${callerName}][Index: ${indexName}][Response-Status: ${axiosResponse.status}]`
-				);
-			}
+			// if (checkStatus && (axiosResponse.status > 299 || axiosResponse.status < 200)) {
+			// 	if (axiosResponse.data) console.error('Error response: ', axiosResponse.data);
+			// 	if (axiosResponse.data) console.error('Error response: ', axiosResponse.data);
+			// 	if (axiosResponse.statusText)
+			// 		console.error('Error StatusText: ', axiosResponse.statusText);
+			// 	throw new Error(
+			// 		`[Base Elastic][${callerName}][Index: ${indexName}][Response-Status: ${axiosResponse.status}]`
+			// 	);
+			// }
 
 			return {
 				status: axiosResponse.status ?? -1,
@@ -198,7 +199,7 @@ export class ElasticsearchClient implements IElasticsearchClient {
 		const axiosRequestConfig = this.customRequestConfig.getConfig();
 		axiosRequestConfig.method = 'POST';
 		axiosRequestConfig.url = `/${requestData.indexName}/_delete_by_query`;
-		axiosRequestConfig.data = { query: requestData.query };
+		axiosRequestConfig.data = requestData.query;
 
 		const elasticResponse = await this.makeElasticRequest<IElasticDeleteByQResponse>({
 			axiosRequestConfig,
@@ -215,18 +216,17 @@ export class ElasticsearchClient implements IElasticsearchClient {
 		};
 	}
 
-	async updateRecordByQ(requestData: { indexName: string; query: any; script: any }) {
+	async updateRecordByQ(requestData: { indexName: string; query: any }) {
 		const axiosRequestConfig = this.customRequestConfig.getConfig();
 		axiosRequestConfig.method = 'POST';
 		axiosRequestConfig.url = `/${requestData.indexName}/_update_by_query`;
-		axiosRequestConfig.data = {
-			query: requestData.query,
-			script: requestData.script,
-		};
+		axiosRequestConfig.data = requestData.query;
+
+		console.log('[updateRecordByQ] axiosRequestConfig.data : ', axiosRequestConfig.data);
 
 		const elasticResponse = await this.makeElasticRequest<IElasticUpdateByQResponse>({
 			axiosRequestConfig,
-			callerName: 'Delete Records',
+			callerName: 'Update Record By Query',
 			indexName: requestData.indexName,
 		});
 
@@ -279,7 +279,7 @@ export interface IElasticsearchClient {
 		data: IElasticDeleteByQResponse | null;
 	}>;
 
-	updateRecordByQ(requestData: { indexName: string; query: any; script: any }): Promise<{
+	updateRecordByQ(requestData: { indexName: string; query: any }): Promise<{
 		status: number;
 		statusText: string;
 		data: IElasticUpdateByQResponse | null;
@@ -386,7 +386,7 @@ export interface IElasticCrUpRecordResponse {
 	_index: string;
 	_id: string;
 	_version: number;
-	result: string;
+	result: 'created' | 'updated';
 	_shards: {
 		total: number;
 		successful: number;
@@ -453,181 +453,3 @@ class CustomRequestConfig {
 		}
 	};
 }
-
-// ###################################################################################################
-// ### Deprecated \ replaced #########################################################################
-// ###################################################################################################
-
-// export class elasticsearchClient implements IElasticsearchClient {
-// 	private indexMapping: MappingTypeMapping;
-// 	private indexName: string;
-// 	protected customRequestConfig: CustomRequestConfig;
-
-// 	constructor({ indexMapping, indexName }: ElasticsearchData) {
-// 		this.indexMapping = indexMapping;
-// 		this.indexName = indexName;
-
-// 		const { certificates, password, username } = getAuthenticationData();
-
-// 		this.customRequestConfig = new CustomRequestConfig.Builder()
-// 			.auth({ password, username })
-// 			.baseURL(ELASTIC_BASE_URL)
-// 			.validateStatus((status: number) => true)
-// 			.httpsAgent(
-// 				new https.Agent({
-// 					ca: certificates,
-// 				})
-// 			)
-// 			.build();
-// 	}
-
-// 	private async makeElasticRequest<R, C extends AxiosRequestConfig>(
-// 		axiosRequestConfig: C,
-// 		callerName: string
-// 	) {
-// 		const axiosResponse = await axios.request<C, AxiosResponse<R, C>>(axiosRequestConfig);
-// 		const data = axiosResponse.data;
-
-// 		if (axiosResponse.status > 299 || axiosResponse.status < 200) {
-// 			console.error('Error response: ', data);
-// 			throw new Error(
-// 				`[Base Elastic][${callerName}][Index: ${this.indexName}][Response-Status: ${axiosResponse.status}]`
-// 			);
-// 		}
-
-// 		return {
-// 			status: axiosResponse.status ?? -1,
-// 			statusText: axiosResponse.statusText ?? 'Nothing',
-// 			data: axiosResponse.data ?? null,
-// 		};
-// 	}
-
-// 	async searchIndex<RE extends IElasticSearchResponse>(query: any) {
-// 		const axiosRequestConfig = this.customRequestConfig.getConfig();
-// 		axiosRequestConfig.url = `/${this.indexName}/_search`;
-// 		axiosRequestConfig.method = 'GET';
-// 		axiosRequestConfig.data = query;
-
-// 		const elasticResponse = await this.makeElasticRequest<RE, AxiosRequestConfig>(
-// 			axiosRequestConfig,
-// 			'Search Index'
-// 		);
-
-// 		return {
-// 			hitsAmount: elasticResponse.data?.hits?.total?.value ?? 0,
-// 			data: elasticResponse.data,
-// 		};
-// 	}
-
-// 	async bulkAdd(bulkedDocuments: any) {
-// 		const axiosRequestConfig = this.customRequestConfig.getConfig();
-// 		axiosRequestConfig.url = '_bulk';
-// 		axiosRequestConfig.method = 'POST';
-// 		axiosRequestConfig.data = bulkedDocuments;
-// 		axiosRequestConfig['headers'] = { 'Content-Type': 'application/x-ndjson' };
-
-// 		const elasticResponse = await this.makeElasticRequest<
-// 			IElasticBulkResponse,
-// 			AxiosRequestConfig
-// 		>(axiosRequestConfig, 'Bulk Add');
-// 		return elasticResponse;
-// 	}
-
-// 	async pingIndex() {
-// 		const axiosRequestConfig = this.customRequestConfig.getConfig();
-// 		axiosRequestConfig.method = 'HEAD';
-// 		axiosRequestConfig.url = this.indexName;
-
-// 		const elasticResponse = await this.makeElasticRequest(axiosRequestConfig, 'Ping Index');
-// 		return elasticResponse.status;
-// 	}
-
-// 	async deleteIndex() {
-// 		const axiosRequestConfig = this.customRequestConfig.getConfig();
-// 		axiosRequestConfig.method = 'DELETE';
-// 		axiosRequestConfig.url = this.indexName;
-
-// 		const elasticResponse = await this.makeElasticRequest<
-// 			IElasticDeleteResponse,
-// 			AxiosRequestConfig
-// 		>(axiosRequestConfig, 'Delete Index');
-
-// 		return elasticResponse.data?.acknowledged;
-// 	}
-
-// 	async createIndex() {
-// 		const axiosRequestConfig = this.customRequestConfig.getConfig();
-// 		axiosRequestConfig.method = 'PUT';
-// 		axiosRequestConfig.url = this.indexName;
-
-// 		const elasticResponse = await this.makeElasticRequest<
-// 			IElasticCreateIndexResponse,
-// 			AxiosRequestConfig
-// 		>(axiosRequestConfig, 'Create Index');
-
-// 		return elasticResponse.data?.acknowledged;
-// 	}
-
-// 	async addUpdateRecord(documentId: number, record: any) {
-// 		const axiosRequestConfig = this.customRequestConfig.getConfig();
-// 		axiosRequestConfig.method = 'POST';
-// 		axiosRequestConfig.url = `/${this.indexName}/_doc/${documentId}`;
-// 		axiosRequestConfig.data = record;
-
-// 		const elasticResponse = await this.makeElasticRequest<
-// 			IElasticCrUpRecordResponse,
-// 			AxiosRequestConfig
-// 		>(axiosRequestConfig, 'Add Update Record');
-
-// 		const data = elasticResponse.data;
-
-// 		return {
-// 			status: elasticResponse.status ?? -1,
-// 			statusText: elasticResponse.statusText ?? ' No status text',
-// 			data: data,
-// 		};
-// 	}
-
-// 	async deleteRecordsByQ(query: any) {
-// 		const axiosRequestConfig = this.customRequestConfig.getConfig();
-// 		axiosRequestConfig.method = 'POST';
-// 		axiosRequestConfig.url = `/${this.indexName}/_delete_by_query`;
-// 		axiosRequestConfig.data = { query: query };
-
-// 		const elasticResponse = await this.makeElasticRequest<
-// 			IElasticDeleteByQResponse,
-// 			AxiosRequestConfig
-// 		>(axiosRequestConfig, 'Delete Records');
-
-// 		const data = elasticResponse.data;
-
-// 		return {
-// 			status: elasticResponse.status ?? -1,
-// 			statusText: elasticResponse.statusText ?? ' No status text',
-// 			data: data,
-// 		};
-// 	}
-
-// 	async updateRecordByQ(query: any, script: any) {
-// 		const axiosRequestConfig = this.customRequestConfig.getConfig();
-// 		axiosRequestConfig.method = 'POST';
-// 		axiosRequestConfig.url = `/${this.indexName}/_update_by_query`;
-// 		axiosRequestConfig.data = {
-// 			query: query,
-// 			script: script,
-// 		};
-
-// 		const elasticResponse = await this.makeElasticRequest<
-// 			IElasticUpdateByQResponse,
-// 			AxiosRequestConfig
-// 		>(axiosRequestConfig, 'Delete Records');
-
-// 		const data = elasticResponse.data;
-
-// 		return {
-// 			status: elasticResponse.status ?? -1,
-// 			statusText: elasticResponse.statusText ?? ' No status text',
-// 			data: data,
-// 		};
-// 	}
-// }

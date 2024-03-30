@@ -177,8 +177,14 @@ testHandlersAsStringType(false);
 testHandlersAsEnums(false);
 testHandlersEnumsAndFunctions(false);
 
-//////////////////////////////////////////////////////////////////////////////////////////////////
+// ##############################################################################################
+// ### Elastic APIs #############################################################################
+// ##############################################################################################
 
+/*
+Basic Elasticsearch 'Client' for communication using https*/
+// #########################################################
+// #########################################################
 const {
 	createIndex,
 	getIndexMapping,
@@ -186,16 +192,56 @@ const {
 	negativePingIndex,
 	positivePingIndex,
 } = require('./js-build/test/api/elastic/base/TestElasticsearchClient');
+/* This class has more abilities that are not tested directly */
 
+// createIndex();
+// getIndexMapping();
+// getInstance();
 // negativePingIndex();
 // positivePingIndex();
 
+/*
+Queries that are specific to 'Branch' index*/
+// ##########################################
+// ##########################################
+
 const {
-	construct,
+	construct: branchConstruct,
 	fetchAllBranches,
 	branchesWithoutServices,
+	getQnomyCodesExcluding,
+	bulkAddBranches,
+	updateBranchServices,
+	fetchAllQnomyCodes,
+	createBranchIndex,
+	deleteAllBranches,
+	deleteBranchIndex,
 } = require('./js-build/test/api/elastic/TestBranchServicesIndexing');
 
-construct();
-fetchAllBranches();
-branchesWithoutServices();
+// branchConstruct();
+// fetchAllBranches();
+// branchesWithoutServices();
+// getQnomyCodesExcluding();
+// bulkAddBranches();
+// updateBranchServices();
+// fetchAllQnomyCodes();
+// createBranchIndex();
+// deleteAllBranches();
+// deleteBranchIndex();
+
+/*
+Queries that are specific to 'Errors' index*/
+// ##########################################
+// ##########################################
+
+const {
+	construct: errorsConstruct,
+	fetchAllErrors,
+	updateAddError,
+	deleteAllErrors,
+} = require('./js-build/test/api/elastic/TestUpdateErrorIndexing');
+
+// errorsConstruct();
+// fetchAllErrors();
+// updateAddError();
+// deleteAllErrors();
