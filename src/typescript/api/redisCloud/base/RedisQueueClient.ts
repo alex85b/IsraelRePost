@@ -1,7 +1,31 @@
 import Redis from 'ioredis';
 import { getRedisCloudData } from './RedisQueueUtils';
 
-export class RedisQueueClient {
+// ###################################################################################################
+// ### Interfaces ####################################################################################
+// ###################################################################################################
+
+interface IRedisQueueClient {
+	exists(requestData: { queueName: string }): Promise<number>;
+
+	enqueue(requestData: { queueName: string; data: any }): Promise<number>;
+
+	dequeue(requestData: { queueName: string }): Promise<string | null>;
+
+	bEnqueue(requestData: { queueName: string; itemsToEnqueue: any[] }): Promise<number>;
+
+	bDequeueAll(requestData: { queueName: string }): Promise<string[]>;
+
+	qSize(requestData: { queueName: string }): Promise<number>;
+
+	disconnect(): Promise<'OK'>;
+}
+
+// ###################################################################################################
+// ### RedisQueueClient Class ########################################################################
+// ###################################################################################################
+
+export class RedisQueueClient implements IRedisQueueClient {
 	private static instance: RedisQueueClient;
 	private redis: Redis;
 
