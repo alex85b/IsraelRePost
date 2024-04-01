@@ -245,3 +245,35 @@ const {
 // fetchAllErrors();
 // updateAddError();
 // deleteAllErrors();
+
+// ##############################################################################################
+// ### Redis Cloud APIs #########################################################################
+// ##############################################################################################
+
+/*
+Basic Redis Cloud Queue Client*/
+// #############################
+// #############################
+const {
+	deserializeItems,
+	getRedisCloudData,
+} = require('./js-build/test/api/redisCloud/base/TestRedisQueueUtils');
+// getRedisCloudData();
+// deserializeItems();
+
+const {
+	construct: constructRedisQueue,
+	enqueue,
+	dequeue,
+	exists,
+	bEnqueue,
+	bDequeueAll,
+	qSize,
+} = require('./js-build/test/api/redisCloud/base/TestRedisQueueClient');
+// constructRedisQueue();
+// enqueue();
+// dequeue();
+// exists();
+// bEnqueue();
+// bDequeueAll();
+// qSize();

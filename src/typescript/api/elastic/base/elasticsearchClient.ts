@@ -11,7 +11,7 @@ import { getAuthenticationData } from './ElasticsearchUtils';
 
 export class ElasticsearchClient implements IElasticsearchClient {
 	private static instance: ElasticsearchClient;
-	protected customRequestConfig: CustomRequestConfig;
+	private customRequestConfig: CustomRequestConfig;
 
 	// Private constructor to prevent direct instantiation
 	private constructor() {
