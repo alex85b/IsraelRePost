@@ -277,3 +277,19 @@ const {
 // bEnqueue();
 // bDequeueAll();
 // qSize();
+
+// ##############################################################################################
+// ### Israel Post API Requests  ################################################################
+// ##############################################################################################
+
+const {
+	buildAndPerformUserRequest,
+} = require('./js-build/test/api/postOfficeCalls/base/TestBaseApiCall');
+
+buildAndPerformUserRequest();
+
+const {
+	multipleConfigBuildsInSingleRun,
+} = require('./js-build/test/api/postOfficeCalls/TestBuildCallConfigurations');
+
+// multipleConfigBuildsInSingleRun();
