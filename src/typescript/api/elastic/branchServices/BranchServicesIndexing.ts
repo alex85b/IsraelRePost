@@ -1,18 +1,22 @@
 import {
 	ElasticsearchClient,
+	IElasticBulkResponse,
+	IElasticCreateIndexResponse,
+	IElasticDeleteByQResponse,
+	IElasticDeleteResponse,
 	IElasticSearchResponse,
+	IElasticUpdateByQResponse,
 	IElasticsearchClient,
 } from '../base/ElasticsearchClient';
-import { BRANCH_INDEX_MAPPING } from '../../../shared/constants/elasticIndices/branch/Mapping';
-import { BRANCH_INDEX_NAME } from '../../../shared/constants/elasticIndices/branch/Index';
-import {
-	buildBranchesExcludingQuery,
-	buildBranchesWithoutServicesQuery,
-	buildUpdateBranchServicesQuery,
-} from './BranchServicesQueries';
 import { bulkBranchDocuments } from './BranchServicesUtils';
-import { buildAllRecordsQuery } from '../../../shared/elasticQueries/QueryAllRecords';
-import { buildDeleteAllRecordsQuery } from '../../../shared/elasticQueries/DeleteAllRecordsByQuery';
+import { buildAllRecordsQuery } from '../shared/queryBuilders/QueryAllRecordsBuilder';
+import { buildDeleteAllRecordsQuery } from '../shared/queryBuilders/DeleteByQueryBuilder';
+import { BRANCH_INDEX_NAME } from './constants/Index';
+import { BRANCH_INDEX_MAPPING } from './constants/Mapping';
+import { searchAllBranchesRequest } from './requests/SearchAllBranchesRequest';
+import { branchesWithoutServicesRequest } from './requests/SearchBranchesWithoutServices';
+import { updateBranchServicesRequest } from './requests/UpdateBranchServicesRequest';
+import { AxiosResponse } from 'axios';
 
 const MODULE_NAME = 'Branch Services Indexing';
 
@@ -20,31 +24,35 @@ const MODULE_NAME = 'Branch Services Indexing';
 // ### BranchServicesIndexing Interface ##############################################################
 // ###################################################################################################
 
-interface IBranchServicesIndexing {
-	createBranchIndex(): Promise<boolean>;
+export interface IBranchServicesIndexing {
+	createBranchIndex(): Promise<
+		Omit<AxiosResponse<IElasticCreateIndexResponse>, 'request' | 'config'>
+	>;
 
-	deleteBranchIndex(): Promise<boolean>;
+	deleteBranchIndex(): Promise<Omit<AxiosResponse<IElasticDeleteResponse>, 'request' | 'config'>>;
 
-	fetchAllBranches(): Promise<ISingleBranchQueryResponse[]>;
+	fetchAllBranches(): Promise<Omit<AxiosResponse<IQueryBranches>, 'request' | 'config'>>;
 
-	branchesWithoutServices(): Promise<ISingleBranchQueryResponse[]>;
+	branchesWithoutServices(): Promise<Omit<AxiosResponse<IQueryBranches>, 'request' | 'config'>>;
 
-	getQnomyCodesExcluding(requestData: {
+	getBranchesExcluding(requestData: {
 		excludeBranchIds: string[];
-	}): Promise<IBranchQnomycodePair[]>;
+	}): Promise<Omit<AxiosResponse<IQueryBranches>, 'request' | 'config'>>;
 
 	bulkAddBranches(requestData: {
 		addBranches: IDocumentBranch[];
-	}): Promise<{ status: number; id: string; action: string }[]>;
+	}): Promise<Omit<AxiosResponse<IElasticBulkResponse>, 'request' | 'config'>>;
 
 	updateBranchServices(requestData: {
 		branchID: string;
 		services: INewServiceRecord[];
-	}): Promise<{ updated: number }>;
+	}): Promise<Omit<AxiosResponse<IElasticUpdateByQResponse>, 'request' | 'config'>>;
 
-	deleteAllBranches(): Promise<number>;
+	deleteAllBranches(): Promise<
+		Omit<AxiosResponse<IElasticDeleteByQResponse>, 'request' | 'config'>
+	>;
 
-	fetchAllQnomyCodes(): Promise<IBranchQnomycodePair[]>;
+	fetchAllQnomyCodes(): Promise<Omit<AxiosResponse<IQueryQnomycode>, 'request' | 'config'>>;
 }
 
 // ###################################################################################################
@@ -59,60 +67,39 @@ export class BranchServicesIndexing implements IBranchServicesIndexing {
 	}
 
 	async createBranchIndex() {
-		const pingResult = await this.eClient.pingIndex({ indexName: BRANCH_INDEX_NAME });
-		let createResult = false;
-		if (pingResult != 200) {
-			createResult = await this.eClient.createIndex({
-				indexName: BRANCH_INDEX_NAME,
-				indexMapping: BRANCH_INDEX_MAPPING,
-			});
-		}
-		return createResult;
+		return await this.eClient.createIndex({
+			indexName: BRANCH_INDEX_NAME,
+			indexMapping: BRANCH_INDEX_MAPPING,
+		});
 	}
 
 	async deleteBranchIndex() {
-		const pingResult = await this.eClient.pingIndex({ indexName: BRANCH_INDEX_NAME });
-		let deleteResult = false;
-		if (pingResult === 200) {
-			deleteResult =
-				(await this.eClient.deleteIndex({
-					indexName: BRANCH_INDEX_NAME,
-				})) ?? false;
-		}
-		return deleteResult;
+		return await this.eClient.deleteIndex({
+			indexName: BRANCH_INDEX_NAME,
+		});
 	}
 
 	async fetchAllBranches() {
-		const results = await this.eClient.searchIndex<IQueryBranches>({
+		return await this.eClient.searchIndex<IQueryBranches>({
 			indexName: BRANCH_INDEX_NAME,
-			query: buildAllRecordsQuery({ maxRecords: 500 }),
+			request: searchAllBranchesRequest({ maxRecords: 500 }),
 		});
-		return results.data?.hits?.hits ?? [];
 	}
 
 	async branchesWithoutServices() {
-		const results = await this.eClient.searchIndex<IQueryBranches>({
+		return await this.eClient.searchIndex<IQueryBranches>({
 			indexName: BRANCH_INDEX_NAME,
-			query: buildBranchesWithoutServicesQuery({ maxRecords: 500 }),
+			request: branchesWithoutServicesRequest({ maxRecords: 500 }),
 		});
-		return results.data?.hits?.hits ?? [];
 	}
 
-	async getQnomyCodesExcluding(requestData: {
-		excludeBranchIds: string[];
-	}): Promise<IBranchQnomycodePair[]> {
-		const results = await this.eClient.searchIndex<IQueryBranches>({
+	async getBranchesExcluding(requestData: { excludeBranchIds: string[] }) {
+		return await this.eClient.searchIndex<IQueryBranches>({
 			indexName: BRANCH_INDEX_NAME,
-			query: buildBranchesExcludingQuery({
+			request: searchAllBranchesRequest({
 				excludeBranches: requestData.excludeBranchIds,
 				maxRecords: 500,
 			}),
-		});
-
-		const branches = results.data?.hits?.hits ?? [];
-
-		return branches.map((branch) => {
-			return { branchId: branch._id, qnomycode: branch._source.qnomycode };
 		});
 	}
 
@@ -122,81 +109,33 @@ export class BranchServicesIndexing implements IBranchServicesIndexing {
 			addBranches: requestData.addBranches,
 			branchIndexName: BRANCH_INDEX_NAME,
 		});
-
-		const response = await this.eClient.bulkAdd({
+		return await this.eClient.bulkAdd({
 			indexName: BRANCH_INDEX_NAME,
 			bulkedDocuments: bulk,
 		});
-
-		const responseData = response.data;
-		const errors = responseData?.errors;
-		if (errors) {
-			console.error('[Branch Module][Bulk Add Branches]: Failed ', responseData);
-			throw new Error(
-				`[${MODULE_NAME}][Bulk Add Branches][Index: ${BRANCH_INDEX_NAME}]: Response Had Errors`
-			);
-		}
-
-		const items = responseData?.items ?? [];
-		const returnReport: { status: number; id: string; action: string }[] = [];
-		items.forEach((itemBulked) => {
-			returnReport.push({
-				status: itemBulked.index.status ?? -1,
-				id: itemBulked.index._id ?? 'No-id',
-				action: itemBulked.index.result ?? 'No-action',
-			});
-		});
-		return returnReport;
 	}
 
 	async updateBranchServices(requestData: { branchID: string; services: INewServiceRecord[] }) {
-		const response = await this.eClient.updateRecordByQ({
+		return await this.eClient.updateRecordByQ({
 			indexName: BRANCH_INDEX_NAME,
-			query: buildUpdateBranchServicesQuery({
+			request: updateBranchServicesRequest({
 				branchID: requestData.branchID,
 				params: { updatedServicesArray: requestData.services },
 			}),
 		});
-
-		const updatedAmount = response.data?.updated ?? -1;
-		const failures = response.data?.failures ?? [];
-		if (failures.length > 0) {
-			throw new Error(
-				`[${MODULE_NAME}][Update Branch Services]: Response Had {${failures.length}} Errors`
-			);
-		}
-		return { updated: updatedAmount };
 	}
 
 	async deleteAllBranches() {
-		const results = await this.eClient.deleteRecordsByQ({
+		return await this.eClient.deleteRecordsByQ({
 			indexName: BRANCH_INDEX_NAME,
-			query: buildDeleteAllRecordsQuery(),
+			request: buildDeleteAllRecordsQuery(),
 		});
-
-		console.log(`[${MODULE_NAME}][Delete All Branches][Index: ${BRANCH_INDEX_NAME}]`, results);
-
-		const failures = results.data?.failures ?? [];
-		const deletedAmount = results.data?.deleted ?? 0;
-
-		if (Array.isArray(failures) && failures.length > 0) {
-			console.error(`[${MODULE_NAME}][Delete All Branches]: Failed `, results);
-			throw new Error(
-				`[${MODULE_NAME}][Delete All Branches][Index: ${BRANCH_INDEX_NAME}]: Response Had Errors`
-			);
-		}
-		return deletedAmount;
 	}
 
-	async fetchAllQnomyCodes(): Promise<IBranchQnomycodePair[]> {
-		const results = await this.eClient.searchIndex<IQueryQnomycode>({
+	async fetchAllQnomyCodes() {
+		return await this.eClient.searchIndex<IQueryQnomycode>({
 			indexName: BRANCH_INDEX_NAME,
-			query: buildAllRecordsQuery({ maxRecords: 500, specificFields: ['qnomycode'] }),
-		});
-
-		const qnomyCodes = results.data?.hits?.hits ?? [];
-		return qnomyCodes.map((hit) => {
-			return { branchId: hit._id, qnomycode: hit._source.qnomycode };
+			request: buildAllRecordsQuery({ maxRecords: 500, specificFields: ['qnomycode'] }),
 		});
 	}
 }

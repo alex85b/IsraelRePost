@@ -1,6 +1,10 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { IPostofficeRequestAxiosConfig } from './BaseRequestConfig';
 
+// #############################################################################################
+// ### Interfaces ##############################################################################
+// #############################################################################################
+
 export interface IPostofficeResponseData {
 	Success: boolean;
 	Results: { [key: string]: any }[] | { [key: string]: any } | null;
@@ -19,10 +23,16 @@ export interface IPostOfficeApiResponse<SR extends IPostofficeResponseData> {
 	responseData: SR;
 }
 
+// #############################################################################################
+// ### Type : Base Api Call Function ###########################################################
+// #############################################################################################
+
 export type BaseApiCall = <SR extends IPostofficeResponseData>(
 	axiosRequestConfig: IPostofficeRequestAxiosConfig
 ) => Promise<IPostOfficeApiResponse<SR>>;
 
+/*
+Performs an Axios request using pre-made request-configuration*/
 export const baseApiCall: BaseApiCall = async <SR extends IPostofficeResponseData>(
 	axiosRequestConfig: IPostofficeRequestAxiosConfig
 ) => {

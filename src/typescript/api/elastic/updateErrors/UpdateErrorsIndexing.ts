@@ -4,53 +4,42 @@ import {
 	IElasticsearchClient,
 } from '../base/ElasticsearchClient';
 
-import { UPDATE_ERRORS_INDEX_NAME } from '../../../shared/constants/elasticIndices/updateErrors/Index';
-import { buildAllRecordsQuery } from '../../../shared/elasticQueries/QueryAllRecords';
-import { buildDeleteAllRecordsQuery } from '../../../shared/elasticQueries/DeleteAllRecordsByQuery';
+import { UPDATE_ERRORS_INDEX_NAME } from './constants/Index';
+import { buildAllRecordsQuery } from '../shared/queryBuilders/QueryAllRecordsBuilder';
+import { buildDeleteAllRecordsQuery } from '../shared/queryBuilders/DeleteByQueryBuilder';
 
 const MODULE_NAME = 'Branch Services Indexing';
 
-export class UpdateErrorsIndexing {
+export class UpdateErrorsIndexing implements IErrorIndexService {
 	private eClient: IElasticsearchClient;
 
 	constructor() {
 		this.eClient = ElasticsearchClient.getInstance();
 	}
 
-	async fetchAllErrors() {
-		const results = await this.eClient.searchIndex<IQueryErrors>({
-			indexName: UPDATE_ERRORS_INDEX_NAME,
-			query: buildAllRecordsQuery({ maxRecords: 500 }),
-		});
+	// TODO: Create Index
+	// TODO: Delete Index
 
-		return results.data?.hits.hits ?? [];
+	async fetchAllErrors() {
+		return await this.eClient.searchIndex<IQueryErrors>({
+			indexName: UPDATE_ERRORS_INDEX_NAME,
+			request: buildAllRecordsQuery({ maxRecords: 500 }),
+		});
 	}
 
 	async updateAddError(buildData: { errorRecord: IErrorMapping; branchIndex: number }) {
-		const results = await this.eClient.addUpdateRecord({
+		return await this.eClient.addUpdateRecord({
 			indexName: UPDATE_ERRORS_INDEX_NAME,
 			documentId: buildData.branchIndex,
 			record: buildData.errorRecord,
 		});
-		return results.data?.result ?? 'failed'; // Created or Updated.
 	}
 
 	async deleteAllErrors() {
-		const results = await this.eClient.deleteRecordsByQ({
+		return await this.eClient.deleteRecordsByQ({
 			indexName: UPDATE_ERRORS_INDEX_NAME,
-			query: buildDeleteAllRecordsQuery(),
+			request: buildDeleteAllRecordsQuery(),
 		});
-
-		const deletedAmount = results.data?.deleted ?? -1;
-		const failures = results.data?.failures ?? [];
-
-		if (failures.length > 0) {
-			throw new Error(
-				`[Error Module][Delete All Errors]: Response Had {${failures.length}} Errors`
-			);
-		}
-
-		return { deleted: deletedAmount };
 	}
 }
 
@@ -107,10 +96,10 @@ export interface IDateError {
 // ##############################################
 
 interface IErrorIndexService {
-	fetchAllErrors: () => Promise<ISingleErrorQueryResponse[]>;
-	updateAddError: (
-		errorRecord: IErrorMapping,
-		branchIndex: number
-	) => Promise<string | undefined>;
-	deleteAllErrors: () => Promise<{ deleted: number }>;
+	// fetchAllErrors: () => Promise<ISingleErrorQueryResponse[]>;
+	// updateAddError: (
+	// 	errorRecord: IErrorMapping,
+	// 	branchIndex: number
+	// ) => Promise<string | undefined>;
+	// deleteAllErrors: () => Promise<{ deleted: number }>;
 }

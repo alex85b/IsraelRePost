@@ -1,8 +1,8 @@
+import { omit } from '../../../api/elastic/base/ElasticsearchUtils';
 import {
 	IErrorMapping,
 	UpdateErrorsIndexing,
 } from '../../../api/elastic/updateErrors/UpdateErrorsIndexing';
-import { UPDATE_ERRORS_INDEX_NAME } from '../../../shared/constants/elasticIndices/updateErrors/Index';
 
 console.log('** Test Update Error Indexing **');
 
@@ -19,10 +19,17 @@ export const fetchAllErrors = async () => {
 	console.log('** (2) BranchServicesIndexing.fetchAllBranches **');
 	const uErrorsIndex = construct();
 	const allErrors = await uErrorsIndex.fetchAllErrors();
-	if (!Array.isArray(allErrors))
-		throw Error('[fetchAllErrors] Test Failed, fetchAllErrors response is not array');
-	console.log('[fetchAllErrors] allErrors length : ', allErrors.length);
-	console.log('[fetchAllErrors] allErrors demo : ', JSON.stringify(allErrors[0]));
+	console.log('[fetchAllErrors] metadata : ', omit(allErrors, 'data'));
+
+	console.log(
+		'[fetchAllErrors] allBranches data length : ',
+		JSON.stringify(allErrors.data.hits.hits.length)
+	);
+
+	console.log(
+		'[fetchAllErrors] allBranches data demo : ',
+		JSON.stringify(allErrors.data.hits.hits[0])
+	);
 };
 
 export const updateAddError = async () => {
@@ -45,21 +52,17 @@ export const updateAddError = async () => {
 		],
 	};
 	const updateStatus = await uErrorsIndex.updateAddError({
-		branchIndex: 9998,
+		branchIndex: 9997,
 		errorRecord: fakeError,
 	});
-	if (String(updateStatus) === 'Failed') {
-		throw Error('[updateAddError] Test Failed, updateAddError response: Failed');
-	}
-
-	console.log('[fetchAllErrors] updateStatus : ', updateStatus);
+	console.log('[updateAddError] metadata : ', omit(updateStatus, 'data'));
+	console.log('[updateAddError] updateStatus data : ', JSON.stringify(updateStatus.data));
 };
 
 export const deleteAllErrors = async () => {
 	console.log('** (4) BranchServicesIndexing.deleteAllErrors **');
 	const uErrorsIndex = construct();
 	const deletedAmount = await uErrorsIndex.deleteAllErrors();
-	if (!deletedAmount)
-		throw Error('[fetchAllErrors] Test Failed, deleteAllErrors response is undefined');
-	console.log('[deleteAllErrors] deletedAmount : ', deletedAmount);
+	console.log('[deleteAllErrors] metadata : ', omit(deletedAmount, 'data'));
+	console.log('[deleteAllErrors] deletedAmount data : ', JSON.stringify(deletedAmount.data));
 };

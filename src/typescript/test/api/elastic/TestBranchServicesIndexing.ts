@@ -1,3 +1,4 @@
+import { omit } from '../../../api/elastic/base/ElasticsearchUtils';
 import {
 	BranchServicesIndexing,
 	IDocumentBranch,
@@ -19,45 +20,54 @@ export const fetchAllBranches = async () => {
 	console.log('** (2) BranchServicesIndexing.fetchAllBranches **');
 	const bServicesIndex = construct();
 	const allBranches = await bServicesIndex.fetchAllBranches();
-	if (!Array.isArray(allBranches))
-		throw Error('[fetchAllBranches] Test Failed, fetchAllBranches response is not array');
-	console.log('[fetchAllBranches] allBranches length : ', allBranches.length);
-	console.log('[fetchAllBranches] allBranches demo : ', JSON.stringify(allBranches[0]));
+	console.log('[fetchAllBranches] metadata : ', omit(allBranches, 'data'));
+
+	console.log(
+		'[fetchAllBranches] allBranches data length : ',
+		JSON.stringify(allBranches.data.hits.hits.length)
+	);
+
+	console.log(
+		'[fetchAllBranches] allBranches data demo : ',
+		JSON.stringify(allBranches.data.hits.hits[0])
+	);
 };
 
 export const branchesWithoutServices = async () => {
 	console.log('** (3) BranchServicesIndexing.branchesWithoutServices **');
 	const bServicesIndex = construct();
 	const bWithoutServices = await bServicesIndex.branchesWithoutServices();
-	if (!Array.isArray(bWithoutServices))
-		throw Error(
-			'[branchesWithoutServices] Test Failed, branchesWithoutServices response is not array'
-		);
-	console.log('[branchesWithoutServices] bWithoutServices length : ', bWithoutServices.length);
+	console.log('[branchesWithoutServices] metadata : ', omit(bWithoutServices, 'data'));
+
 	console.log(
-		'[branchesWithoutServices] bWithoutServices demo : ',
-		JSON.stringify(bWithoutServices[0])
+		'[branchesWithoutServices] allBranches data length : ',
+		JSON.stringify(bWithoutServices.data.hits.hits.length)
+	);
+
+	console.log(
+		'[branchesWithoutServices] allBranches data demo : ',
+		JSON.stringify(bWithoutServices.data.hits.hits[0])
 	);
 };
 
-export const getQnomyCodesExcluding = async () => {
-	console.log('** (4) BranchServicesIndexing.getQnomyCodesExcluding **');
+export const getBranchesExcluding = async () => {
+	console.log('** (4) BranchServicesIndexing.getBranchesExcluding **');
 	const bServicesIndex = construct();
-	console.log('[getQnomyCodesExcluding] Excluding branch id : 129');
-	const codesOfBranchesExcluding = await bServicesIndex.getQnomyCodesExcluding({
+	console.log('[getBranchesExcluding] Excluding branch id : 129');
+	const branchesExcluding = await bServicesIndex.getBranchesExcluding({
 		excludeBranchIds: ['129'],
 	});
-	if (!Array.isArray(codesOfBranchesExcluding))
-		throw Error(
-			'[getQnomyCodesExcluding] Test Failed, branchesWithoutServices response is not array'
-		);
+
+	console.log('[getBranchesExcluding] metadata : ', omit(branchesExcluding, 'data'));
+
 	console.log(
-		'[getQnomyCodesExcluding] codesOfBranchesExcluding length : ',
-		codesOfBranchesExcluding.length
+		'[getBranchesExcluding] branchesExcluding data length : ',
+		JSON.stringify(branchesExcluding.data.hits.hits.length)
 	);
+
 	console.log(
-		'[branchesWithoutServices] bWithoutServices demo : ',
-		JSON.stringify(codesOfBranchesExcluding[0])
+		'[getBranchesExcluding] branchesExcluding data demo : ',
+		JSON.stringify(branchesExcluding.data.hits.hits[0])
 	);
 };
 
@@ -112,13 +122,14 @@ export const bulkAddBranches = async () => {
 		addBranches: bulkThis,
 	});
 
-	if (!Array.isArray(bulkAddReport))
-		throw Error('[bulkAddBranches] Test Failed, bulkAddReport response is not array');
-	console.log('[bulkAddBranches] bulkAddBranches length : ', bulkAddReport.length);
+	console.log('[bulkAddBranches] metadata : ', omit(bulkAddReport, 'data'));
+
 	console.log(
-		'[branchesWithoutServices] bulkAddReport demo : ',
-		JSON.stringify(bulkAddReport[0])
+		'[bulkAddBranches] bulkAddReport data length : ',
+		JSON.stringify(bulkAddReport.data.items.length)
 	);
+
+	console.log('[bulkAddBranches] bulkAddReport data : ', JSON.stringify(bulkAddReport.data));
 };
 
 export const updateBranchServices = async () => {
@@ -142,19 +153,30 @@ export const updateBranchServices = async () => {
 		branchID: '9999',
 		services: fakeServices,
 	});
-	if (!successfullyUpdated)
-		throw Error('[updateBranchServices] Test Failed, successfullyUpdated is not n > 0');
-	console.log('[updateBranchServices] successfullyUpdated : ', successfullyUpdated);
+
+	console.log('[updateBranchServices] metadata : ', omit(successfullyUpdated, 'data'));
+	console.log(
+		'[updateBranchServices] successfullyUpdated data : ',
+		JSON.stringify(successfullyUpdated.data)
+	);
 };
 
 export const fetchAllQnomyCodes = async () => {
-	console.log('** (7) BranchServicesIndexing.getQnomyCodesExcluding **');
+	console.log('** (7) BranchServicesIndexing.fetchAllQnomyCodes **');
 	const bServicesIndex = construct();
 	const qCodes = await bServicesIndex.fetchAllQnomyCodes();
-	if (!Array.isArray(qCodes))
-		throw Error('[fetchAllQnomyCodes] Test Failed, fetchAllQnomyCodes response is not array');
-	console.log('[fetchAllQnomyCodes] qCodes length : ', qCodes.length);
-	console.log('[fetchAllQnomyCodes] qCodes demo : ', JSON.stringify(qCodes[0]));
+
+	console.log('[fetchAllQnomyCodes] metadata : ', omit(qCodes, 'data'));
+
+	console.log(
+		'[fetchAllQnomyCodes] qCodes data length : ',
+		JSON.stringify(qCodes.data.hits.hits.length)
+	);
+
+	console.log(
+		'[fetchAllQnomyCodes] qCodes data demo : ',
+		JSON.stringify(qCodes.data.hits.hits[0])
+	);
 };
 
 export const createBranchIndex = async () => {
