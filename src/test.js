@@ -191,14 +191,26 @@ const {
 	getInstance,
 	negativePingIndex,
 	positivePingIndex,
+	searchIndex,
+	addUpdateRecord,
+	deleteIndex,
+	bulkAdd,
+	deleteRecordsByQ,
+	updateRecordByQ,
 } = require('./js-build/test/api/elastic/base/TestElasticsearchClient');
 /* This class has more abilities that are not tested directly */
 
+// getInstance();
 // createIndex();
 // getIndexMapping();
-// getInstance();
+// deleteIndex();
 // negativePingIndex();
 // positivePingIndex();
+// searchIndex();
+// addUpdateRecord();
+// bulkAdd();
+// deleteRecordsByQ();
+// updateRecordByQ();
 
 /*
 Queries that are specific to 'Branch' index*/
@@ -209,7 +221,7 @@ const {
 	construct: branchConstruct,
 	fetchAllBranches,
 	branchesWithoutServices,
-	getQnomyCodesExcluding,
+	getBranchesExcluding,
 	bulkAddBranches,
 	updateBranchServices,
 	fetchAllQnomyCodes,
@@ -221,7 +233,7 @@ const {
 // branchConstruct();
 // fetchAllBranches();
 // branchesWithoutServices();
-// getQnomyCodesExcluding();
+// getBranchesExcluding();
 // bulkAddBranches();
 // updateBranchServices();
 // fetchAllQnomyCodes();
@@ -286,7 +298,7 @@ const {
 	buildAndPerformUserRequest,
 } = require('./js-build/test/api/postOfficeCalls/base/TestBaseApiCall');
 
-buildAndPerformUserRequest();
+// buildAndPerformUserRequest();
 
 const {
 	multipleConfigBuildsInSingleRun,
