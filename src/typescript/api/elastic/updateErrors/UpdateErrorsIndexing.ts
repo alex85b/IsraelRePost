@@ -1,16 +1,39 @@
 import {
 	ElasticsearchClient,
+	IElasticCrUpRecordResponse,
+	IElasticDeleteByQResponse,
 	IElasticSearchResponse,
 	IElasticsearchClient,
 } from '../base/ElasticsearchClient';
-
 import { UPDATE_ERRORS_INDEX_NAME } from './constants/Index';
 import { buildAllRecordsQuery } from '../shared/queryBuilders/QueryAllRecordsBuilder';
 import { buildDeleteAllRecordsQuery } from '../shared/queryBuilders/DeleteByQueryBuilder';
+import { AxiosResponse } from 'axios';
 
 const MODULE_NAME = 'Branch Services Indexing';
 
-export class UpdateErrorsIndexing implements IErrorIndexService {
+// ###################################################################################################
+// ### Interface : IUpdateErrorsIndexing #############################################################
+// ###################################################################################################
+
+export interface IUpdateErrorsIndexing {
+	fetchAllErrors(): Promise<Omit<AxiosResponse<IQueryErrors>, 'request' | 'config'>>;
+
+	updateAddError(buildData: {
+		errorRecord: IErrorMapping;
+		branchIndex: number;
+	}): Promise<Omit<AxiosResponse<IElasticCrUpRecordResponse>, 'request' | 'config'>>;
+
+	deleteAllErrors(): Promise<
+		Omit<AxiosResponse<IElasticDeleteByQResponse>, 'request' | 'config'>
+	>;
+}
+
+// ###################################################################################################
+// ### UpdateErrorsIndexing Class ####################################################################
+// ###################################################################################################
+
+export class UpdateErrorsIndexing implements IUpdateErrorsIndexing {
 	private eClient: IElasticsearchClient;
 
 	constructor() {
@@ -89,17 +112,4 @@ export interface IDateError {
 	calendarId: string;
 	datesError: string;
 	timesError: string;
-}
-
-// ##############################################
-// ### Error Index Service ######################
-// ##############################################
-
-interface IErrorIndexService {
-	// fetchAllErrors: () => Promise<ISingleErrorQueryResponse[]>;
-	// updateAddError: (
-	// 	errorRecord: IErrorMapping,
-	// 	branchIndex: number
-	// ) => Promise<string | undefined>;
-	// deleteAllErrors: () => Promise<{ deleted: number }>;
 }

@@ -1,4 +1,4 @@
-import { BuildPostRequestAxiosConfig } from '../../../api/postOfficeCalls/base/BaseRequestConfig';
+import { BuildPostRequestAxiosConfig } from '../../../api/postOfficeCalls/base/PostofficeRequestConfig';
 
 console.log('** Build Call Configurations **');
 

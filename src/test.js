@@ -297,11 +297,29 @@ const {
 const {
 	buildAndPerformUserRequest,
 } = require('./js-build/test/api/postOfficeCalls/base/TestBaseApiCall');
-
 // buildAndPerformUserRequest();
 
 const {
 	multipleConfigBuildsInSingleRun,
 } = require('./js-build/test/api/postOfficeCalls/TestBuildCallConfigurations');
-
 // multipleConfigBuildsInSingleRun();
+
+const {
+	makeUserRequest,
+} = require('./js-build/test/api/postOfficeCalls/requestConfigs/TestCreateUserConfig');
+// makeUserRequest();
+
+const {
+	makeServicesRequest,
+} = require('./js-build/test/api/postOfficeCalls/requestConfigs/TestFetchServicesConfig');
+// makeServicesRequest();
+
+const {
+	makeDatesRequest,
+} = require('./js-build/test/api/postOfficeCalls/requestConfigs/TestFetchDatesConfig');
+// makeDatesRequest();
+
+const {
+	makeTimesRequest,
+} = require('./js-build/test/api/postOfficeCalls/requestConfigs/TestFetchTimesConfig');
+// makeTimesRequest();

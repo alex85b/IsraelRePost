@@ -41,6 +41,7 @@ export class BuildPostRequestAxiosConfig {
 
 	static Builder = class PostofficeRequestConfigBuilder {
 		private postofficeRequestConfig: IPostofficeRequestAxiosConfig;
+		private params: { [key: string]: string | number } = {};
 		constructor() {
 			this.postofficeRequestConfig = {
 				method: 'GET',
@@ -110,18 +111,65 @@ export class BuildPostRequestAxiosConfig {
 		}
 
 		paramsLocationId(data: { locationId: string }) {
-			if (!this.postofficeRequestConfig.params) {
-				this.postofficeRequestConfig.params = {};
-			}
-			this.postofficeRequestConfig.params['locationId'] = data.locationId;
+			this.params['locationId'] = data.locationId;
+			// if (!this.postofficeRequestConfig.params) {
+			// 	this.postofficeRequestConfig.params = {};
+			// }
+			// this.postofficeRequestConfig.params['locationId'] = data.locationId;
 			return this;
 		}
 
 		paramsServiceTypeId(data: { serviceTypeId: string }) {
-			if (!this.postofficeRequestConfig.params) {
-				this.postofficeRequestConfig.params = {};
-			}
-			this.postofficeRequestConfig.params['serviceTypeId'] = data.serviceTypeId;
+			this.params['serviceTypeId'] = data.serviceTypeId;
+			// if (!this.postofficeRequestConfig.params) {
+			// 	this.postofficeRequestConfig.params = {};
+			// }
+			// this.postofficeRequestConfig.params['serviceTypeId'] = data.serviceTypeId;
+			return this;
+		}
+
+		paramsMaxResults(data: { maxResults: string }) {
+			this.params['maxResults'] = data.maxResults;
+			// if (!this.postofficeRequestConfig.params) {
+			// 	this.postofficeRequestConfig.params = {};
+			// }
+			// this.postofficeRequestConfig.params['maxResults'] = data.maxResults;
+			return this;
+		}
+
+		paramsServiceId(data: { serviceId: string }) {
+			this.params['serviceId'] = data.serviceId;
+			// if (!this.postofficeRequestConfig.params) {
+			// 	this.postofficeRequestConfig.params = {};
+			// }
+			// this.postofficeRequestConfig.params['serviceId'] = data.serviceId;
+			return this;
+		}
+
+		paramsStartDate(data: { startDate: string }) {
+			this.params['startDate'] = data.startDate;
+			// if (!this.postofficeRequestConfig.params) {
+			// 	this.postofficeRequestConfig.params = {};
+			// }
+			// this.postofficeRequestConfig.params['startDate'] = data.startDate;
+			return this;
+		}
+
+		paramsCalendarId(data: { CalendarId: string }) {
+			this.params['CalendarId'] = data.CalendarId;
+			// if (!this.postofficeRequestConfig.params) {
+			// 	this.postofficeRequestConfig.params = {};
+			// }
+			// this.postofficeRequestConfig.params['CalendarId'] = data.CalendarId;
+			return this;
+		}
+
+		paramsDayPart(data: { dayPart: string }) {
+			this.params['dayPart'] = data.dayPart;
+			// if (!this.postofficeRequestConfig.params) {
+			// 	this.postofficeRequestConfig.params = {};
+			// }
+			// this.postofficeRequestConfig.params['dayPart'] = data.dayPart;
 			return this;
 		}
 
@@ -146,6 +194,7 @@ export class BuildPostRequestAxiosConfig {
 		}
 
 		build() {
+			if (Object.keys(this.params)) this.postofficeRequestConfig.params = this.params;
 			return new BuildPostRequestAxiosConfig(this.postofficeRequestConfig);
 		}
 	};
