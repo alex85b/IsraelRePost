@@ -3,7 +3,7 @@ import { buildUserCallConfig } from '../../../../api/postOfficeCalls/requestConf
 import {
 	IExpectedUserResponse,
 	RequestUserResponse,
-} from '../../../../data/models/dataTransferModels/apiResponses/RequestUserResponse';
+} from '../../../../data/models/dataTransferModels/postofficeResponses/RequestUserResponse';
 
 console.log('** Test Create-User Config **');
 

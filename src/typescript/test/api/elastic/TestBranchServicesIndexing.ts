@@ -19,7 +19,7 @@ export const construct = () => {
 export const fetchAllBranches = async () => {
 	console.log('** (2) BranchServicesIndexing.fetchAllBranches **');
 	const bServicesIndex = construct();
-	const allBranches = await bServicesIndex.fetchAllBranches();
+	const allBranches = await bServicesIndex.fetchAllBranches({ maxRecords: 500 });
 	console.log('[fetchAllBranches] metadata : ', omit(allBranches, 'data'));
 
 	console.log(

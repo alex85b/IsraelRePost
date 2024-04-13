@@ -4,7 +4,7 @@ import { buildTimesCallConfig } from '../../../../api/postOfficeCalls/requestCon
 import {
 	IExpectedTimesResponse,
 	RequestTimesResponse,
-} from '../../../../data/models/dataTransferModels/apiResponses/RequestTimesResponse';
+} from '../../../../data/models/dataTransferModels/postofficeResponses/RequestTimesResponse';
 import { makeUserRequest } from './TestCreateUserConfig';
 
 console.log('** Test Fetch-times Config **');

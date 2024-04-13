@@ -3,7 +3,7 @@ import { buildDatesCallConfig } from '../../../../api/postOfficeCalls/requestCon
 import {
 	IExpectedDatesResponse,
 	RequestDatesResponse,
-} from '../../../../data/models/dataTransferModels/apiResponses/RequestDatesResponse';
+} from '../../../../data/models/dataTransferModels/postofficeResponses/RequestDatesResponse';
 import { makeUserRequest } from './TestCreateUserConfig';
 
 console.log('** Test Fetch-dates Config **');

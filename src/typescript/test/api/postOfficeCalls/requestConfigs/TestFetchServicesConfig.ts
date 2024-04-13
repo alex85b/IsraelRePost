@@ -3,7 +3,7 @@ import { buildServicesCallConfig } from '../../../../api/postOfficeCalls/request
 import {
 	IExpectedServiceResponse,
 	RequestServicesResponse,
-} from '../../../../data/models/dataTransferModels/apiResponses/RequestServicesResponse';
+} from '../../../../data/models/dataTransferModels/postofficeResponses/RequestServicesResponse';
 import { makeUserRequest } from './TestCreateUserConfig';
 
 console.log('** Test Fetch-Services Config **');
