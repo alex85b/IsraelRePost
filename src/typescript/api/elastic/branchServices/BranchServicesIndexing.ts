@@ -31,7 +31,9 @@ export interface IBranchServicesIndexing {
 
 	deleteBranchIndex(): Promise<Omit<AxiosResponse<IElasticDeleteResponse>, 'request' | 'config'>>;
 
-	fetchAllBranches(): Promise<Omit<AxiosResponse<IQueryBranches>, 'request' | 'config'>>;
+	fetchAllBranches(data: {
+		maxRecords: number;
+	}): Promise<Omit<AxiosResponse<IQueryBranches>, 'request' | 'config'>>;
 
 	branchesWithoutServices(): Promise<Omit<AxiosResponse<IQueryBranches>, 'request' | 'config'>>;
 
@@ -79,10 +81,10 @@ export class BranchServicesIndexing implements IBranchServicesIndexing {
 		});
 	}
 
-	async fetchAllBranches() {
+	async fetchAllBranches(data: { maxRecords: number }) {
 		return await this.eClient.searchIndex<IQueryBranches>({
 			indexName: BRANCH_INDEX_NAME,
-			request: searchAllBranchesRequest({ maxRecords: 500 }),
+			request: searchAllBranchesRequest({ maxRecords: data.maxRecords }),
 		});
 	}
 
@@ -228,13 +230,4 @@ export interface IQueryQnomycode extends IElasticSearchResponse {
 		max_score: number;
 		hits: ISingleQnomycodeQueryResponse[];
 	};
-}
-
-// ##############################################
-// ### fetchAllQnomyCodes Return ################
-// ##############################################
-
-export interface IBranchQnomycodePair {
-	branchId: string;
-	qnomycode: number;
 }

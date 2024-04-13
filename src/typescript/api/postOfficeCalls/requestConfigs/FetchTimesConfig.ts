@@ -1,5 +1,5 @@
-import { Cookies } from '../../../data/models/dataTransferModels/apiResponses/shared/PostofficeCookies';
-import { flattenDictionaryOfCookies } from '../../../data/models/dataTransferModels/apiResponses/shared/ReformatCookies';
+import { Cookies } from '../../../data/models/dataTransferModels/postofficeResponses/shared/PostofficeCookies';
+import { flattenDictionaryOfCookies } from '../../../data/models/dataTransferModels/postofficeResponses/shared/ReformatCookies';
 import { BuildPostRequestAxiosConfig } from '../base/PostofficeRequestConfig';
 
 export type CookiesWithoutCentralJWT = Omit<Cookies, 'CentralJWTCookie'>;

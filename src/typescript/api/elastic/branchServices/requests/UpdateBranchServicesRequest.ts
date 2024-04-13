@@ -44,6 +44,6 @@ export const updateBranchServicesRequest = (buildData: {
 		.withScript(SPECIFIC_SERVICE_SCRIPT)
 		.build();
 
-	console.log('[updateBranchServicesRequest] : ', request);
+	// console.log('[updateBranchServicesRequest] : ', request);
 	return request;
 };

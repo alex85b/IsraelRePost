@@ -1,6 +1,6 @@
 import { BuildPostRequestAxiosConfig } from '../base/PostofficeRequestConfig';
-import { flattenDictionaryOfCookies } from '../../../data/models/dataTransferModels/apiResponses/shared/ReformatCookies';
-import { Cookies } from '../../../data/models/dataTransferModels/apiResponses/shared/PostofficeCookies';
+import { flattenDictionaryOfCookies } from '../../../data/models/dataTransferModels/postofficeResponses/shared/ReformatCookies';
+import { Cookies } from '../../../data/models/dataTransferModels/postofficeResponses/shared/PostofficeCookies';
 
 export const buildServicesCallConfig = (data: {
 	headerAuth: string;

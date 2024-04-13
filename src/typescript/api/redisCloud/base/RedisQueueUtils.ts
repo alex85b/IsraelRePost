@@ -1,7 +1,11 @@
 import * as dotenv from 'dotenv';
-import { IBranchQnomycodePair } from '../../elastic/branchServices/BranchServicesIndexing';
 
 const MODULE_NAME = 'Redis Cloud Utilities';
+
+export interface IBranchQnomycodePair {
+	branchId: string;
+	qnomycode: number;
+}
 
 export const getRedisCloudData = () => {
 	dotenv.config();

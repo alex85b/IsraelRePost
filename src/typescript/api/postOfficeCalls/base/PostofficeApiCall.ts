@@ -1,7 +1,7 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { IPostofficeRequestAxiosConfig } from './PostofficeRequestConfig';
 import { omit } from '../../elastic/base/ElasticsearchUtils';
-import { IPostofficeResponseData } from '../../../data/models/dataTransferModels/apiResponses/shared/PostofficeResponseData';
+import { IPostofficeResponseData } from '../../../data/models/dataTransferModels/postofficeResponses/shared/PostofficeResponseData';
 
 // #############################################################################################
 // ### Postoffice Api Call #####################################################################
