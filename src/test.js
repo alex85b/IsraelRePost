@@ -323,3 +323,12 @@ const {
 	makeTimesRequest,
 } = require('./js-build/test/api/postOfficeCalls/requestConfigs/TestFetchTimesConfig');
 // makeTimesRequest();
+
+// ##############################################################################################
+// ### Repositories  ############################################################################
+// ##############################################################################################
+
+const {
+	getAllBranches,
+} = require('./js-build/test/data/models/repositories/TestPostofficeBranchesRepository');
+getAllBranches();
