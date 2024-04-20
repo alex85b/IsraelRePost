@@ -1,6 +1,6 @@
 import { BuildPostRequestAxiosConfig } from '../../../api/postOfficeCalls/base/PostofficeRequestConfig';
 
-console.log('** Build Call Configurations **');
+console.log('** Test Build Call Configurations **');
 
 export const multipleConfigBuildsInSingleRun = async () => {
 	console.log('** (1) Multiple Config Builds In Single Run **');

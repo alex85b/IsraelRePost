@@ -331,4 +331,30 @@ const {
 const {
 	getAllBranches,
 } = require('./js-build/test/data/models/repositories/TestPostofficeBranchesRepository');
-getAllBranches();
+// getAllBranches();
+
+// ##############################################################################################
+// ### Services  ################################################################################
+// ##############################################################################################
+
+const {
+	newPage,
+	browserPage,
+} = require('./js-build/test/services/scrape/base/TestPuppeteerClient');
+// newPage();
+// browserPage();
+
+const { testScrapeXhrObjects } = require('./js-build/test/services/scrape/TestScrapeBranches');
+// testScrapeXhrObjects();
+
+const {
+	testFilterByMakeAppointments,
+} = require('./js-build/test/services/scrape/TestFilterBranches');
+// testFilterByMakeAppointments();
+
+const {
+	testDeleteAddBranches,
+	testAddUpdateBranches,
+} = require('./js-build/test/services/TestUpdateBranches');
+// testDeleteAddBranches();
+// testAddUpdateBranches();

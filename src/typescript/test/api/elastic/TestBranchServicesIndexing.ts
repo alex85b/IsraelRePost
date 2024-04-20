@@ -29,7 +29,7 @@ export const fetchAllBranches = async () => {
 
 	console.log(
 		'[fetchAllBranches] allBranches data demo : ',
-		JSON.stringify(allBranches.data.hits.hits[0])
+		JSON.stringify(allBranches.data.hits.hits[0], null, 3)
 	);
 };
 
@@ -46,7 +46,7 @@ export const branchesWithoutServices = async () => {
 
 	console.log(
 		'[branchesWithoutServices] allBranches data demo : ',
-		JSON.stringify(bWithoutServices.data.hits.hits[0])
+		JSON.stringify(bWithoutServices.data.hits.hits[0], null, 3)
 	);
 };
 
@@ -67,7 +67,7 @@ export const getBranchesExcluding = async () => {
 
 	console.log(
 		'[getBranchesExcluding] branchesExcluding data demo : ',
-		JSON.stringify(branchesExcluding.data.hits.hits[0])
+		JSON.stringify(branchesExcluding.data.hits.hits[0], null, 3)
 	);
 };
 
@@ -122,14 +122,19 @@ export const bulkAddBranches = async () => {
 		addBranches: bulkThis,
 	});
 
+	console.log(
+		'[bulkAddBranches] bulkAddReport data : ',
+		JSON.stringify(bulkAddReport.data, null, 3),
+		null,
+		3
+	);
+
 	console.log('[bulkAddBranches] metadata : ', omit(bulkAddReport, 'data'));
 
 	console.log(
 		'[bulkAddBranches] bulkAddReport data length : ',
 		JSON.stringify(bulkAddReport.data.items.length)
 	);
-
-	console.log('[bulkAddBranches] bulkAddReport data : ', JSON.stringify(bulkAddReport.data));
 };
 
 export const updateBranchServices = async () => {
@@ -157,7 +162,7 @@ export const updateBranchServices = async () => {
 	console.log('[updateBranchServices] metadata : ', omit(successfullyUpdated, 'data'));
 	console.log(
 		'[updateBranchServices] successfullyUpdated data : ',
-		JSON.stringify(successfullyUpdated.data)
+		JSON.stringify(successfullyUpdated.data, null, 3)
 	);
 };
 
@@ -175,7 +180,7 @@ export const fetchAllQnomyCodes = async () => {
 
 	console.log(
 		'[fetchAllQnomyCodes] qCodes data demo : ',
-		JSON.stringify(qCodes.data.hits.hits[0])
+		JSON.stringify(qCodes.data.hits.hits[0], null, 3)
 	);
 };
 
