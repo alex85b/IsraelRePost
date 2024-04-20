@@ -4,7 +4,7 @@ import { SearchRequestBuilder } from '../requestBuilders/SearchRequestBuilder';
 export const buildDeleteAllRecordsQuery = (): SearchRequest => {
 	const QUERY_ALL_BRANCHES: QueryDslQueryContainer = { match_all: {} };
 	const returnQuery = new SearchRequestBuilder().withQuery(QUERY_ALL_BRANCHES).build();
-	console.log(`[buildDeleteAllBranchesQuery] : `, returnQuery);
+	// console.log(`[buildDeleteAllBranchesQuery] : `, returnQuery);
 	return returnQuery;
 };
 
@@ -13,6 +13,6 @@ export const buildDeleteRecordQuery = (buildData: { recordId: string }): SearchR
 		term: { _id: buildData.recordId },
 	};
 	const returnQuery = new SearchRequestBuilder().withQuery(QUERY_BRANCH).build();
-	console.log(`[buildDeleteRecordQuery] : `, returnQuery);
+	// console.log(`[buildDeleteRecordQuery] : `, returnQuery);
 	return returnQuery;
 };

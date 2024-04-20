@@ -351,7 +351,7 @@ export interface IElasticCrUpRecordResponse {
 	_index: string;
 	_id: string;
 	_version: number;
-	result: string;
+	result: 'created' | 'updated';
 	_shards: {
 		total: number;
 		successful: number;
