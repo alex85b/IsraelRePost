@@ -254,7 +254,7 @@ const {
 } = require('./js-build/test/api/elastic/TestUpdateErrorIndexing');
 
 // errorsConstruct();
-// fetchAllErrors();
+fetchAllErrors();
 // updateAddError();
 // deleteAllErrors();
 
@@ -332,6 +332,17 @@ const {
 	getAllBranches,
 } = require('./js-build/test/data/models/repositories/TestPostofficeBranchesRepository');
 // getAllBranches();
+
+/*
+Models*/
+// ####
+
+const {
+	constructNewServiceRecord,
+	useServiceRecord,
+} = require('./js-build/test/data/models/persistenceModels/TestPostofficeBranchServices');
+// constructNewServiceRecord();
+// useServiceRecord();
 
 // ##############################################################################################
 // ### Services  ################################################################################
