@@ -1,6 +1,6 @@
-export interface ISearchAvailableDates {
-	Results: {
-		calendarDate: string;
-		calendarId: number;
-	}[];
-}
+// export interface ISearchAvailableDates {
+// 	Results: {
+// 		calendarDate: string;
+// 		calendarId: number;
+// 	}[];
+// }

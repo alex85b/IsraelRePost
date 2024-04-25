@@ -1,3 +1,3 @@
-export interface ISearchAvailableSlots {
-	Results: { Time: number }[];
-}
+// export interface ISearchAvailableSlots {
+// 	Results: { Time: number }[];
+// }
