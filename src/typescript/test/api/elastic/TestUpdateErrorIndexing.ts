@@ -21,14 +21,11 @@ export const fetchAllErrors = async () => {
 	const allErrors = await uErrorsIndex.fetchAllErrors();
 	console.log('[fetchAllErrors] metadata : ', omit(allErrors, 'data'));
 
-	console.log(
-		'[fetchAllErrors] allBranches data length : ',
-		JSON.stringify(allErrors.data.hits.hits.length)
-	);
+	console.log('[fetchAllErrors] allBranches data length : ', allErrors.data.hits.hits.length);
 
 	console.log(
 		'[fetchAllErrors] allBranches data demo : ',
-		JSON.stringify(allErrors.data.hits.hits[0])
+		JSON.stringify(allErrors.data.hits.hits[0], null, 4)
 	);
 };
 
@@ -56,7 +53,10 @@ export const updateAddError = async () => {
 		errorRecord: fakeError,
 	});
 	console.log('[updateAddError] metadata : ', omit(updateStatus, 'data'));
-	console.log('[updateAddError] updateStatus data : ', JSON.stringify(updateStatus.data));
+	console.log(
+		'[updateAddError] updateStatus data : ',
+		JSON.stringify(updateStatus.data, null, 4)
+	);
 };
 
 export const deleteAllErrors = async () => {
@@ -64,5 +64,8 @@ export const deleteAllErrors = async () => {
 	const uErrorsIndex = construct();
 	const deletedAmount = await uErrorsIndex.deleteAllErrors();
 	console.log('[deleteAllErrors] metadata : ', omit(deletedAmount, 'data'));
-	console.log('[deleteAllErrors] deletedAmount data : ', JSON.stringify(deletedAmount.data));
+	console.log(
+		'[deleteAllErrors] deletedAmount data : ',
+		JSON.stringify(deletedAmount.data, null, 4)
+	);
 };

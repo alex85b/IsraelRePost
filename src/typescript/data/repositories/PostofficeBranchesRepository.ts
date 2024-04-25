@@ -3,11 +3,25 @@ import {
 	IBranchServicesIndexing,
 } from '../../api/elastic/branchServices/BranchServicesIndexing';
 import {
+	BulkCreateUpdateResponse,
+	IBulkCreateUpdateResponse,
+} from '../models/dataTransferModels/elasticResponses/BulkCreateUpdateResponse';
+import {
 	IPostofficeBranchRecord,
-	PostofficeBranchRecord,
+	useSingleBranchQueryResponse,
 } from '../models/persistenceModels/PostofficeBranchRecord';
 
-export class PostofficeBranchesRepository {
+export interface IPostofficeBranchesRepository {
+	getAllBranches(): Promise<IPostofficeBranchRecord[]>;
+	deleteWriteBranches(
+		branchRecords: IPostofficeBranchRecord[]
+	): Promise<IBulkCreateUpdateResponse>;
+	writeUpdateBranches(
+		branchRecords: IPostofficeBranchRecord[]
+	): Promise<IBulkCreateUpdateResponse>;
+}
+
+export class PostofficeBranchesRepository implements IPostofficeBranchesRepository {
 	private branches: IBranchServicesIndexing;
 
 	constructor() {
@@ -32,20 +46,44 @@ export class PostofficeBranchesRepository {
 			);
 		}
 
-		const records: IPostofficeBranchRecord[] = rawQueryResult.map((branchQuery) => {
+		const branchRecords: IPostofficeBranchRecord[] = rawQueryResult.map((branchQuery) => {
 			try {
-				return new PostofficeBranchRecord.Builder()
-					.useSingleBranchQueryResponse({ rawQueryResponse: branchQuery })
-					.build();
+				return useSingleBranchQueryResponse({ rawQueryResponse: branchQuery }).build();
 			} catch (error) {
 				throw Error(`Branch ${branchQuery._id} : ` + (error as Error).message);
 			}
 		});
 
-		return records;
+		return branchRecords;
 	}
 
 	getBranchByID() {}
+
 	writeUpdateBranch() {}
-	writeUpdateBranches() {}
+
+	async writeUpdateBranches(branchRecords: IPostofficeBranchRecord[]) {
+		const rawBulkAddResponse = await this.branches.bulkAddBranches({
+			addBranches: branchRecords.map((branchRecord) => branchRecord.getBranchDocumentCopy()),
+		});
+		const bulkAddResponse: IBulkCreateUpdateResponse = new BulkCreateUpdateResponse.Builder()
+			.useAxiosResponse(rawBulkAddResponse)
+			.build();
+		return bulkAddResponse;
+	}
+
+	async deleteWriteBranches(branchRecords: IPostofficeBranchRecord[]) {
+		const deleteResponse = await this.branches.deleteAllBranches();
+		if (deleteResponse.status > 299 || deleteResponse.status < 200)
+			throw Error(
+				'[deleteWriteBranches] delete branches failed : ' +
+					JSON.stringify(deleteResponse, null, 3)
+			);
+		const rawBulkAddResponse = await this.branches.bulkAddBranches({
+			addBranches: branchRecords.map((branchRecord) => branchRecord.getBranchDocumentCopy()),
+		});
+		const bulkAddResponse: IBulkCreateUpdateResponse = new BulkCreateUpdateResponse.Builder()
+			.useAxiosResponse(rawBulkAddResponse)
+			.build();
+		return bulkAddResponse;
+	}
 }
