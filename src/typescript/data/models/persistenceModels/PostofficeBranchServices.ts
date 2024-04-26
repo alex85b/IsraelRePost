@@ -2,7 +2,7 @@ import {
 	INewDateEntryRecord,
 	INewServiceRecord,
 } from '../../../api/elastic/branchServices/BranchServicesIndexing';
-import { isValidString } from './shared/FieldValidation';
+import { isValidISO8601DateTime, isValidString } from './shared/FieldValidation';
 
 // ############################################################################################
 // ### Interfaces #############################################################################
@@ -57,7 +57,7 @@ export class PostofficeBranchServicesBuilder implements IPostofficeBranchService
 		}
 
 		toString() {
-			return JSON.stringify(this.services, null, 2);
+			return JSON.stringify(this.services, null, 3);
 		}
 	};
 
@@ -70,7 +70,7 @@ export class PostofficeBranchServicesBuilder implements IPostofficeBranchService
 		}
 		console.log(
 			'[addService] invalid service : ',
-			JSON.stringify(this.servicesDictionary, null, 4)
+			JSON.stringify(this.servicesDictionary, null, 3)
 		);
 		if (!vServiceId) this.faults.push(`Invalid serviceId`);
 		if (!vServiceName) this.faults.push(`Invalid serviceName`);
@@ -83,10 +83,9 @@ export class PostofficeBranchServicesBuilder implements IPostofficeBranchService
 			this.faults.push(`cannot add dates to : ${data.serviceId}`);
 			return this;
 		}
-
 		const vCalendarId = isValidString(data.calendarId);
-		// TODO: Add a Regex check.
-		const vCalendarDate = isValidString(data.calendarDate);
+		const vCalendarDate = isValidISO8601DateTime(data.calendarDate);
+		// const vCalendarDate = isValidString(data.calendarDate);
 		if (vCalendarId && vCalendarDate) {
 			this.servicesDictionary[data.serviceId].dates[data.calendarId] = {
 				calendarId: data.calendarId,
@@ -97,7 +96,7 @@ export class PostofficeBranchServicesBuilder implements IPostofficeBranchService
 		}
 		console.log(
 			'[addService] invalid date : ',
-			JSON.stringify(this.servicesDictionary, null, 4)
+			JSON.stringify(this.servicesDictionary, null, 3)
 		);
 		if (!vCalendarId) this.faults.push(`Invalid calendarId`);
 		if (!vCalendarDate) this.faults.push(`Invalid calendarDate`);

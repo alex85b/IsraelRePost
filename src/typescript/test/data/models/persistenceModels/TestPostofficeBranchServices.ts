@@ -15,7 +15,7 @@ export const constructNewServiceRecord = async () => {
 		})
 		.addDate({
 			serviceId: 'service1',
-			calendarDate: 'date1',
+			calendarDate: '2024-03-26T20:41:01',
 			calendarId: 'date1',
 		})
 		.addHours({ serviceId: 'service1', calendarId: 'date1', hours: ['1234', '455'] })
@@ -27,7 +27,7 @@ export const constructNewServiceRecord = async () => {
 	);
 	console.log(
 		'[constructNewServiceRecord] branchServices getServices : ',
-		JSON.stringify(branchServices.getServices(), null, 2)
+		JSON.stringify(branchServices.getServices(), null, 3)
 	);
 };
 
@@ -42,7 +42,7 @@ export const useServiceRecord = async () => {
 				dates: [
 					{
 						calendarId: 'cId1',
-						calendarDate: 11 as unknown as string,
+						calendarDate: '2024-03-26T20:41:01',
 						hours: ['1', '2', '3'],
 					},
 				],
@@ -51,7 +51,11 @@ export const useServiceRecord = async () => {
 				serviceName: 'test_service2',
 				serviceId: 'sId2',
 				dates: [
-					{ calendarId: 'cId2', calendarDate: 'bad-date2', hours: ['4', '5', '6', '7'] },
+					{
+						calendarId: 'cId2',
+						calendarDate: '2024-01-26T00:00:59',
+						hours: ['4', '5', '6', '7'],
+					},
 				],
 			},
 		],
@@ -63,12 +67,12 @@ export const useServiceRecord = async () => {
 		console.log('[useServiceRecord] servicesModel toString : ', servicesModel.toString());
 		console.log(
 			'[useServiceRecord] servicesModel getServices : ',
-			JSON.stringify(servicesModel.getServices(), null, 2)
+			JSON.stringify(servicesModel.getServices(), null, 3)
 		);
 	}
 
 	if (faults.length)
-		console.log('[useServiceRecord] branchServices faults : ', JSON.stringify(faults, null, 2));
+		console.log('[useServiceRecord] branchServices faults : ', JSON.stringify(faults, null, 3));
 
 	const emptyServicesArray = branchServicesFromRecords({
 		branchId: 998,
@@ -78,16 +82,19 @@ export const useServiceRecord = async () => {
 	const { faults: emptyFaults, branchServices: emptyServicesModel } = emptyServicesArray;
 
 	if (emptyServicesModel) {
-		console.log('[useServiceRecord] servicesModel toString : ', emptyServicesModel.toString());
 		console.log(
-			'[useServiceRecord] servicesModel getServices : ',
-			JSON.stringify(emptyServicesModel.getServices(), null, 2)
+			'[useServiceRecord] Empty - servicesModel toString : ',
+			emptyServicesModel.toString()
+		);
+		console.log(
+			'[useServiceRecord] Empty - servicesModel getServices : ',
+			JSON.stringify(emptyServicesModel.getServices(), null, 3)
 		);
 	}
 
 	if (emptyFaults.length)
 		console.log(
-			'[useServiceRecord] branchServices faults : ',
-			JSON.stringify(emptyFaults, null, 2)
+			'[useServiceRecord] Empty - branchServices faults : ',
+			JSON.stringify(emptyFaults, null, 3)
 		);
 };
