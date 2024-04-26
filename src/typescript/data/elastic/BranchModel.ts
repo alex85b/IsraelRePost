@@ -113,13 +113,17 @@ export class BranchModule extends BaseElastic {
 		let bulk: any = [];
 		addBranches.forEach((branchDocument) => {
 			bulk.push(
-				JSON.stringify({
-					index: {
-						_index: this.indexName,
-						_id: branchDocument.branchnumber.toString(),
+				JSON.stringify(
+					{
+						index: {
+							_index: this.indexName,
+							_id: branchDocument.branchnumber.toString(),
+						},
 					},
-				}),
-				JSON.stringify(branchDocument)
+					null,
+					3
+				),
+				JSON.stringify(branchDocument, null, 3)
 			);
 		});
 		bulk = bulk.join('\n') + '\n';

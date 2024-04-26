@@ -49,7 +49,7 @@ export const getIndexMapping = async () => {
 	console.log('** (3) ElasticsearchClient.getIndexMapping **');
 	const eClient = await getInstance();
 	const response = await eClient.getIndexMapping({ indexName: TEST_INDEX_NAME });
-	console.log('[getIndexMapping] : ', JSON.stringify(response));
+	console.log('[getIndexMapping] : ', JSON.stringify(response, null, 3));
 };
 
 export const createIndex = async () => {
@@ -69,7 +69,7 @@ export const searchIndex = async () => {
 		indexName: TEST_INDEX_NAME,
 		request: buildAllRecordsQuery({ maxRecords: 500 }),
 	});
-	console.log('[searchIndex] : ', JSON.stringify(response));
+	console.log('[searchIndex] : ', JSON.stringify(response, null, 3));
 };
 
 export const addUpdateRecord = async () => {
@@ -88,7 +88,7 @@ export const addUpdateRecord = async () => {
 		documentId: 9999,
 		record: exampleA,
 	});
-	console.log('[addUpdateRecord] : ', JSON.stringify(response));
+	console.log('[addUpdateRecord] : ', JSON.stringify(response, null, 3));
 };
 
 export const deleteIndex = async () => {
@@ -126,7 +126,7 @@ export const bulkAdd = async () => {
 		indexName: TEST_INDEX_NAME,
 		bulkedDocuments: bulkDocuments({ indexName: TEST_INDEX_NAME, documentsArray: container }),
 	});
-	console.log('[addUpdateRecord] : ', JSON.stringify(response));
+	console.log('[addUpdateRecord] : ', JSON.stringify(response, null, 3));
 };
 
 export const deleteRecordsByQ = async () => {
@@ -136,7 +136,7 @@ export const deleteRecordsByQ = async () => {
 		indexName: TEST_INDEX_NAME,
 		request: buildDeleteRecordQuery({ recordId: '9999' }),
 	});
-	console.log('[deleteRecordsByQ] : ', JSON.stringify(response));
+	console.log('[deleteRecordsByQ] : ', JSON.stringify(response, null, 3));
 };
 
 export const updateRecordByQ = async () => {
@@ -149,7 +149,7 @@ export const updateRecordByQ = async () => {
 			params: { updatedServicesArray: [] },
 		}),
 	});
-	console.log('[updateRecordByQ] : ', JSON.stringify(response));
+	console.log('[updateRecordByQ] : ', JSON.stringify(response, null, 3));
 };
 
 /*
@@ -169,15 +169,19 @@ const bulkDocuments = (bulkData: { indexName: string; documentsArray: IDocument[
 	// Iterate over each branch document in the addBranches array
 	bulkData.documentsArray.forEach((document) => {
 		// Create the index metadata string for the current branch document
-		const indexMetadata = JSON.stringify({
-			index: {
-				_index: bulkData.indexName,
-				_id: document.id,
+		const indexMetadata = JSON.stringify(
+			{
+				index: {
+					_index: bulkData.indexName,
+					_id: document.id,
+				},
 			},
-		});
+			null,
+			3
+		);
 
 		// Convert document to a JSON string
-		const stringedDocument = JSON.stringify(document);
+		const stringedDocument = JSON.stringify(document, null, 3);
 
 		// Push the index metadata and branch document strings to the bulk array
 		bulk.push(indexMetadata, stringedDocument);

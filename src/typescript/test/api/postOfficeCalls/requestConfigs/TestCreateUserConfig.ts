@@ -10,7 +10,7 @@ console.log('** Test Create-User Config **');
 export const makeUserRequest = async () => {
 	console.log('** (1) Make User Request **');
 	const config = buildUserCallConfig();
-	// console.log('[makeUserRequest] request config', JSON.stringify(config));
+	// console.log('[makeUserRequest] request config', JSON.stringify(config, null, 3));
 	const response = await postofficeApiCall<IExpectedUserResponse>(config);
 	// console.log('[makeUserRequest] response : ', response);
 	const userResponse = new RequestUserResponse.Builder().useAxiosResponse(response).build();

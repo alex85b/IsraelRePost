@@ -10,15 +10,19 @@ export const bulkBranchDocuments = (bulkData: {
 	// Iterate over each branch document in the addBranches array
 	bulkData.addBranches.forEach((branchDocument) => {
 		// Create the index metadata string for the current branch document
-		const indexMetadata = JSON.stringify({
-			index: {
-				_index: bulkData.branchIndexName,
-				_id: branchDocument.branchnumber.toString(),
+		const indexMetadata = JSON.stringify(
+			{
+				index: {
+					_index: bulkData.branchIndexName,
+					_id: branchDocument.branchnumber.toString(),
+				},
 			},
-		});
+			null,
+			3
+		);
 
 		// Convert the branch document to a JSON string
-		const stringedDocument = JSON.stringify(branchDocument);
+		const stringedDocument = JSON.stringify(branchDocument, null, 3);
 
 		// Push the index metadata and branch document strings to the bulk array
 		bulk.push(indexMetadata, stringedDocument);

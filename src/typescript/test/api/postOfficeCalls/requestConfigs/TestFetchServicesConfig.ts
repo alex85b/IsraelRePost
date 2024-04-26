@@ -47,9 +47,9 @@ export const makeServicesRequest = async () => {
 		locationId: String(demoBranch._source.qnomycode),
 	});
 
-	// console.log('[makeServicesRequest] request config', JSON.stringify(config));
+	// console.log('[makeServicesRequest] request config', JSON.stringify(config, null, 3));
 	const response = await postofficeApiCall<IExpectedServiceResponse>(config);
-	// console.log('[makeServicesRequest] response : ', JSON.stringify(response));
+	// console.log('[makeServicesRequest] response : ', JSON.stringify(response, null, 3));
 	const services = new RequestServicesResponse.Builder().useAxiosResponse(response).build();
 	console.log('[makeServicesRequest] services : ', services.toString());
 	return services.getServices();

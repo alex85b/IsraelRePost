@@ -25,7 +25,7 @@ export const fetchAllErrors = async () => {
 
 	console.log(
 		'[fetchAllErrors] allBranches data demo : ',
-		JSON.stringify(allErrors.data.hits.hits[0], null, 4)
+		JSON.stringify(allErrors.data.hits.hits[0], null, 3)
 	);
 };
 
@@ -55,7 +55,7 @@ export const updateAddError = async () => {
 	console.log('[updateAddError] metadata : ', omit(updateStatus, 'data'));
 	console.log(
 		'[updateAddError] updateStatus data : ',
-		JSON.stringify(updateStatus.data, null, 4)
+		JSON.stringify(updateStatus.data, null, 3)
 	);
 };
 
@@ -66,6 +66,6 @@ export const deleteAllErrors = async () => {
 	console.log('[deleteAllErrors] metadata : ', omit(deletedAmount, 'data'));
 	console.log(
 		'[deleteAllErrors] deletedAmount data : ',
-		JSON.stringify(deletedAmount.data, null, 4)
+		JSON.stringify(deletedAmount.data, null, 3)
 	);
 };

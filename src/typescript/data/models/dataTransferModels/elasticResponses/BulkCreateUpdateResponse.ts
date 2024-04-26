@@ -99,7 +99,7 @@ export class BulkCreateUpdateResponse implements IBulkCreateUpdateResponse {
 					throw Error(
 						'[BulkCreateUpdateResponse] : ' +
 							faults.join(' | ') +
-							JSON.stringify(item, null, 2)
+							JSON.stringify(item, null, 3)
 					);
 
 				if (item?.index?._shards.successful > 0 && item?.index?._shards.failed === 0) {
@@ -115,7 +115,7 @@ export class BulkCreateUpdateResponse implements IBulkCreateUpdateResponse {
 				} else
 					throw Error(
 						'[BulkCreateUpdateResponse] items success\fail count is invalid : ' +
-							JSON.stringify(item, null, 2)
+							JSON.stringify(item, null, 3)
 					);
 			});
 			return this;

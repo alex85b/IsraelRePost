@@ -35,9 +35,9 @@ export const makeDatesRequest = async () => {
 		serviceId: String(demoService.serviceId),
 	});
 
-	// console.log('[makeDatesRequest] request config', JSON.stringify(config));
+	// console.log('[makeDatesRequest] request config', JSON.stringify(config, null, 3));
 	const response = await postofficeApiCall<IExpectedDatesResponse>(config);
-	// console.log('[makeDatesRequest] response : ', JSON.stringify(response));
+	// console.log('[makeDatesRequest] response : ', JSON.stringify(response, null, 3));
 	const dates = new RequestDatesResponse.Builder().useAxiosResponse(response).build();
 	console.log('[makeDatesRequest] services : ', dates.toString());
 	return dates.getDates();

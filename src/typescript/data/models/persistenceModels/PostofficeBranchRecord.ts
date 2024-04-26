@@ -80,7 +80,7 @@ export class PostofficeBranchRecordBuilder implements IPostofficeBranchRecordBui
 		}
 
 		toString() {
-			return JSON.stringify(this.branchDocument, null, 2);
+			return JSON.stringify(this.branchDocument, null, 3);
 		}
 	};
 
@@ -327,7 +327,8 @@ export class PostofficeBranchRecordBuilder implements IPostofficeBranchRecordBui
 
 const fixEmptyNulledString = (data: { fieldValue: any; fieldName: string }) => {
 	let returnFieldValue = data.fieldValue;
-	if (typeof returnFieldValue === 'object') returnFieldValue = JSON.stringify(returnFieldValue);
+	if (typeof returnFieldValue === 'object')
+		returnFieldValue = JSON.stringify(returnFieldValue, null, 3);
 	if (typeof returnFieldValue !== 'string') return returnFieldValue;
 	return returnFieldValue ? (returnFieldValue.length ? returnFieldValue : 'EMPTY') : 'NULL';
 };

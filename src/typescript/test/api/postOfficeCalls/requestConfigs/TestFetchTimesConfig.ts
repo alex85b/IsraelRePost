@@ -43,7 +43,7 @@ export const makeTimesRequest = async () => {
 	});
 
 	const response = await postofficeApiCall<IExpectedTimesResponse>(config);
-	// console.log('[makeDatesRequest] raw response dayPart-0 : ', JSON.stringify(response));
+	// console.log('[makeDatesRequest] raw response dayPart-0 : ', JSON.stringify(response, null, 3));
 	const times = new RequestTimesResponse.Builder().useAxiosResponse(response).build();
 	console.log('[makeDatesRequest] response dayPart-0 : ', times.toString());
 	return times.getTimes();

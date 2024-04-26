@@ -25,7 +25,7 @@ export const postofficeApiCall: PostofficeApiCall = async <SR extends IPostoffic
 		>(axiosRequestConfig);
 		return omit(axiosResponse, 'request', 'config');
 	} catch (error) {
-		console.log('[israelPostRequest] Error', JSON.stringify(error));
+		console.log('[israelPostRequest] Error', JSON.stringify(error, null, 3));
 		throw new Error('[israelPostRequest] Error : ' + (error as Error).message);
 	}
 };

@@ -22,10 +22,7 @@ export const fetchAllBranches = async () => {
 	const allBranches = await bServicesIndex.fetchAllBranches({ maxRecords: 500 });
 	console.log('[fetchAllBranches] metadata : ', omit(allBranches, 'data'));
 
-	console.log(
-		'[fetchAllBranches] allBranches data length : ',
-		JSON.stringify(allBranches.data.hits.hits.length)
-	);
+	console.log('[fetchAllBranches] allBranches data length : ', allBranches.data.hits.hits.length);
 
 	console.log(
 		'[fetchAllBranches] allBranches data demo : ',
@@ -41,7 +38,7 @@ export const branchesWithoutServices = async () => {
 
 	console.log(
 		'[branchesWithoutServices] allBranches data length : ',
-		JSON.stringify(bWithoutServices.data.hits.hits.length)
+		bWithoutServices.data.hits.hits.length
 	);
 
 	console.log(
@@ -62,7 +59,7 @@ export const getBranchesExcluding = async () => {
 
 	console.log(
 		'[getBranchesExcluding] branchesExcluding data length : ',
-		JSON.stringify(branchesExcluding.data.hits.hits.length)
+		branchesExcluding.data.hits.hits.length
 	);
 
 	console.log(
@@ -131,10 +128,7 @@ export const bulkAddBranches = async () => {
 
 	console.log('[bulkAddBranches] metadata : ', omit(bulkAddReport, 'data'));
 
-	console.log(
-		'[bulkAddBranches] bulkAddReport data length : ',
-		JSON.stringify(bulkAddReport.data.items.length)
-	);
+	console.log('[bulkAddBranches] bulkAddReport data length : ', bulkAddReport.data.items.length);
 };
 
 export const updateBranchServices = async () => {
@@ -173,10 +167,7 @@ export const fetchAllQnomyCodes = async () => {
 
 	console.log('[fetchAllQnomyCodes] metadata : ', omit(qCodes, 'data'));
 
-	console.log(
-		'[fetchAllQnomyCodes] qCodes data length : ',
-		JSON.stringify(qCodes.data.hits.hits.length)
-	);
+	console.log('[fetchAllQnomyCodes] qCodes data length : ', qCodes.data.hits.hits.length);
 
 	console.log(
 		'[fetchAllQnomyCodes] qCodes data demo : ',
