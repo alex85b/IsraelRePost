@@ -254,7 +254,7 @@ const {
 } = require('./js-build/test/api/elastic/TestUpdateErrorIndexing');
 
 // errorsConstruct();
-fetchAllErrors();
+// fetchAllErrors();
 // updateAddError();
 // deleteAllErrors();
 
@@ -325,7 +325,7 @@ const {
 // makeTimesRequest();
 
 // ##############################################################################################
-// ### Repositories  ############################################################################
+// ### Repositories #############################################################################
 // ##############################################################################################
 
 const {
@@ -333,16 +333,27 @@ const {
 } = require('./js-build/test/data/models/repositories/TestPostofficeBranchesRepository');
 // getAllBranches();
 
-/*
-Models*/
-// ####
+const {
+	getAllErrors,
+} = require('./js-build/test/data/models/repositories/TestUpdateErrorRecordsRepository');
+// getAllErrors();
 
+// ##############################################################################################
+// ### Models ###################################################################################
+// ##############################################################################################
 const {
 	constructNewServiceRecord,
 	useServiceRecord,
 } = require('./js-build/test/data/models/persistenceModels/TestPostofficeBranchServices');
 // constructNewServiceRecord();
 // useServiceRecord();
+
+const {
+	constructNewErrorRecord,
+	useErrorRecord,
+} = require('./js-build/test/data/models/persistenceModels/TestUpdateErrorRecord');
+// constructNewErrorRecord();
+useErrorRecord();
 
 // ##############################################################################################
 // ### Services  ################################################################################
