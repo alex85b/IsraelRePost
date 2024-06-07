@@ -19,7 +19,7 @@ export const constructNewServiceRecord = async () => {
 			calendarId: 'date1',
 		})
 		.addHours({ serviceId: 'service1', calendarId: 'date1', hours: ['1234', '455'] })
-		.build(991);
+		.build('991');
 
 	console.log(
 		'[constructNewServiceRecord] branchServices toString : ',
@@ -34,7 +34,7 @@ export const constructNewServiceRecord = async () => {
 export const useServiceRecord = async () => {
 	console.log('** (2) Use Service Record **');
 	const branchServices = branchServicesFromRecords({
-		branchId: 999,
+		branchId: '999',
 		branchServices: [
 			{
 				serviceName: 'test_service1',
@@ -75,7 +75,7 @@ export const useServiceRecord = async () => {
 		console.log('[useServiceRecord] branchServices faults : ', JSON.stringify(faults, null, 3));
 
 	const emptyServicesArray = branchServicesFromRecords({
-		branchId: 998,
+		branchId: '998',
 		branchServices: [],
 	});
 

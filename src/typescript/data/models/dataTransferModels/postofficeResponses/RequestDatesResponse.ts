@@ -1,5 +1,6 @@
 import { AxiosResponse } from 'axios';
 import { IPostofficeResponseData } from './shared/PostofficeResponseData';
+import { ConstructLogMessage } from '../../../../shared/classes/ConstructLogMessage';
 
 export interface IDatesResponseData {
 	calendarDate: string;
@@ -55,7 +56,13 @@ export class RequestDatesResponse implements IRequestDatesResponse {
 			} else if (!dates.length) {
 				faults.push('dates response contains no services');
 			}
-			if (faults.length) throw Error(faults.join(' | '));
+			if (faults.length) {
+				faults.push(`response status: ${rawResponse.status}`);
+				faults.push(`response statusText: ${rawResponse.statusText}`);
+				faults.push(`response ErrorMessage: ${rawResponse.data.ErrorMessage}`);
+				faults.push(`response ErrorNumber: ${rawResponse.data.ErrorNumber}`);
+				throw Error(faults.join(' | '));
+			}
 
 			if (dates.length) {
 				const demoDate = dates[0];

@@ -1,5 +1,6 @@
 import { AxiosResponse } from 'axios';
 import { IPostofficeResponseData } from './shared/PostofficeResponseData';
+import { ConstructLogMessage } from '../../../../shared/classes/ConstructLogMessage';
 
 export interface ITimesResponseData {
 	Time: number;
@@ -10,7 +11,7 @@ export interface IExpectedTimesResponse extends IPostofficeResponseData {
 }
 
 export interface IRequestTimesResponse {
-	getTimes(): ITimesResponseData[];
+	getTimes(): string[];
 	toString(): string;
 }
 
@@ -21,7 +22,7 @@ export class RequestTimesResponse implements IRequestTimesResponse {
 	}
 
 	getTimes() {
-		return [...this.times];
+		return this.times.map((time) => String(time.Time ?? ''));
 	}
 
 	toString() {
@@ -41,16 +42,25 @@ export class RequestTimesResponse implements IRequestTimesResponse {
 			const faults: string[] = [];
 			const success = rawResponse.data?.Success ?? false;
 			const times = rawResponse.data?.Results;
+			const errorMessage = rawResponse.data?.ErrorMessage;
 
 			if (typeof success !== 'boolean' || (typeof success === 'boolean' && !success)) {
-				faults.push('times response status is failed');
+				faults.push(
+					`times response status is failed${errorMessage ? ' ' + errorMessage : ''}`
+				);
 			}
 			if (!Array.isArray(times)) {
 				faults.push('times response array is malformed or does not exist');
 			} else if (!times.length) {
 				faults.push('times response contains no appointment times');
 			}
-			if (faults.length) throw Error(faults.join(' | '));
+			if (faults.length) {
+				faults.push(`response status: ${rawResponse.status}`);
+				faults.push(`response statusText: ${rawResponse.statusText}`);
+				faults.push(`response ErrorMessage: ${rawResponse.data.ErrorMessage}`);
+				faults.push(`response ErrorNumber: ${rawResponse.data.ErrorNumber}`);
+				throw Error(faults.join(' | '));
+			}
 
 			if (times.length) {
 				const time = times[0]?.Time;

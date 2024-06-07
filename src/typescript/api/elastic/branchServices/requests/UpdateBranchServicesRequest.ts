@@ -1,5 +1,6 @@
 import { InlineScript, QueryDslQueryContainer } from '@elastic/elasticsearch/lib/api/types';
 import { UpdateByQueryBuilder } from '../../shared/requestBuilders/UpdateByQueryBuilder';
+import { INewServiceRecord } from '../../../../data/elastic/BranchModel';
 
 // ##############################################
 // ### Interfaces ###############################
@@ -28,7 +29,7 @@ interface ISpecificBranchQuery extends QueryDslQueryContainer {
 
 export const updateBranchServicesRequest = (buildData: {
 	branchID: string;
-	params: {};
+	params: { updatedServicesArray: any[] };
 }): ICustomUpdateByQuery => {
 	const QUERY_SPECIFIC_BRANCH: ISpecificBranchQuery = {
 		term: { _id: buildData.branchID },
@@ -43,7 +44,5 @@ export const updateBranchServicesRequest = (buildData: {
 		.withQuery(QUERY_SPECIFIC_BRANCH)
 		.withScript(SPECIFIC_SERVICE_SCRIPT)
 		.build();
-
-	// console.log('[updateBranchServicesRequest] : ', request);
 	return request;
 };

@@ -149,7 +149,7 @@ export const updateBranchServices = async () => {
 	});
 
 	const successfullyUpdated = await bServicesIndex.updateBranchServices({
-		branchID: '9999',
+		branchID: '113',
 		services: fakeServices,
 	});
 

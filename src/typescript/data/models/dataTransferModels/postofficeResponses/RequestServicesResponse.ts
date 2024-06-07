@@ -1,5 +1,6 @@
 import { AxiosResponse } from 'axios';
 import { IPostofficeResponseData } from './shared/PostofficeResponseData';
+import { ConstructLogMessage } from '../../../../shared/classes/ConstructLogMessage';
 
 export interface IServicesResponseData {
 	serviceId: number;
@@ -70,14 +71,23 @@ export class RequestServicesResponse implements IRequestServicesResponse {
 			const services = rawResponse.data?.Results;
 
 			if (typeof success !== 'boolean' || (typeof success === 'boolean' && !success)) {
-				faults.push('services response status is failed');
+				faults.push(
+					'services request has failed' +
+						(rawResponse.statusText ? ', ' + rawResponse.statusText : '')
+				);
 			}
 			if (!Array.isArray(services)) {
 				faults.push('services array is malformed or does not exist');
 			} else if (!services.length) {
 				faults.push('response contains no services');
 			}
-			if (faults.length) throw Error(faults.join(' | '));
+			if (faults.length) {
+				faults.push(`response status: ${rawResponse.status}`);
+				faults.push(`response statusText: ${rawResponse.statusText}`);
+				faults.push(`response ErrorMessage: ${rawResponse.data.ErrorMessage}`);
+				faults.push(`response ErrorNumber: ${rawResponse.data.ErrorNumber}`);
+				throw Error(faults.join(' | '));
+			}
 
 			const demoService = services[0];
 			const serviceId = demoService.serviceId;

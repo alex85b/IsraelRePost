@@ -177,8 +177,6 @@ export class ElasticsearchClient implements IElasticsearchClient {
 		axiosRequestConfig.url = `/${requestData.indexName}/_update_by_query`;
 		axiosRequestConfig.data = requestData.request;
 
-		console.log('[updateRecordByQ] axiosRequestConfig.data : ', axiosRequestConfig.data);
-
 		return await this.makeElasticRequest<IElasticUpdateByQResponse>({
 			axiosRequestConfig,
 			callerName: 'Update Record By request',

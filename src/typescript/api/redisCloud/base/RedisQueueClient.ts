@@ -5,7 +5,7 @@ import { getRedisCloudData } from './RedisQueueUtils';
 // ### Interfaces ####################################################################################
 // ###################################################################################################
 
-interface IRedisQueueClient {
+export interface IRedisQueueClient {
 	exists(requestData: { queueName: string }): Promise<number>;
 
 	enqueue(requestData: { queueName: string; data: any }): Promise<number>;
