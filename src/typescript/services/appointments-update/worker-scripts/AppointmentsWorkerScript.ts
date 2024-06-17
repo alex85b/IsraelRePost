@@ -1,3 +1,4 @@
+/*
 import { parentPort, threadId, workerData, MessagePort } from 'worker_threads';
 import { IHandlerFunction, MessagesHandler } from '../worker-messaging/HandleThreadMessages';
 import { IpManagerParentPort } from '../components/custom-parent/IpManagerParentPort';
@@ -55,24 +56,24 @@ const listen = () => {
 const hStartUpdates: IHandlerFunction<IBUMessageHandlers, IMMessageHandlers> = async ({
 	parentPort,
 }) => {
-	// if (!parentPort || !branchesToProcess || !requestCounter) {
-	// 	throw Error(
-	// 		`[Branch Updater: ${threadId}][hStartUpdates] received no${
-	// 			parentPort ? '' : ' parentPort'
-	// 		}${branchesToProcess ? '' : ' branchesToProcess'}${
-	// 			requestCounter ? '' : ' requestCounter'
-	// 		}`
-	// 	);
-	// }
-	// // From redis-online, get a branch data - for appointments update.
-	// const updateBranch = await processQueue.dequeueBranch();
-	// if (!updateBranch) {
-	// 	parentPort.postMessage({ handlerName: 'updater-done' });
-	// 	return;
-	// }
-	// // Summon performUpdate helper function.
-	// const updateStatus = performUpdate({ branchesToProcess, parentPort, requestCounter });
-	// TODO: decide what to do based on the status.
+	if (!parentPort || !branchesToProcess || !requestCounter) {
+		throw Error(
+			`[Branch Updater: ${threadId}][hStartUpdates] received no${
+				parentPort ? '' : ' parentPort'
+			}${branchesToProcess ? '' : ' branchesToProcess'}${
+				requestCounter ? '' : ' requestCounter'
+			}`
+		);
+	}
+	// From redis-online, get a branch data - for appointments update.
+	const updateBranch = await processQueue.dequeueBranch();
+	if (!updateBranch) {
+		parentPort.postMessage({ handlerName: 'updater-done' });
+		return;
+	}
+	// Summon performUpdate helper function.
+	const updateStatus = performUpdate({ branchesToProcess, parentPort, requestCounter });
+	TODO: decide what to do based on the status.
 };
 messagesHandler.addMessageHandler('start-updates', hStartUpdates);
 
@@ -92,48 +93,48 @@ messagesHandler.addMessageHandler('continue-updates', () => {});
 interface IPerformUpdateData {
 	branchesToProcess: BranchesToProcess;
 	branchAppointments?: RetrieveBranchServices; // If not provided, a new one will be constructed.
-	// requestCounter: CountAPIRequest;
+	requestCounter: CountAPIRequest;
 	parentPort: ACustomParentPort<IBUMessageHandlers, IMMessageHandlers>;
 }
 
 const performUpdate = async (performUpdateData: IPerformUpdateData) => {
-	// const { branchesToProcess, branchAppointments, requestCounter, parentPort } = performUpdateData;
+	const { branchesToProcess, branchAppointments, requestCounter, parentPort } = performUpdateData;
 	let updaterClass: RetrieveBranchServices | undefined;
 
-	// if (branchAppointments) {
-	// 	// BranchAppointments has been provided, recovering after a 'Depleted' scenario.
-	// 	updaterClass = branchAppointments;
-	// } else {
-	// 	// A brand new update.
-	// 	// Fetch a Branch data, to perform appointments update.
-	// 	const updateBranch = await branchesToProcess.dequeueBranch();
-	// 	if (!updateBranch) return 'updater-done'; // No more branches.
-	// 	const { branchId, qnomycode } = updateBranch;
+	if (branchAppointments) {
+		// BranchAppointments has been provided, recovering after a 'Depleted' scenario.
+		updaterClass = branchAppointments;
+	} else {
+		// A brand new update.
+		// Fetch a Branch data, to perform appointments update.
+		const updateBranch = await branchesToProcess.dequeueBranch();
+		if (!updateBranch) return 'updater-done'; // No more branches.
+		const { branchId, qnomycode } = updateBranch;
 
-	// // Construct BranchAppointments (data then class).
-	// const branchAppointmentOptions: RetrieveBranchServicesOptions = {
-	// 	branchCodePair: { branchId, qnomycode },
-	// 	requestCounter,
-	// };
-	// updaterClass = new RetrieveBranchServices(branchAppointmentOptions);
-	// } // At this point i should have updater class ready.
+	// Construct BranchAppointments (data then class).
+	const branchAppointmentOptions: RetrieveBranchServicesOptions = {
+		branchCodePair: { branchId, qnomycode },
+		requestCounter,
+	};
+	updaterClass = new RetrieveBranchServices(branchAppointmentOptions);
+	} // At this point i should have updater class ready.
 
-	// // Perform an Update of branch's appointments and \ or errors.
-	// const status = await updaterClass.performUpdate();
-	// console.log(`$Branch Updater ${threadId} performed update. Status:${status}`);
-	// updaterClass.printAppointments();
-	// updaterClass.printUpdateErrors();
-	// switch (status) {
-	// 	case 'Depleted':
-	// 		return 'Depleted';
-	// 	case 'Done':
-	// 		// Write updated-appointment to Database (Currently Elastic).
+	// Perform an Update of branch's appointments and \ or errors.
+	const status = await updaterClass.performUpdate();
+	console.log(`$Branch Updater ${threadId} performed update. Status:${status}`);
+	updaterClass.printAppointments();
+	updaterClass.printUpdateErrors();
+	switch (status) {
+		case 'Depleted':
+			return 'Depleted';
+		case 'Done':
+			// Write updated-appointment to Database (Currently Elastic).
 
-	// 		break;
-	// 	case 'Error':
-	// 		// Write update-errors to Database (Currently Elastic).
-	// 		break;
-	// }
+			break;
+		case 'Error':
+			// Write update-errors to Database (Currently Elastic).
+			break;
+	}
 };
 
 // ###################################################################################################
@@ -156,16 +157,13 @@ export type IBUMessageHandlers =
 // ### Interfaces ####################################################################################
 // ###################################################################################################
 
-// export interface IBranchUpdaterWData {
-// 	proxyEndpoint: ProxyEndpoint | undefined;
-// 	counterData: APIRequestCounterData;
-// }
+export interface IBranchUpdaterWData {
+	proxyEndpoint: ProxyEndpoint | undefined;
+	counterData: APIRequestCounterData;
+}
 
 export type AppointmentsWorkerData = {
 	proxyEndpoint: ProxyEndpoint | undefined;
 	CounterData: CounterData;
 };
-
-// ###################################################################################################
-// ### Class #########################################################################################
-// ###################################################################################################
+*/
