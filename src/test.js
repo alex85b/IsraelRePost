@@ -1,181 +1,29 @@
 console.log('### Initiate Tests of IsraelRePost ###');
 
-const { testE2E } = require('./js-build/test/threads/e2e');
-testE2E(false);
-
-// ##############################################################################################
-// ### Test Generators of proxy endpoints #######################################################
-// ##############################################################################################
-
-/*
-Classes that translate various (and differently constructed) proxy data file,
-Into an uniform object*/
-// ##########################################################################
-// ##########################################################################
-
-const {
-	smartProxyObjects,
-	webShareProxyObject,
-} = require('./js-build/test/proxy-collection/testProxyObjects');
-
-smartProxyObjects(false);
-webShareProxyObject(false);
-
-// ##############################################################################################
-// ### Test Israel-post APIs ####################################################################
-// ##############################################################################################
-
-/*
-Fetch an Israel-post's branch appointments,
-Chain a series of requests to Israel-post APIs*/
-// #############################################
-// #############################################
-const { testAPIs } = require('./js-build/test/suites/IsraelPostsAPIs');
-
-testAPIs(false);
-
-// ##############################################################################################
-// ### Test Nodes That Envelops Israel-post APIs ################################################
-// ##############################################################################################
-
-const { testNodes } = require('./js-build/test/suites/RequestNodes');
-
-testNodes(false);
-
 // ##############################################################################################
 // ### Test Counters (Atomic and Mutex protected) And Request Limiters ##########################
 // ##############################################################################################
 
 /*
-Ip-Manager and Appointments-Updater threads use Shared-memory,
-In order to track consumption of Israel-post-request,
-Currently i use 2 type of request limiters, and a reset-on-event logic,
-Those implement an Atomic counter and Mutex.*/
+The concept of Mutex as a "Request batch limiter"*/
+// ###############################################
+// ###############################################
+// const { testMutexCounter } = require('./js-build/test/async-mutex/base-mutex/TestAsyncMutex');
 
-/*
-Base Atomic Counter (Single Cell Array), used to construct Request-limiter,
-Will be made deprecated and replaced by an Array-Counter*/
-// ########################################################################
-// ########################################################################
-const {
-	testNaturalNumbersCounter,
-} = require('./js-build/test/atomic-counter/TestIncrementalCounter');
-
-testNaturalNumbersCounter(false);
-
-/*
-Base Array-Counter, used to construct Request-limiter*/
-// ####################################################
-// ####################################################
-const {
-	Test_BoundaryAwareIncrementalCounter,
-} = require('./js-build/test/atomic-counter/TestBoundaryAwareCounter');
-
-Test_BoundaryAwareIncrementalCounter(false);
-
-/*
-A Request-limiter, determines if a minutely limit has been reached */
-// ##################################################################
-// ##################################################################
-const {
-	testLimitPerMinuteThreaded,
-	testLimitPerMinute,
-} = require('./js-build/test/atomic-counter/count-request/TestLimitRequests');
-
-testLimitPerMinuteThreaded(false);
-testLimitPerMinute(false);
-
-/*
-The 'second half' of Request-limiter, This resets Request-limiter*/
-// ################################################################
-// ################################################################
-const {
-	testResetLimitPerMinute,
-} = require('./js-build/test/atomic-counter/reset-on-depleted/TestIResetRequestLimiter');
-
-testResetLimitPerMinute(false);
-
-/*
-The concept of Mutex as a Request-batch-limiter*/
-// ##############################################
-// ##############################################
-const { testMutexCounter } = require('./js-build/test/async-mutex/base-mutex/TestAsyncMutex');
-
-testMutexCounter(false);
-
-/*
-A Request-batch-limiter that allows to
-Determine if a hourly Request-limit has been reached*/
-// ###################################################
-// ###################################################
-const {
-	testLimitPerHour,
-} = require('./js-build/test/async-mutex/consumed-batch/TestLimitRequestsBatch');
-
-testLimitPerHour(false);
-
-// ##############################################################################################
-// ### Test Cloud-Redis Atomic Queue ############################################################
-// ##############################################################################################
-
-/*
-Implements a Redis-Cloud database to provide,
-Independent and thread safe branches-to-update Queue*/
-// ###################################################
-const { testBranchesToProcess } = require('./js-build/test/redis/testRedis');
-
-testBranchesToProcess(false);
-
-// ##############################################################################################
-// ### Test Appointment-Fetching Worker-Thread ##################################################
-// ##############################################################################################
-
-/*
-This is the third part of Appointment Update Process,
-'Appointment-Fetching' handles fetching and persisting appointments
-Of israel-post branches*/
-// #################################################################
-// #################################################################
-const {
-	TestAppointments,
-} = require('./js-build/test/handlers/massage-handlers/Appointments/TestAppointments');
-
-TestAppointments(false);
-
-// ##############################################################################################
-// ### Test Request-Allotment Worker-Thread #####################################################
-// ##############################################################################################
-
-/*
-This is the second part of Appointment Update Process,
-'Request-Allotment' handles limiting requests to israel post*/
-// ###########################################################
-// ###########################################################
-const {
-	TestIpManagers,
-} = require('./js-build/test/handlers/massage-handlers/IpManagers/TestIpManagers');
-
-TestIpManagers(false);
+// testMutexCounter(false);
 
 // ##############################################################################################
 // ### New Messaging Concept ####################################################################
 // ##############################################################################################
 
-/*
-Tests how to send an Enum values as a messages*/
-// #############################################
-// #############################################
-const { testEnumMessages } = require('./js-build/test/messaging/enums/TestEnumMessages');
-testEnumMessages(false);
-
-const {
-	testHandlersAsStringType,
-	testHandlersAsEnums,
-	testHandlersEnumsAndFunctions,
-} = require('./js-build/test/messaging/handlers/HandlerFunctionConcept');
-testHandlersAsStringType(false);
-testHandlersAsEnums(false);
-testHandlersEnumsAndFunctions(false);
+// const {
+// 	testHandlersAsStringType,
+// 	testHandlersAsEnums,
+// 	testHandlersEnumsAndFunctions,
+// } = require('./js-build/test/messaging/handlers/HandlerFunctionConcept');
+// testHandlersAsStringType(false);
+// testHandlersAsEnums(false);
+// testHandlersEnumsAndFunctions(false);
 
 // ##############################################################################################
 // ### Elastic APIs #############################################################################
@@ -185,20 +33,20 @@ testHandlersEnumsAndFunctions(false);
 Basic Elasticsearch 'Client' for communication using https*/
 // #########################################################
 // #########################################################
-const {
-	createIndex,
-	getIndexMapping,
-	getInstance,
-	negativePingIndex,
-	positivePingIndex,
-	searchIndex,
-	addUpdateRecord,
-	deleteIndex,
-	bulkAdd,
-	deleteRecordsByQ,
-	updateRecordByQ,
-} = require('./js-build/test/api/elastic/base/TestElasticsearchClient');
-/* This class has more abilities that are not tested directly */
+// const {
+// 	createIndex,
+// 	getIndexMapping,
+// 	getInstance,
+// 	negativePingIndex,
+// 	positivePingIndex,
+// 	searchIndex,
+// 	addUpdateRecord,
+// 	deleteIndex,
+// 	bulkAdd,
+// 	deleteRecordsByQ,
+// 	updateRecordByQ,
+// } = require('./js-build/test/api/elastic/base/TestElasticsearchClient');
+// /* This class has more abilities that are not tested directly */
 
 // getInstance();
 // createIndex();
@@ -217,18 +65,18 @@ Queries that are specific to 'Branch' index*/
 // ##########################################
 // ##########################################
 
-const {
-	construct: branchConstruct,
-	fetchAllBranches,
-	branchesWithoutServices,
-	getBranchesExcluding,
-	bulkAddBranches,
-	updateBranchServices,
-	fetchAllQnomyCodes,
-	createBranchIndex,
-	deleteAllBranches,
-	deleteBranchIndex,
-} = require('./js-build/test/api/elastic/TestBranchServicesIndexing');
+// const {
+// 	construct: branchConstruct,
+// 	fetchAllBranches,
+// 	branchesWithoutServices,
+// 	getBranchesExcluding,
+// 	bulkAddBranches,
+// 	updateBranchServices,
+// 	fetchAllQnomyCodes,
+// 	createBranchIndex,
+// 	deleteAllBranches,
+// 	deleteBranchIndex,
+// } = require('./js-build/test/api/elastic/TestBranchServicesIndexing');
 
 // branchConstruct();
 // fetchAllBranches();
@@ -246,12 +94,12 @@ Queries that are specific to 'Errors' index*/
 // ##########################################
 // ##########################################
 
-const {
-	construct: errorsConstruct,
-	fetchAllErrors,
-	updateAddError,
-	deleteAllErrors,
-} = require('./js-build/test/api/elastic/TestUpdateErrorIndexing');
+// const {
+// 	construct: errorsConstruct,
+// 	fetchAllErrors,
+// 	updateAddError,
+// 	deleteAllErrors,
+// } = require('./js-build/test/api/elastic/TestUpdateErrorIndexing');
 
 // errorsConstruct();
 // fetchAllErrors();
@@ -266,22 +114,22 @@ const {
 Basic Redis Cloud Queue Client*/
 // #############################
 // #############################
-const {
-	deserializeItems,
-	getRedisCloudData,
-} = require('./js-build/test/api/redisCloud/base/TestRedisQueueUtils');
+// const {
+// 	deserializeItems,
+// 	getRedisCloudData,
+// } = require('./js-build/test/api/redisCloud/base/TestRedisQueueUtils');
 // getRedisCloudData();
 // deserializeItems();
 
-const {
-	construct: constructRedisQueue,
-	enqueue,
-	dequeue,
-	exists,
-	bEnqueue,
-	bDequeueAll,
-	qSize,
-} = require('./js-build/test/api/redisCloud/base/TestRedisQueueClient');
+// const {
+// 	construct: constructRedisQueue,
+// 	enqueue,
+// 	dequeue,
+// 	exists,
+// 	bEnqueue,
+// 	bDequeueAll,
+// 	qSize,
+// } = require('./js-build/test/api/redisCloud/base/TestRedisQueueClient');
 // constructRedisQueue();
 // enqueue();
 // dequeue();
@@ -294,75 +142,111 @@ const {
 // ### Israel Post API Requests  ################################################################
 // ##############################################################################################
 
-const {
-	buildAndPerformUserRequest,
-} = require('./js-build/test/api/postOfficeCalls/base/TestBaseApiCall');
+// const {
+// 	buildAndPerformUserRequest,
+// } = require('./js-build/test/api/postOfficeCalls/base/TestBaseApiCall');
 // buildAndPerformUserRequest();
 
-const {
-	multipleConfigBuildsInSingleRun,
-} = require('./js-build/test/api/postOfficeCalls/TestBuildCallConfigurations');
+// const {
+// 	multipleConfigBuildsInSingleRun,
+// } = require('./js-build/test/api/postOfficeCalls/TestBuildCallConfigurations');
 // multipleConfigBuildsInSingleRun();
 
-const {
-	makeUserRequest,
-} = require('./js-build/test/api/postOfficeCalls/requestConfigs/TestCreateUserConfig');
+// const {
+// 	makeUserRequest,
+// 	makeUserRequestWithProxy,
+// } = require('./js-build/test/api/postOfficeCalls/requestConfigs/TestCreateUserConfig');
 // makeUserRequest();
+// makeUserRequestWithProxy();
 
-const {
-	makeServicesRequest,
-} = require('./js-build/test/api/postOfficeCalls/requestConfigs/TestFetchServicesConfig');
+// const {
+// 	makeServicesRequest,
+// 	makeServicesRequestWithProxy,
+// } = require('./js-build/test/api/postOfficeCalls/requestConfigs/TestFetchServicesConfig');
 // makeServicesRequest();
+// makeServicesRequestWithProxy();
 
-const {
-	makeDatesRequest,
-} = require('./js-build/test/api/postOfficeCalls/requestConfigs/TestFetchDatesConfig');
+// const {
+// 	makeDatesRequest,
+// 	makeDatesRequestWithProxy,
+// } = require('./js-build/test/api/postOfficeCalls/requestConfigs/TestFetchDatesConfig');
 // makeDatesRequest();
+// makeDatesRequestWithProxy();
 
-const {
-	makeTimesRequest,
-} = require('./js-build/test/api/postOfficeCalls/requestConfigs/TestFetchTimesConfig');
+// const {
+// 	makeTimesRequest,
+// 	makeTimesRequestWithProxy,
+// } = require('./js-build/test/api/postOfficeCalls/requestConfigs/TestFetchTimesConfig');
 // makeTimesRequest();
+// makeTimesRequestWithProxy();
 
 // ##############################################################################################
 // ### Repositories #############################################################################
 // ##############################################################################################
 
-const {
-	getAllBranches,
-} = require('./js-build/test/data/models/repositories/TestPostofficeBranchesRepository');
+// const {
+// 	getAllBranches,
+// 	getAllBranchesIdAndQnomyCode,
+// 	getAllBranchesIdAndQnomyCodeExcluding,
+// 	testUpdateBranchServices,
+// } = require('./js-build/test/data/repositories/TestPostofficeBranchesRepository');
 // getAllBranches();
+// getAllBranchesIdAndQnomyCode();
+// getAllBranchesIdAndQnomyCodeExcluding();
+// testUpdateBranchServices();
 
-const {
-	getAllErrors,
-} = require('./js-build/test/data/models/repositories/TestUpdateErrorRecordsRepository');
+// const {
+// 	getAllErrors,
+// 	addUpdateErrorRecord,
+// } = require('./js-build/test/data/repositories/TestUpdateErrorRecordsRepository');
 // getAllErrors();
+// addUpdateErrorRecord();
+
+// const {
+// 	replaceUnprocessedQueue,
+// 	popPushPair,
+// 	popAllPairs,
+// } = require('./js-build/test/data/repositories/TestPostofficeCodeIdPairsRepository');
+// replaceUnprocessedQueue();
+// popPushPair();
+// popAllPairs();
 
 // ##############################################################################################
 // ### Models ###################################################################################
 // ##############################################################################################
-const {
-	constructNewServiceRecord,
-	useServiceRecord,
-} = require('./js-build/test/data/models/persistenceModels/TestPostofficeBranchServices');
+// const {
+// 	constructNewServiceRecord,
+// 	useServiceRecord,
+// } = require('./js-build/test/data/models/persistenceModels/TestPostofficeBranchServices');
 // constructNewServiceRecord();
 // useServiceRecord();
 
-const {
-	constructNewErrorRecord,
-	useErrorRecord,
-} = require('./js-build/test/data/models/persistenceModels/TestUpdateErrorRecord');
-// constructNewErrorRecord();
-useErrorRecord();
+// const {
+// 	useErrorRecord,
+// 	testUserErrorConstruction,
+// 	testServiceErrorConstruction,
+// 	testDatesErrorConstruction,
+// 	testTimesErrorConstruction,
+// } = require('./js-build/test/data/models/persistenceModels/TestUpdateErrorRecord');
+// useErrorRecord();
+// testUserErrorConstruction();
+// testServiceErrorConstruction();
+// testDatesErrorConstruction();
+// testTimesErrorConstruction();
+
+// const {
+// 	endpointProxiesStrings,
+// } = require('./js-build/test/data/models/dataTransferModels/TestProxyEndpointString');
+// endpointProxiesStrings();
 
 // ##############################################################################################
 // ### Services  ################################################################################
 // ##############################################################################################
 
-const {
-	newPage,
-	browserPage,
-} = require('./js-build/test/services/scrape/base/TestPuppeteerClient');
+// const {
+// 	newPage,
+// 	browserPage,
+// } = require('./js-build/test/services/scrape/base/TestPuppeteerClient');
 // newPage();
 // browserPage();
 
@@ -380,3 +264,110 @@ const {
 } = require('./js-build/test/services/TestUpdateBranches');
 // testDeleteAddBranches();
 // testAddUpdateBranches();
+
+const {
+	testWorkerWrapper,
+} = require('./js-build/test/services/updateAppointments/helpers/threadCommunication/TestCommunicationWrappers');
+// testWorkerWrapper();
+
+const {
+	constructNewMemoryView,
+	checkIfMemoryView,
+} = require('./js-build/test/data/models/dataTransferModels/TestThreadSharedMemory');
+// constructNewMemoryView();
+// checkIfMemoryView();
+
+const {
+	testSetCellValue,
+	testReplaceExpectedValue,
+	testAddToCellValue,
+} = require('./js-build/test/services/updateAppointments/helpers/concurrency/TestAtomicArrayWriter');
+// testSetCellValue();
+// testReplaceExpectedValue();
+// testAddToCellValue();
+
+const {
+	testSingleThreadTracking,
+	testMultiThreadedTracking,
+	testLimitReset,
+} = require('./js-build/test/services/updateAppointments/helpers/consumptionTracker/TestRequestTracker');
+// testSingleThreadTracking();
+// testMultiThreadedTracking();
+// testLimitReset();
+
+const {
+	testBuildMutexRequestsBatchTracker,
+} = require('./js-build/test/services/updateAppointments/helpers/consumptionTracker/TestRequestsBatchTracker');
+// testBuildMutexRequestsBatchTracker();
+
+const {
+	rePopulateUnprocessed,
+} = require('./js-build/test/services/updateAppointments/helpers/TestPopulateRedisQueue');
+// rePopulateUnprocessed();
+
+const {
+	testCreateUserNode,
+	testFetchServicesNode,
+	testFetchDatesNode,
+	testFetchTimesNode,
+	testCreateUserNodeUsingProxy,
+	testFetchServicesNodeUsingProxy,
+	testFetchDatesNodeUsingProxy,
+	testFetchTimesNodeUsingProxy,
+} = require('./js-build/test/services/updateAppointments/helpers/updateServicesRecord/TestPostofficeRequestNodes');
+// testCreateUserNode();
+// testFetchServicesNode();
+// testFetchDatesNode();
+// testFetchTimesNode();
+// testCreateUserNodeUsingProxy();
+// testFetchServicesNodeUsingProxy();
+// testFetchDatesNodeUsingProxy();
+// testFetchTimesNodeUsingProxy();
+
+const {
+	testDepleteContinue,
+	testDepleteContinueUseProxy,
+} = require('./js-build/test/services/updateAppointments/helpers/updateServicesRecord/TestConstructServicesRecord');
+// testDepleteContinue();
+// testDepleteContinueUseProxy();
+
+const {
+	testSingleThreadedDepletedTracker,
+	testMultiThreadedDepletedTracker,
+} = require('./js-build/test/services/updateAppointments/helpers/claimTracker/TestDepletedClaimTracker');
+// testSingleThreadedDepletedTracker();
+// testMultiThreadedDepletedTracker();
+
+const {
+	testHandleStartUpdate,
+	testHandleStartUpdateUseProxy,
+	testStartUpdateThenStop,
+	testStartUpdateThenEndUpdater,
+	testStartUpdateThenContinue,
+} = require('./js-build/test/services/updateAppointments/workerThreads/appointmentsUpdater/TestMessageHandlers');
+// testHandleStartUpdate();
+// testHandleStartUpdateUseProxy();
+// testStartUpdateThenStop(true);
+// testStartUpdateThenEndUpdater(true);
+// testStartUpdateThenContinue(true);
+
+const {
+	testHandleStartEndpoint,
+} = require('./js-build/test/services/updateAppointments/workerThreads/ipManager/TestMessageHandler');
+testHandleStartEndpoint();
+
+// ##############################################################################################
+// ### Shared  ##################################################################################
+// ##############################################################################################
+
+/*
+Functions*/
+const { testReadExisting } = require('./js-build/test/shared/functions/TestReadEnv');
+// testReadExisting();
+
+const {
+	testReadSmartProxyFile,
+	testReadWebShareFile,
+} = require('./js-build/test/shared/functions/TestReadTextFile');
+// testReadSmartProxyFile();
+// testReadWebShareFile();

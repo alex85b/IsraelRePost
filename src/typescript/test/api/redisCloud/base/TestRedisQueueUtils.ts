@@ -1,7 +1,5 @@
-import {
-	getRedisCloudData as fetchData,
-	deserializeItems as deserialize,
-} from '../../../../api/redisCloud/base/RedisQueueUtils';
+import { getRedisCloudData as fetchData } from '../../../../api/redisCloud/base/RedisQueueUtils';
+import { IBranchIdQnomyCodePair } from '../../../../data/models/persistenceModels/PostofficeBranchIdCodePair';
 
 console.log('** Test Redis Queue Utilities **');
 
@@ -19,4 +17,15 @@ export const deserializeItems = () => {
 	console.log(`[deserializeItems] Serialized items : `, container);
 	const data = deserialize({ serializedItems: container });
 	console.log(`[deserializeItems] De serialized items : `, data);
+};
+
+const deserialize = (data: { serializedItems: string[] }) => {
+	if (!Array.isArray(data.serializedItems)) return null;
+	let deserialized: IBranchIdQnomyCodePair[] = [];
+	try {
+		deserialized = data.serializedItems.map((item) => JSON.parse(item));
+	} catch (error) {
+		console.error(`[PostofficeBranchQueueItem][deserializeItems] Error : ` + error);
+	}
+	return deserialized;
 };

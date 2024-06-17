@@ -5,60 +5,88 @@ import {
 	useSingleErrorQueryResponse,
 } from '../../../../data/models/persistenceModels/UpdateErrorRecord';
 
-console.log('** Test Postoffice Branch Services **');
+console.log('** Test Update Error Record **');
 
-export const constructNewErrorRecord = async () => {
-	console.log('** (1) Construct New Error Record **');
-	const onlyUserError = new PostofficeUpdateErrorBuilder()
-		.addUserError({ userError: 'fake user error' })
-		.build('branchId1')
-		.toString();
-	console.log('[constructNewErrorRecord] onlyUserError : ', onlyUserError);
+export const testUserErrorConstruction = async () => {
+	console.log('** (1) Test User Error Construction **');
 
 	try {
-		const FaultyBuild = new PostofficeUpdateErrorBuilder()
-			.addUserError({ userError: 'fake user error' })
-			.addDateError({
-				serviceId: 'service1',
-				calendarId: 'calendarID1',
-				datesError: 'fake dates error',
-			})
-			.build('branchId2')
+		const userError = new PostofficeUpdateErrorBuilder()
+			.addUserError({ userError: 'test user error' })
+			.build('Br123')
 			.toString();
 
-		console.log('[constructNewErrorRecord] FaultyBuild : ', FaultyBuild);
+		console.log('[testUserErrorConstruction] userError : ', userError);
 	} catch (error) {
-		console.log('[constructNewErrorRecord] FaultyBuild : ', (error as Error).message);
+		console.log('[testUserErrorConstruction] userError faulted : ', (error as Error).message);
 	}
+};
 
-	const userServiceDateError = new PostofficeUpdateErrorBuilder()
-		.addUserError({ userError: 'fake user error' })
-		.addServiceError({ serviceError: 'fake service error', serviceId: 'service2' })
-		.addDateError({
-			serviceId: 'service2',
-			calendarId: 'calendarID2',
-			datesError: 'fake dates error',
-		})
-		.build('branchId3')
-		.toString();
-	console.log('[constructNewErrorRecord] userServiceDateError : ', userServiceDateError);
+export const testServiceErrorConstruction = async () => {
+	console.log('** (2) Test Service Error Construction **');
 
-	const userServiceDateTimeError = new PostofficeUpdateErrorBuilder()
-		.addUserError({ userError: 'fake user error' })
-		.addServiceError({ serviceError: 'fake service error', serviceId: 'service2' })
-		.addDateError({
-			serviceId: 'service2',
-			calendarId: 'calendarID2',
-			datesError: 'fake dates error',
-		})
-		.addTimesError({
-			serviceId: 'service2',
-			calendarId: 'calendarID2',
-			timesError: 'fake service error',
-		})
-		.build('branchId4')
-		.toString();
-	console.log('[constructNewErrorRecord] userServiceDateTimeError : ', userServiceDateTimeError);
+	try {
+		const serviceError = new PostofficeUpdateErrorBuilder()
+			.addServiceError({ serviceId: 'Sr123', serviceError: 'test service error A' })
+			.addServiceError({ serviceId: 'Sr456', serviceError: 'test service error B' })
+			.build('Br123')
+			.toString();
+
+		console.log('[testUserErrorConstruction] serviceError : ', serviceError);
+	} catch (error) {
+		console.log(
+			'[testUserErrorConstruction] serviceError faulted : ',
+			(error as Error).message
+		);
+	}
+};
+
+export const testDatesErrorConstruction = async () => {
+	console.log('** (3) Test Dates Error Construction **');
+
+	try {
+		const datesError = new PostofficeUpdateErrorBuilder()
+			.addDateError({
+				serviceId: 'Sr123',
+				calendarId: 'Dt123',
+				datesError: 'test dates error A',
+			})
+			.addDateError({
+				serviceId: 'Sr456',
+				calendarId: 'Dt456',
+				datesError: 'test dates error B',
+			})
+			.build('Br123')
+			.toString();
+
+		console.log('[testUserErrorConstruction] datesError : ', datesError);
+	} catch (error) {
+		console.log('[testUserErrorConstruction] datesError faulted : ', (error as Error).message);
+	}
+};
+
+export const testTimesErrorConstruction = async () => {
+	console.log('** (4) Test Times Error Construction **');
+
+	try {
+		const timesError = new PostofficeUpdateErrorBuilder()
+			.addTimesError({
+				serviceId: 'Sr123',
+				calendarId: 'Dt123',
+				timesError: 'test times error A',
+			})
+			.addTimesError({
+				serviceId: 'Sr123',
+				calendarId: 'Dt123',
+				timesError: 'test times error B',
+			})
+			.build('Br123')
+			.toString();
+
+		console.log('[testUserErrorConstruction] timesError : ', timesError);
+	} catch (error) {
+		console.log('[testUserErrorConstruction] timesError faulted : ', (error as Error).message);
+	}
 };
 
 export const useErrorRecord = async () => {
