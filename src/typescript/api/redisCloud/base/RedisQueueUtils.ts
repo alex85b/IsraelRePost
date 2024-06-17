@@ -2,11 +2,6 @@ import * as dotenv from 'dotenv';
 
 const MODULE_NAME = 'Redis Cloud Utilities';
 
-export interface IBranchQnomycodePair {
-	branchId: string;
-	qnomycode: number;
-}
-
 export const getRedisCloudData = () => {
 	dotenv.config();
 
@@ -36,15 +31,4 @@ export const getRedisCloudData = () => {
 	};
 
 	return redisData;
-};
-
-export const deserializeItems = (data: { serializedItems: string[] }) => {
-	if (!Array.isArray(data.serializedItems)) return null;
-	let deserialized: IBranchQnomycodePair[] = [];
-	try {
-		deserialized = data.serializedItems.map((item) => JSON.parse(item));
-	} catch (error) {
-		console.error(`[${MODULE_NAME}][deserializeItems] Error : ` + error);
-	}
-	return deserialized;
 };
