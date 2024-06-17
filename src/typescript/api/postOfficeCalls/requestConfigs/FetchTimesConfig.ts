@@ -1,3 +1,4 @@
+import { HttpsProxyAgent } from 'https-proxy-agent';
 import { Cookies } from '../../../data/models/dataTransferModels/postofficeResponses/shared/PostofficeCookies';
 import { flattenDictionaryOfCookies } from '../../../data/models/dataTransferModels/postofficeResponses/shared/ReformatCookies';
 import { BuildPostRequestAxiosConfig } from '../base/PostofficeRequestConfig';
@@ -10,8 +11,16 @@ export const buildTimesCallConfig = (data: {
 	CalendarId: string;
 	ServiceId: string;
 	dayPart?: string;
+	endpointProxyString?: string;
 }) => {
 	const rBuilder = new BuildPostRequestAxiosConfig.Builder();
+	if (data.endpointProxyString)
+		rBuilder.requestHttpsAgent({
+			httpsAgent: new HttpsProxyAgent(
+				// http://< Username >:< Password >@< Endpoint >:< Port >
+				data.endpointProxyString
+			),
+		});
 	const tRequest = rBuilder
 		.requestUrl({ url: 'CentralAPI/SearchAvailableSlots' })
 		.headerAuthorization({ authorization: data.headerAuth })

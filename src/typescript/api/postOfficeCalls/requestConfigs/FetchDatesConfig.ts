@@ -1,3 +1,4 @@
+import { HttpsProxyAgent } from 'https-proxy-agent';
 import { Cookies } from '../../../data/models/dataTransferModels/postofficeResponses/shared/PostofficeCookies';
 import { flattenDictionaryOfCookies } from '../../../data/models/dataTransferModels/postofficeResponses/shared/ReformatCookies';
 import { getTodayDateObject } from '../../elastic/shared/TodaysDate';
@@ -9,8 +10,16 @@ export const buildDatesCallConfig = (data: {
 	serviceId: string;
 	maxResults?: string;
 	startDate?: string;
+	endpointProxyString?: string;
 }) => {
 	const rBuilder = new BuildPostRequestAxiosConfig.Builder();
+	if (data.endpointProxyString)
+		rBuilder.requestHttpsAgent({
+			httpsAgent: new HttpsProxyAgent(
+				// http://< Username >:< Password >@< Endpoint >:< Port >
+				data.endpointProxyString
+			),
+		});
 	const dRequest = rBuilder
 		.requestUrl({ url: 'CentralAPI/SearchAvailableDates' })
 		.headerAuthorization({ authorization: data.headerAuth })
