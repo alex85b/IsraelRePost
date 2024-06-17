@@ -23,7 +23,10 @@ export const postofficeApiCall: PostofficeApiCall = async <SR extends IPostoffic
 			AxiosResponse<SR>,
 			AxiosRequestConfig
 		>(axiosRequestConfig);
-		return omit(axiosResponse, 'request', 'config');
+		const filteredResponse = omit(axiosResponse, 'request', 'config');
+		// console.log('[postofficeApiCall] response: ', JSON.stringify(filteredResponse, null, 4));
+
+		return filteredResponse;
 	} catch (error) {
 		console.log('[israelPostRequest] Error', JSON.stringify(error, null, 3));
 		throw new Error('[israelPostRequest] Error : ' + (error as Error).message);
