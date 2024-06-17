@@ -68,34 +68,44 @@ export class BranchServicesIndexing implements IBranchServicesIndexing {
 		this.eClient = ElasticsearchClient.getInstance();
 	}
 
-	async createBranchIndex() {
+	async createBranchIndex(): Promise<
+		Omit<AxiosResponse<IElasticCreateIndexResponse, any>, 'request' | 'config'>
+	> {
 		return await this.eClient.createIndex({
 			indexName: BRANCH_INDEX_NAME,
 			indexMapping: BRANCH_INDEX_MAPPING,
 		});
 	}
 
-	async deleteBranchIndex() {
+	async deleteBranchIndex(): Promise<
+		Omit<AxiosResponse<IElasticDeleteResponse, any>, 'request' | 'config'>
+	> {
 		return await this.eClient.deleteIndex({
 			indexName: BRANCH_INDEX_NAME,
 		});
 	}
 
-	async fetchAllBranches(data: { maxRecords: number }) {
+	async fetchAllBranches(data: {
+		maxRecords: number;
+	}): Promise<Omit<AxiosResponse<IQueryBranches, any>, 'request' | 'config'>> {
 		return await this.eClient.searchIndex<IQueryBranches>({
 			indexName: BRANCH_INDEX_NAME,
 			request: searchAllBranchesRequest({ maxRecords: data.maxRecords }),
 		});
 	}
 
-	async branchesWithoutServices() {
+	async branchesWithoutServices(): Promise<
+		Omit<AxiosResponse<IQueryBranches, any>, 'request' | 'config'>
+	> {
 		return await this.eClient.searchIndex<IQueryBranches>({
 			indexName: BRANCH_INDEX_NAME,
 			request: branchesWithoutServicesRequest({ maxRecords: 500 }),
 		});
 	}
 
-	async getBranchesExcluding(requestData: { excludeBranchIds: string[] }) {
+	async getBranchesExcluding(requestData: {
+		excludeBranchIds: string[];
+	}): Promise<Omit<AxiosResponse<IQueryBranches, any>, 'request' | 'config'>> {
 		return await this.eClient.searchIndex<IQueryBranches>({
 			indexName: BRANCH_INDEX_NAME,
 			request: searchAllBranchesRequest({
@@ -105,7 +115,9 @@ export class BranchServicesIndexing implements IBranchServicesIndexing {
 		});
 	}
 
-	async bulkAddBranches(requestData: { addBranches: IDocumentBranch[] }) {
+	async bulkAddBranches(requestData: {
+		addBranches: IDocumentBranch[];
+	}): Promise<Omit<AxiosResponse<IElasticBulkResponse, any>, 'request' | 'config'>> {
 		// prepare bulk request data.
 		const bulk = bulkBranchDocuments({
 			addBranches: requestData.addBranches,
@@ -117,7 +129,10 @@ export class BranchServicesIndexing implements IBranchServicesIndexing {
 		});
 	}
 
-	async updateBranchServices(requestData: { branchID: string; services: INewServiceRecord[] }) {
+	async updateBranchServices(requestData: {
+		branchID: string;
+		services: INewServiceRecord[];
+	}): Promise<Omit<AxiosResponse<IElasticUpdateByQResponse, any>, 'request' | 'config'>> {
 		return await this.eClient.updateRecordByQ({
 			indexName: BRANCH_INDEX_NAME,
 			request: updateBranchServicesRequest({
@@ -127,20 +142,25 @@ export class BranchServicesIndexing implements IBranchServicesIndexing {
 		});
 	}
 
-	async deleteAllBranches() {
+	async deleteAllBranches(): Promise<
+		Omit<AxiosResponse<IElasticDeleteByQResponse, any>, 'request' | 'config'>
+	> {
 		return await this.eClient.deleteRecordsByQ({
 			indexName: BRANCH_INDEX_NAME,
 			request: buildDeleteAllRecordsQuery(),
 		});
 	}
 
-	async fetchAllQnomyCodes() {
+	async fetchAllQnomyCodes(): Promise<
+		Omit<AxiosResponse<IQueryQnomycode, any>, 'request' | 'config'>
+	> {
 		return await this.eClient.searchIndex<IQueryQnomycode>({
 			indexName: BRANCH_INDEX_NAME,
 			request: buildAllRecordsQuery({ maxRecords: 500, specificFields: ['qnomycode'] }),
 		});
 	}
 }
+
 // ###################################################################################################
 // ### Interfaces ####################################################################################
 // ###################################################################################################
