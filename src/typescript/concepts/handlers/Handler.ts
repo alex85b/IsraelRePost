@@ -1,21 +1,23 @@
-export type EnumLike = {
-	[key: string]: string;
-};
+// export type EnumLike = {
+// 	[key: string]: string;
+// };
 
-export type EnumValues<T extends EnumLike> = T[keyof T];
+// export type EnumValues<T extends EnumLike> = T[keyof T];
 
-export interface IHandlerClass<E extends EnumLike> {
-	message: EnumValues<E>;
-	handle(): void;
-}
+// export interface IHandlerClass<M> {
+// 	handle(): void;
+// }
 
-export abstract class HandlerClass<D, E extends EnumLike> implements IHandlerClass<E> {
-	abstract message: E[keyof E];
-	protected abstract data: D;
+// export abstract class HandlerClass<D, M> implements IHandlerClass<M> {
+// 	data: D;
 
-	abstract handle(): void;
-}
+// 	constructor(data: D) {
+// 		this.data = data;
+// 	}
 
-export type MessageDataPair<E extends EnumLike> = {
-	[K in EnumValues<E>]: IHandlerClass<E> & { message: K };
-};
+// 	abstract handle(): void;
+// }
+
+// export type MessageDataPair<E extends EnumLike> = {
+// 	[K in EnumValues<E>]: IHandlerClass<K>;
+// };

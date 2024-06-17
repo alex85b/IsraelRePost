@@ -1,68 +1,61 @@
-import { AppointmentsUpdatingMessages } from '../communication/Messages';
-import { HandlerClass } from './Handler';
+// import { AppointmentsUpdatingMessages } from '../communication/Messages';
+// import { HandlerClass, MessageDataPair } from './Handler';
 
-class HContinueUpdates extends HandlerClass<number, typeof AppointmentsUpdatingMessages> {
-	handle(): void {
-		throw new Error('Method not implemented.');
-	}
-	message: AppointmentsUpdatingMessages.ContinueUpdates;
-	protected data: number;
+// class HContinueUpdates extends HandlerClass<
+// 	number,
+// 	typeof AppointmentsUpdatingMessages.ContinueUpdates
+// > {
+// 	handle(): void {
+// 		throw new Error('Method not implemented.');
+// 	}
 
-	constructor(message: AppointmentsUpdatingMessages.ContinueUpdates, data: number) {
-		super();
-		this.message = message;
-		this.data = data;
-	}
-}
+// 	constructor(data: number) {
+// 		super(data);
+// 	}
+// }
 
-class HEndUpdater extends HandlerClass<{ value1: string }, typeof AppointmentsUpdatingMessages> {
-	handle(): void {
-		throw new Error('Method not implemented.');
-	}
-	protected data: { value1: string };
-	message: AppointmentsUpdatingMessages.EndUpdater;
+// class HEndUpdater extends HandlerClass<
+// 	{ value1: string },
+// 	typeof AppointmentsUpdatingMessages.EndUpdater
+// > {
+// 	handle(): void {
+// 		throw new Error('Method not implemented.');
+// 	}
 
-	constructor(message: AppointmentsUpdatingMessages.EndUpdater, data: { value1: string }) {
-		super();
-		this.message = message;
-		this.data = data;
-	}
-}
+// 	constructor(data: { value1: string }) {
+// 		super(data);
+// 	}
+// }
 
-class HStartUpdates extends HandlerClass<{ value1: string }, typeof AppointmentsUpdatingMessages> {
-	handle(): void {
-		throw new Error('Method not implemented.');
-	}
-	protected data: { value1: string };
-	message: AppointmentsUpdatingMessages.StartUpdates;
+// class HStartUpdates extends HandlerClass<
+// 	{ value1: string },
+// 	typeof AppointmentsUpdatingMessages.StartUpdates
+// > {
+// 	handle(): void {
+// 		throw new Error('Method not implemented.');
+// 	}
 
-	constructor(message: AppointmentsUpdatingMessages.StartUpdates, data: { value1: string }) {
-		super();
-		this.message = message;
-		this.data = data;
-	}
-}
+// 	constructor(data: { value1: string }) {
+// 		super(data);
+// 	}
+// }
 
-class HStopUpdates extends HandlerClass<{ value1: string }, typeof AppointmentsUpdatingMessages> {
-	handle(): void {
-		throw new Error('Method not implemented.');
-	}
-	protected data: { value1: string };
-	message: AppointmentsUpdatingMessages.StopUpdates;
+// class HStopUpdates extends HandlerClass<
+// 	{ value1: string },
+// 	typeof AppointmentsUpdatingMessages.StopUpdates
+// > {
+// 	handle(): void {
+// 		throw new Error('Method not implemented.');
+// 	}
 
-	constructor(message: AppointmentsUpdatingMessages.StopUpdates, data: { value1: string }) {
-		super();
-		this.message = message;
-		this.data = data;
-	}
-}
-
-const hContinueUpdates = new HContinueUpdates(AppointmentsUpdatingMessages.ContinueUpdates, 8);
-const hEndUpdater = new HEndUpdater(AppointmentsUpdatingMessages.EndUpdater, {
-	value1: 'Qwe?',
-});
+// 	constructor(data: { value1: string }) {
+// 		super(data);
+// 	}
+// }
 
 // export const testPairing: MessageDataPair<typeof AppointmentsUpdatingMessages> = {
-// 	'continue-updates': hContinueUpdates,
-// 	'end-updater': hEndUpdater,
+// 	[AppointmentsUpdatingMessages.StartUpdates]: new HStartUpdates({ value1: 'start-updates' }),
+// 	[AppointmentsUpdatingMessages.StopUpdates]: new HStopUpdates({ value1: 'stop-updates' }),
+// 	[AppointmentsUpdatingMessages.EndUpdater]: new HEndUpdater({ value1: 'end-updater' }),
+// 	[AppointmentsUpdatingMessages.ContinueUpdates]: new HContinueUpdates(8),
 // };
