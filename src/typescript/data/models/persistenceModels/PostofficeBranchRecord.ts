@@ -5,7 +5,7 @@ import {
 	ISingleBranchQueryResponse,
 } from '../../elastic/BranchModel';
 import { branchServicesFromRecords } from './PostofficeBranchServices';
-import { isValidNumber, isValidString, validateAndAssign } from './shared/FieldValidation';
+import { isValidNumber, isValidString, validateAndAssign } from '../shared/FieldValidation';
 
 // ###########################################################################################
 // ### Builder and Builder-product Interfaces ################################################
@@ -16,8 +16,9 @@ export interface IPostofficeBranchRecord {
 	getBranchDocumentCopy(): IDocumentBranch;
 	setServices(services: INewServiceRecord[]): void;
 	getIsMakeAppointment(): number;
-	getBranchID(): number;
+	getBranchNumber(): number;
 	getBranchNameEn(): string;
+	getBranchIdAndQnomycode(): number;
 	toString(): string;
 }
 
@@ -55,31 +56,35 @@ export class PostofficeBranchRecordBuilder implements IPostofficeBranchRecordBui
 			this.branchDocument = buildData.branchDocument;
 		}
 
-		getServices() {
+		getServices(): INewServiceRecord[] {
 			return this.branchDocument.services;
 		}
 
-		getBranchDocumentCopy() {
+		getBranchDocumentCopy(): IDocumentBranch {
 			return { ...this.branchDocument };
 		}
 
-		setServices(services: INewServiceRecord[]) {
+		setServices(services: INewServiceRecord[]): void {
 			this.branchDocument.services = services;
 		}
 
-		getBranchID() {
-			return this.branchDocument.id;
+		getBranchNumber(): number {
+			return this.branchDocument.branchnumber;
 		}
 
-		getBranchNameEn() {
+		getBranchNameEn(): string {
 			return this.branchDocument.branchnameEN;
 		}
 
-		getIsMakeAppointment() {
+		getIsMakeAppointment(): number {
 			return this.branchDocument.isMakeAppointment;
 		}
 
-		toString() {
+		getBranchIdAndQnomycode(): number {
+			return this.branchDocument.qnomycode;
+		}
+
+		toString(): string {
 			return JSON.stringify(this.branchDocument, null, 3);
 		}
 	};
@@ -300,7 +305,7 @@ export class PostofficeBranchRecordBuilder implements IPostofficeBranchRecordBui
 
 	withServices(data: { services: INewServiceRecord[] }) {
 		const { branchServices, faults } = branchServicesFromRecords({
-			branchId: this.branchDocument.id,
+			branchId: String(this.branchDocument.id ?? ''),
 			branchServices: data.services,
 		});
 		if (faults.length) faults.forEach((fault) => this.faults.push(fault));
@@ -379,7 +384,7 @@ export const useSingleBranchQueryResponse: IBuildBranchFromSingleBranchResponse 
 	const { _source } = data.rawQueryResponse;
 	const builder: IPostofficeBranchRecordBuilder = new PostofficeBranchRecordBuilder()
 		.withBranchId({ id: _source.id })
-		.withBranchNumber({ branchnumber: _source.id })
+		.withBranchNumber({ branchnumber: _source.branchnumber })
 		.withBranchName({ branchname: _source.branchname })
 		.withBranchNameEN({ branchnameEN: _source.branchnameEN })
 		.withCity({ city: _source.city })

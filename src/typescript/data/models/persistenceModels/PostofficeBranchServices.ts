@@ -2,7 +2,7 @@ import {
 	INewDateEntryRecord,
 	INewServiceRecord,
 } from '../../../api/elastic/branchServices/BranchServicesIndexing';
-import { isValidISO8601DateTime, isValidString } from './shared/FieldValidation';
+import { isValidISO8601DateTime, isValidString } from '../shared/FieldValidation';
 
 // ############################################################################################
 // ### Interfaces #############################################################################
@@ -16,15 +16,19 @@ interface IService {
 
 export interface IPostofficeBranchServices {
 	getServices(): INewServiceRecord[];
-	getBranchId(): number;
+	getBranchId(): string;
 	toString(): string;
 }
 
-interface IPostofficeBranchServicesBuilder {
+export interface IPostofficeBranchServicesBuilder {
 	addService(data: { serviceId: string; serviceName: string }): this;
 	addDate(data: { serviceId: string; calendarId: string; calendarDate: string }): this;
 	addHours(data: { serviceId: string; calendarId: string; hours: string[] }): this;
-	build(branchId: number): IPostofficeBranchServices | undefined;
+	build(branchId: string): IPostofficeBranchServices;
+	safeBuild(branchId: string): {
+		faults: string[];
+		branchServices: IPostofficeBranchServices | undefined;
+	};
 }
 
 // ############################################################################################
@@ -34,7 +38,7 @@ interface IPostofficeBranchServicesBuilder {
 export class PostofficeBranchServicesBuilder implements IPostofficeBranchServicesBuilder {
 	private servicesDictionary: { [key: string]: IService } = {};
 	private services: INewServiceRecord[] = [];
-	private branchId = -1;
+	private branchId = '-1';
 	private faults: string[] = [];
 
 	/*
@@ -43,7 +47,7 @@ export class PostofficeBranchServicesBuilder implements IPostofficeBranchService
 		private services: INewServiceRecord[];
 		private branchId;
 
-		constructor(buildData: { branchServices: INewServiceRecord[]; branchId: number }) {
+		constructor(buildData: { branchServices: INewServiceRecord[]; branchId: string }) {
 			this.services = buildData.branchServices;
 			this.branchId = buildData.branchId;
 		}
@@ -80,6 +84,11 @@ export class PostofficeBranchServicesBuilder implements IPostofficeBranchService
 	addDate(data: { serviceId: string; calendarId: string; calendarDate: string }) {
 		const service = this.servicesDictionary[data.serviceId];
 		if (!service) {
+			console.log(
+				'[PostofficeBranchServices][addDate] data : ',
+				JSON.stringify(this.PostofficeBranchServices, null, 4)
+			);
+
 			this.faults.push(`cannot add dates to : ${data.serviceId}`);
 			return this;
 		}
@@ -136,30 +145,46 @@ export class PostofficeBranchServicesBuilder implements IPostofficeBranchService
 		});
 	}
 
-	build(branchId: number) {
-		this.branchId = branchId;
-		if (this.faults.length)
-			throw Error(
-				`[PostofficeBranchRecord] Branch-${branchId} Errors : ` +
-					JSON.stringify(this.servicesDictionary, null, 3) +
-					' ' +
-					this.faults.join(' | ')
-			);
-		const branchServices: INewServiceRecord[] = this.convertToBranchServicesRecord();
-		return new this.PostofficeBranchServices({ branchServices, branchId });
+	build(branchId: string): IPostofficeBranchServices {
+		try {
+			this.branchId = branchId;
+			if (!isValidString(branchId)) this.faults.push('branchId is invalid string');
+			if (this.faults.length)
+				throw Error(
+					`[PostofficeBranchRecord] Branch-${branchId} Errors : ` +
+						JSON.stringify(this.servicesDictionary, null, 3) +
+						' ' +
+						this.faults.join(' | ')
+				);
+			const branchServices: INewServiceRecord[] = this.convertToBranchServicesRecord();
+			return new this.PostofficeBranchServices({ branchServices, branchId });
+		} finally {
+			this.faults = [];
+			this.servicesDictionary = {};
+			this.services = [];
+			this.branchId = '-1';
+		}
 	}
 
-	safeBuild(branchId: number): {
+	safeBuild(branchId: string): {
 		faults: string[];
 		branchServices: IPostofficeBranchServices | undefined;
 	} {
-		const branchServices: INewServiceRecord[] = this.convertToBranchServicesRecord();
-		return {
-			faults: this.faults,
-			branchServices: this.faults.length
-				? undefined
-				: new this.PostofficeBranchServices({ branchServices, branchId }),
-		};
+		try {
+			if (!isValidString(branchId)) this.faults.push('branchId is invalid string');
+			const branchServices: INewServiceRecord[] = this.convertToBranchServicesRecord();
+			return {
+				faults: this.faults,
+				branchServices: this.faults.length
+					? undefined
+					: new this.PostofficeBranchServices({ branchServices, branchId }),
+			};
+		} finally {
+			this.faults = [];
+			this.servicesDictionary = {};
+			this.services = [];
+			this.branchId = '-1';
+		}
 	}
 }
 
@@ -177,12 +202,12 @@ export interface ISafeBranchServices {
 /*
 Function definition*/
 export interface IBranchServicesFromRecords {
-	(buildData: { branchServices: INewServiceRecord[]; branchId: number }): ISafeBranchServices;
+	(buildData: { branchServices: INewServiceRecord[]; branchId: string }): ISafeBranchServices;
 }
 
 export const branchServicesFromRecords: IBranchServicesFromRecords = (buildData: {
 	branchServices: INewServiceRecord[];
-	branchId: number;
+	branchId: string;
 }): ISafeBranchServices => {
 	const builder = new PostofficeBranchServicesBuilder();
 
