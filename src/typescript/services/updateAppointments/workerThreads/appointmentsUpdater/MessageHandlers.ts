@@ -195,13 +195,6 @@ export class HandleContinueUpdates
 	}
 }
 
-// export const testPairing: MessageDataPair<typeof AppointmentsUpdatingMessages> = {
-// 	[AppointmentsUpdatingMessages.StartUpdates]: new HStartUpdates({ value1: 's' }),
-// 	[AppointmentsUpdatingMessages.StopUpdates]: new HStopUpdates({ value1: 'stop-updates' }),
-// 	[AppointmentsUpdatingMessages.EndUpdater]: new HEndUpdater({ value1: 'end-updater' }),
-// 	[AppointmentsUpdatingMessages.ContinueUpdates]: new HContinueUpdates(8),
-// };
-
 // ###############################################################################################
 // ### Helper Function : New Update ##############################################################
 // ###############################################################################################
