@@ -1,38 +1,62 @@
+import { HTTPResponse } from "puppeteer";
+import * as fs from "fs";
+
 import {
-	IPostofficeBranchRecord,
-	useXhrLoadBranches,
-} from '../../../../data/models/persistenceModels/PostofficeBranchRecord';
-import { IPuppeteerBrowser, PuppeteerBrowser } from './base/PuppeteerClient';
-import {
-	IPuppeteerPostOfficeBranchesPage,
-	PuppeteerPostOfficeBranchesPage,
-} from './base/PuppeteerPostOfficeBranchesPage';
+	IXhrLoadBranches,
+	InterceptorResults,
+	NetworkTrafficCapture,
+	RequestHandler,
+	ResponseHandler,
+	StringedInterceptorResults,
+	buildPuppeteerBrowser,
+	buildPuppeteerPage,
+	extractHtmlToken,
+	navigateToUrl,
+} from "./base/PuppeteerClient";
+import { ConstructLogMessage } from "../../../../shared/classes/ConstructLogMessage";
+import { URLs } from "../../../../common/urls";
 
-const MODULE_NAME = 'Scrape Branches';
-
-export const scrapeXhrObjects = async () => {
-	const browserInstance: IPuppeteerBrowser = PuppeteerBrowser.getInstance({ headless: 'new' });
-	try {
-		const postOfficeBranchesPage: IPuppeteerPostOfficeBranchesPage =
-			new PuppeteerPostOfficeBranchesPage({
-				browserPage: await browserInstance.getDefaultPage(),
-				navigationTimeout: 60000,
-			});
-
-		await postOfficeBranchesPage.navigateToBranchesPage();
-		const htmlToken = await postOfficeBranchesPage.extractHtmlToken();
-		const branchesXHR = await postOfficeBranchesPage.getInterceptedXHR(60000);
-		if (!branchesXHR.branches)
-			throw Error(`[${MODULE_NAME}] Israel Post-office branch scrape returned no branches`);
-		const branchRecords: IPostofficeBranchRecord[] = branchesXHR.branches.map((xhr) => {
-			return useXhrLoadBranches({ rawXhrObject: xhr }).build();
-		});
-		if (!branchRecords.length)
-			throw Error(`[${MODULE_NAME}] XHR Branch objects failed conversion to Branch-records`);
-		return { branchRecords, htmlToken };
-	} catch (error) {
-		throw error;
-	} finally {
-		await browserInstance.closeBrowserAndPages();
-	}
+const MODULE_NAME = "Scrape Branches";
+export const BRANCHES_XHR_RESPONSE_URL =
+	"https://israelpost.co.il/umbraco/Surface/Branches/LoadBranches";
+const skip: RequestHandler = () => {
+	return Promise.resolve(false);
 };
+const rHandler: ResponseHandler = async (response: HTTPResponse) => {
+	const request = response.request();
+	if (
+		request.resourceType() === "xhr" &&
+		request.url() === BRANCHES_XHR_RESPONSE_URL
+	) {
+		return true;
+	}
+	return false;
+};
+
+export const scrapeBrowserResponses =
+	async (): Promise<StringedInterceptorResults> => {
+		const logConstructor = new ConstructLogMessage(["scrapeBrowserResponses"]);
+		const browser = await buildPuppeteerBrowser(true);
+		const page = await buildPuppeteerPage(browser);
+		const capture = new NetworkTrafficCapture({
+			page,
+			customResponseHandler: rHandler,
+			customRequestHandler: skip,
+		});
+		capture.start();
+		await navigateToUrl({
+			page,
+			url: URLs.IsraelPostBranches,
+			logConstructor: logConstructor,
+		});
+		const results = capture.stop();
+		if (!results || !results.responses.length) {
+			throw Error(
+				logConstructor.createLogMessage({
+					subject: "failed to capture xhr responses",
+				})
+			);
+		}
+		await browser.close();
+		return results;
+	};
