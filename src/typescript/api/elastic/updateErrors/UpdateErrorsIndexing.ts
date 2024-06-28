@@ -1,6 +1,7 @@
 import {
 	ElasticsearchClient,
 	IElasticCrUpRecordResponse,
+	IElasticCreateIndexResponse,
 	IElasticDeleteByQResponse,
 	IElasticSearchResponse,
 	IElasticsearchClient,
@@ -9,6 +10,7 @@ import { UPDATE_ERRORS_INDEX_NAME } from './constants/Index';
 import { buildAllRecordsQuery } from '../shared/queryBuilders/QueryAllRecordsBuilder';
 import { buildDeleteAllRecordsQuery } from '../shared/queryBuilders/DeleteByQueryBuilder';
 import { AxiosResponse } from 'axios';
+import { UPDATE_ERROR_INDEX_MAPPING } from './constants/Mapping';
 
 const MODULE_NAME = 'Branch Services Indexing';
 
@@ -27,6 +29,10 @@ export interface IUpdateErrorsIndexing {
 	deleteAllErrors(): Promise<
 		Omit<AxiosResponse<IElasticDeleteByQResponse>, 'request' | 'config'>
 	>;
+
+	createErrorIndex(): Promise<
+		Omit<AxiosResponse<IElasticCreateIndexResponse, any>, 'request' | 'config'>
+	> 
 }
 
 // ###################################################################################################
@@ -42,6 +48,15 @@ export class UpdateErrorsIndexing implements IUpdateErrorsIndexing {
 
 	// TODO: Create Index
 	// TODO: Delete Index
+
+	async createErrorIndex(): Promise<
+		Omit<AxiosResponse<IElasticCreateIndexResponse, any>, 'request' | 'config'>
+	> {
+		return await this.eClient.createIndex({
+			indexName: UPDATE_ERRORS_INDEX_NAME,
+			indexMapping: UPDATE_ERROR_INDEX_MAPPING,
+		});
+	}
 
 	async fetchAllErrors() {
 		return await this.eClient.searchIndex<IQueryErrors>({

@@ -1,25 +1,27 @@
 import {
 	BranchServicesIndexing,
 	IBranchServicesIndexing,
-} from '../../api/elastic/branchServices/BranchServicesIndexing';
+} from "../../api/elastic/branchServices/BranchServicesIndexing";
 import {
 	BulkCreateUpdateResponse,
 	IBulkCreateUpdateResponse,
-} from '../models/dataTransferModels/elasticResponses/BulkCreateUpdateResponse';
+} from "../models/dataTransferModels/elasticResponses/BulkCreateUpdateResponse";
 import {
 	IBranchIdQnomyCodePair,
 	IPostofficeBranchIdCodePairBuilder,
 	PostofficeBranchIdCodePairBuilder,
-} from '../models/persistenceModels/PostofficeBranchIdCodePair';
+} from "../models/persistenceModels/PostofficeBranchIdCodePair";
 import {
 	IPostofficeBranchRecord,
 	useSingleBranchQueryResponse,
-} from '../models/persistenceModels/PostofficeBranchRecord';
-import { IPostofficeBranchServices } from '../models/persistenceModels/PostofficeBranchServices';
+} from "../models/persistenceModels/PostofficeBranchRecord";
+import { IPostofficeBranchServices } from "../models/persistenceModels/PostofficeBranchServices";
 
 export interface IPostofficeBranchesRepository {
 	getAllBranches(): Promise<IPostofficeBranchRecord[]>;
-	getAllBranchesExcluding(branchIdsToExclude: string[]): Promise<IPostofficeBranchRecord[]>;
+	getAllBranchesExcluding(
+		branchIdsToExclude: string[]
+	): Promise<IPostofficeBranchRecord[]>;
 	deleteWriteBranches(
 		branchRecords: IPostofficeBranchRecord[]
 	): Promise<IBulkCreateUpdateResponse>;
@@ -32,10 +34,16 @@ export interface IPostofficeBranchesRepository {
 	): Promise<IBranchIdQnomyCodePair[]>;
 	updateBranchServices(args: {
 		servicesModel: IPostofficeBranchServices;
-	}): Promise<{ actionResult: string; successfulActions: number; failedActions: number }>;
+	}): Promise<{
+		actionResult: string;
+		successfulActions: number;
+		failedActions: number;
+	}>;
 }
 
-export class PostofficeBranchesRepository implements IPostofficeBranchesRepository {
+export class PostofficeBranchesRepository
+	implements IPostofficeBranchesRepository
+{
 	private branches: IBranchServicesIndexing;
 
 	constructor() {
@@ -43,12 +51,14 @@ export class PostofficeBranchesRepository implements IPostofficeBranchesReposito
 	}
 
 	async getAllBranches() {
-		const rawResponse = await this.branches.fetchAllBranches({ maxRecords: 500 });
+		const rawResponse = await this.branches.fetchAllBranches({
+			maxRecords: 500,
+		});
 		const { data, status, statusText } = rawResponse;
 		if (status < 200 || status > 299) {
 			throw Error(
 				`[Postoffice Branches Repository][Get All Branches] Error${status} : ${
-					statusText ?? 'No status text'
+					statusText ?? "No status text"
 				}`
 			);
 		}
@@ -60,13 +70,19 @@ export class PostofficeBranchesRepository implements IPostofficeBranchesReposito
 			);
 		}
 
-		const branchRecords: IPostofficeBranchRecord[] = rawQueryResult.map((branchQuery) => {
-			try {
-				return useSingleBranchQueryResponse({ rawQueryResponse: branchQuery }).build();
-			} catch (error) {
-				throw Error(`Branch ${branchQuery._id} : ` + (error as Error).message);
+		const branchRecords: IPostofficeBranchRecord[] = rawQueryResult.map(
+			(branchQuery) => {
+				try {
+					return useSingleBranchQueryResponse({
+						rawQueryResponse: branchQuery,
+					}).build();
+				} catch (error) {
+					throw Error(
+						`Branch ${branchQuery._id} : ` + (error as Error).message
+					);
+				}
 			}
-		});
+		);
 
 		return branchRecords;
 	}
@@ -78,47 +94,57 @@ export class PostofficeBranchesRepository implements IPostofficeBranchesReposito
 			throw Error(
 				`[Postoffice Branches Repository][Get All Branches Excluding] Branch Ids To Exclude is not array`
 			);
-		if (branchIdsToExclude.length && typeof branchIdsToExclude[0] !== 'string')
+		if (branchIdsToExclude.length && typeof branchIdsToExclude[0] !== "string")
 			throw Error(
 				`[Postoffice Branches Repository][Get All Branches Excluding] Branch Ids To Exclude includes non-string values`
 			);
-		const { data, status, statusText } = await this.branches.getBranchesExcluding({
-			excludeBranchIds: branchIdsToExclude,
-		});
+		const { data, status, statusText } =
+			await this.branches.getBranchesExcluding({
+				excludeBranchIds: branchIdsToExclude,
+			});
 		if (status < 200 || status > 299)
 			throw Error(
 				`[Postoffice Branches Repository][Get All Branches Excluding] Error${status} : ${
-					statusText ?? 'No status text'
+					statusText ?? "No status text"
 				}`
 			);
 		if (!Array.isArray(data?.hits?.hits))
 			throw Error(
 				`[Postoffice Branches Repository][Get All Branches Excluding] Query result is not an array`
 			);
-		const branchRecords: IPostofficeBranchRecord[] = data?.hits?.hits.map((branchQuery) => {
-			try {
-				return useSingleBranchQueryResponse({ rawQueryResponse: branchQuery }).build();
-			} catch (error) {
-				throw Error(`Branch ${branchQuery._id} : ` + (error as Error).message);
+		const branchRecords: IPostofficeBranchRecord[] = data?.hits?.hits.map(
+			(branchQuery) => {
+				try {
+					return useSingleBranchQueryResponse({
+						rawQueryResponse: branchQuery,
+					}).build();
+				} catch (error) {
+					throw Error(
+						`Branch ${branchQuery._id} : ` + (error as Error).message
+					);
+				}
 			}
-		});
+		);
 		return branchRecords;
 	}
 
 	async writeUpdateBranches(branchRecords: IPostofficeBranchRecord[]) {
 		const rawBulkAddResponse = await this.branches.bulkAddBranches({
-			addBranches: branchRecords.map((branchRecord) => branchRecord.getBranchDocumentCopy()),
+			addBranches: branchRecords.map((branchRecord) =>
+				branchRecord.getBranchDocumentCopy()
+			),
 		});
 		if (rawBulkAddResponse.status < 200 || rawBulkAddResponse.status > 299) {
 			throw Error(
 				`[Postoffice Branches Repository][Write Update Branches] Error${
 					rawBulkAddResponse.status
-				} : ${rawBulkAddResponse.statusText ?? 'No status text'}`
+				} : ${rawBulkAddResponse.statusText ?? "No status text"}`
 			);
 		}
-		const bulkAddResponse: IBulkCreateUpdateResponse = new BulkCreateUpdateResponse.Builder()
-			.useAxiosResponse(rawBulkAddResponse)
-			.build();
+		const bulkAddResponse: IBulkCreateUpdateResponse =
+			new BulkCreateUpdateResponse.Builder()
+				.useAxiosResponse(rawBulkAddResponse)
+				.build();
 		return bulkAddResponse;
 	}
 
@@ -126,24 +152,28 @@ export class PostofficeBranchesRepository implements IPostofficeBranchesReposito
 		const deleteResponse = await this.branches.deleteAllBranches();
 		if (deleteResponse.status > 299 || deleteResponse.status < 200)
 			throw Error(
-				'[deleteWriteBranches] delete branches failed : ' +
+				"[deleteWriteBranches] delete branches failed : " +
 					JSON.stringify(deleteResponse, null, 3)
 			);
 		const rawBulkAddResponse = await this.branches.bulkAddBranches({
-			addBranches: branchRecords.map((branchRecord) => branchRecord.getBranchDocumentCopy()),
+			addBranches: branchRecords.map((branchRecord) =>
+				branchRecord.getBranchDocumentCopy()
+			),
 		});
-		const bulkAddResponse: IBulkCreateUpdateResponse = new BulkCreateUpdateResponse.Builder()
-			.useAxiosResponse(rawBulkAddResponse)
-			.build();
+		const bulkAddResponse: IBulkCreateUpdateResponse =
+			new BulkCreateUpdateResponse.Builder()
+				.useAxiosResponse(rawBulkAddResponse)
+				.build();
 		return bulkAddResponse;
 	}
 
 	async getAllBranchesIdAndQnomyCode(): Promise<IBranchIdQnomyCodePair[]> {
-		const { data, status, statusText } = await this.branches.fetchAllQnomyCodes();
+		const { data, status, statusText } =
+			await this.branches.fetchAllQnomyCodes();
 		if (status < 200 || status > 299) {
 			throw Error(
 				`[Postoffice Branches Repository][Get All Branches Id And Qnomy Code] Error${status} : ${
-					statusText ?? 'No status text'
+					statusText ?? "No status text"
 				}`
 			);
 		}
@@ -182,7 +212,11 @@ export class PostofficeBranchesRepository implements IPostofficeBranchesReposito
 
 	async updateBranchServices(args: {
 		servicesModel: IPostofficeBranchServices;
-	}): Promise<{ actionResult: string; successfulActions: number; failedActions: number }> {
+	}): Promise<{
+		actionResult: string;
+		successfulActions: number;
+		failedActions: number;
+	}> {
 		const rawResponse = await this.branches.updateBranchServices({
 			branchID: String(args.servicesModel.getBranchId()),
 			services: args.servicesModel.getServices(),
@@ -192,12 +226,16 @@ export class PostofficeBranchesRepository implements IPostofficeBranchesReposito
 		if (status < 200 || status > 299) {
 			throw Error(
 				`[Postoffice Branches Repository][writeUpdateBranch] Error status ${status} : ${
-					statusText ?? 'No status text'
+					statusText ?? "No status text"
 				}`
 			);
 		}
 
-		const actionResult = data.updated ? 'updated' : data.deleted ? 'deleted' : 'no-action';
+		const actionResult = data.updated
+			? "updated"
+			: data.deleted
+			? "deleted"
+			: "no-action";
 		const successfulActions = data.total ?? 0;
 		const failedActions = data.failures.length ?? 0;
 		return { actionResult, successfulActions, failedActions };

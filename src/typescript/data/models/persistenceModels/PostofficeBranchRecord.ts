@@ -1,11 +1,21 @@
-import { IXhrBranch } from '../../../services/updateBranches/helpers/scrape/base/PuppeteerClient';
+import {
+	IXhrBranch,
+	InterceptorResults,
+	StringedInterceptorResults,
+} from "../../../services/updateBranches/helpers/scrape/base/PuppeteerClient";
 import {
 	IDocumentBranch,
 	INewServiceRecord,
 	ISingleBranchQueryResponse,
-} from '../../elastic/BranchModel';
-import { branchServicesFromRecords } from './PostofficeBranchServices';
-import { isValidNumber, isValidString, validateAndAssign } from '../shared/FieldValidation';
+} from "../../elastic/BranchModel";
+import { branchServicesFromRecords } from "./PostofficeBranchServices";
+import {
+	isValidNumber,
+	isValidString,
+	validateAndAssign,
+} from "../shared/FieldValidation";
+import { ILogMessageConstructor } from "../../../shared/classes/ConstructLogMessage";
+import { BRANCHES_XHR_RESPONSE_URL } from "../../../services/updateBranches/helpers/scrape/ScrapeBranches";
 
 // ###########################################################################################
 // ### Builder and Builder-product Interfaces ################################################
@@ -46,7 +56,9 @@ export interface IPostofficeBranchRecordBuilder {
 // ### IPostofficeBranchRecordBuilder Implementation #########################################
 // ###########################################################################################
 
-export class PostofficeBranchRecordBuilder implements IPostofficeBranchRecordBuilder {
+export class PostofficeBranchRecordBuilder
+	implements IPostofficeBranchRecordBuilder
+{
 	private branchDocument: IDocumentBranch;
 	private faults: string[] = [];
 	private PostofficeBranchRecord = class implements IPostofficeBranchRecord {
@@ -93,14 +105,14 @@ export class PostofficeBranchRecordBuilder implements IPostofficeBranchRecordBui
 		this.branchDocument = {
 			id: -1,
 			branchnumber: -1,
-			branchname: '',
-			branchnameEN: '',
-			city: '',
-			cityEN: '',
-			street: '',
-			streetEN: '',
-			streetcode: '',
-			zip: '',
+			branchname: "",
+			branchnameEN: "",
+			city: "",
+			cityEN: "",
+			street: "",
+			streetEN: "",
+			streetcode: "",
+			zip: "",
 			qnomycode: -1,
 			qnomyWaitTimeCode: -1,
 			haszimuntor: -1,
@@ -118,9 +130,9 @@ export class PostofficeBranchRecordBuilder implements IPostofficeBranchRecordBui
 			value: data.id,
 			validatorFunction: isValidNumber,
 			assignTarget: this.branchDocument,
-			assignKey: 'id',
+			assignKey: "id",
 			faults: this.faults,
-			errorMessage: 'branch id is not valid number',
+			errorMessage: "branch id is not valid number",
 		});
 		return this;
 	}
@@ -130,9 +142,9 @@ export class PostofficeBranchRecordBuilder implements IPostofficeBranchRecordBui
 			value: data.branchnumber,
 			validatorFunction: isValidNumber,
 			assignTarget: this.branchDocument,
-			assignKey: 'branchnumber',
+			assignKey: "branchnumber",
 			faults: this.faults,
-			errorMessage: 'branchnumber is not valid number',
+			errorMessage: "branchnumber is not valid number",
 		});
 		return this;
 	}
@@ -142,9 +154,9 @@ export class PostofficeBranchRecordBuilder implements IPostofficeBranchRecordBui
 			value: data.branchname,
 			validatorFunction: isValidString,
 			assignTarget: this.branchDocument,
-			assignKey: 'branchname',
+			assignKey: "branchname",
 			faults: this.faults,
-			errorMessage: 'branchname is not valid string',
+			errorMessage: "branchname is not valid string",
 		});
 		return this;
 	}
@@ -154,9 +166,9 @@ export class PostofficeBranchRecordBuilder implements IPostofficeBranchRecordBui
 			value: data.branchnameEN,
 			validatorFunction: isValidString,
 			assignTarget: this.branchDocument,
-			assignKey: 'branchnameEN',
+			assignKey: "branchnameEN",
 			faults: this.faults,
-			errorMessage: 'branchnameEN is not valid string',
+			errorMessage: "branchnameEN is not valid string",
 		});
 		return this;
 	}
@@ -166,9 +178,9 @@ export class PostofficeBranchRecordBuilder implements IPostofficeBranchRecordBui
 			value: data.city,
 			validatorFunction: isValidString,
 			assignTarget: this.branchDocument,
-			assignKey: 'city',
+			assignKey: "city",
 			faults: this.faults,
-			errorMessage: 'branch city is not valid string',
+			errorMessage: "branch city is not valid string",
 		});
 		return this;
 	}
@@ -178,9 +190,9 @@ export class PostofficeBranchRecordBuilder implements IPostofficeBranchRecordBui
 			value: data.cityEN,
 			validatorFunction: isValidString,
 			assignTarget: this.branchDocument,
-			assignKey: 'cityEN',
+			assignKey: "cityEN",
 			faults: this.faults,
-			errorMessage: 'branch cityEN is not valid string',
+			errorMessage: "branch cityEN is not valid string",
 		});
 		return this;
 	}
@@ -190,9 +202,9 @@ export class PostofficeBranchRecordBuilder implements IPostofficeBranchRecordBui
 			value: data.street,
 			validatorFunction: isValidString,
 			assignTarget: this.branchDocument,
-			assignKey: 'street',
+			assignKey: "street",
 			faults: this.faults,
-			errorMessage: 'branch street is invalid',
+			errorMessage: "branch street is invalid",
 		});
 		return this;
 	}
@@ -202,9 +214,9 @@ export class PostofficeBranchRecordBuilder implements IPostofficeBranchRecordBui
 			value: data.streetEN,
 			validatorFunction: isValidString,
 			assignTarget: this.branchDocument,
-			assignKey: 'streetEN',
+			assignKey: "streetEN",
 			faults: this.faults,
-			errorMessage: 'branch streetEN is invalid',
+			errorMessage: "branch streetEN is invalid",
 		});
 		return this;
 	}
@@ -214,9 +226,9 @@ export class PostofficeBranchRecordBuilder implements IPostofficeBranchRecordBui
 			value: data.streetcode,
 			validatorFunction: isValidString,
 			assignTarget: this.branchDocument,
-			assignKey: 'streetcode',
+			assignKey: "streetcode",
 			faults: this.faults,
-			errorMessage: 'branch streetcode is not valid',
+			errorMessage: "branch streetcode is not valid",
 		});
 		return this;
 	}
@@ -226,9 +238,9 @@ export class PostofficeBranchRecordBuilder implements IPostofficeBranchRecordBui
 			value: data.zip,
 			validatorFunction: isValidString,
 			assignTarget: this.branchDocument,
-			assignKey: 'zip',
+			assignKey: "zip",
 			faults: this.faults,
-			errorMessage: 'branch zip code is not valid string',
+			errorMessage: "branch zip code is not valid string",
 		});
 		return this;
 	}
@@ -238,9 +250,9 @@ export class PostofficeBranchRecordBuilder implements IPostofficeBranchRecordBui
 			value: data.qnomycode,
 			validatorFunction: isValidNumber,
 			assignTarget: this.branchDocument,
-			assignKey: 'qnomycode',
+			assignKey: "qnomycode",
 			faults: this.faults,
-			errorMessage: 'branch qnomy-code is not valid number',
+			errorMessage: "branch qnomy-code is not valid number",
 		});
 		return this;
 	}
@@ -250,9 +262,9 @@ export class PostofficeBranchRecordBuilder implements IPostofficeBranchRecordBui
 			value: data.qnomyWaitTimeCode,
 			validatorFunction: isValidNumber,
 			assignTarget: this.branchDocument,
-			assignKey: 'qnomyWaitTimeCode',
+			assignKey: "qnomyWaitTimeCode",
 			faults: this.faults,
-			errorMessage: 'branch qnomyWaitTimeCode is not valid number',
+			errorMessage: "branch qnomyWaitTimeCode is not valid number",
 		});
 		return this;
 	}
@@ -262,9 +274,9 @@ export class PostofficeBranchRecordBuilder implements IPostofficeBranchRecordBui
 			value: data.haszimuntor,
 			validatorFunction: isValidNumber,
 			assignTarget: this.branchDocument,
-			assignKey: 'haszimuntor',
+			assignKey: "haszimuntor",
 			faults: this.faults,
-			errorMessage: 'branch haszimuntor is not valid number',
+			errorMessage: "branch haszimuntor is not valid number",
 		});
 		return this;
 	}
@@ -274,9 +286,9 @@ export class PostofficeBranchRecordBuilder implements IPostofficeBranchRecordBui
 			value: data.isMakeAppointment,
 			validatorFunction: isValidNumber,
 			assignTarget: this.branchDocument,
-			assignKey: 'isMakeAppointment',
+			assignKey: "isMakeAppointment",
 			faults: this.faults,
-			errorMessage: 'branch isMakeAppointment is not valid number',
+			errorMessage: "branch isMakeAppointment is not valid number",
 		});
 		return this;
 	}
@@ -286,18 +298,18 @@ export class PostofficeBranchRecordBuilder implements IPostofficeBranchRecordBui
 			value: data.location.lat,
 			validatorFunction: isValidNumber,
 			assignTarget: this.branchDocument.location,
-			assignKey: 'lat',
+			assignKey: "lat",
 			faults: this.faults,
-			errorMessage: 'branch location latitude is not valid number',
+			errorMessage: "branch location latitude is not valid number",
 		});
 
 		validateAndAssign({
 			value: data.location.lon,
 			validatorFunction: isValidNumber,
 			assignTarget: this.branchDocument.location,
-			assignKey: 'lon',
+			assignKey: "lon",
 			faults: this.faults,
-			errorMessage: 'branch location longitude is not valid number',
+			errorMessage: "branch location longitude is not valid number",
 		});
 
 		return this;
@@ -305,11 +317,12 @@ export class PostofficeBranchRecordBuilder implements IPostofficeBranchRecordBui
 
 	withServices(data: { services: INewServiceRecord[] }) {
 		const { branchServices, faults } = branchServicesFromRecords({
-			branchId: String(this.branchDocument.id ?? ''),
+			branchId: String(this.branchDocument.id ?? ""),
 			branchServices: data.services,
 		});
 		if (faults.length) faults.forEach((fault) => this.faults.push(fault));
-		if (branchServices) this.branchDocument.services = branchServices.getServices();
+		if (branchServices)
+			this.branchDocument.services = branchServices.getServices();
 		this.branchDocument.services = data.services;
 		return this;
 	}
@@ -317,12 +330,14 @@ export class PostofficeBranchRecordBuilder implements IPostofficeBranchRecordBui
 	build() {
 		if (this.faults.length)
 			throw Error(
-				'[PostofficeBranchRecord] Errors : ' +
+				"[PostofficeBranchRecord] Errors : " +
 					JSON.stringify(this.branchDocument, null, 3) +
-					' ' +
-					this.faults.join(' | ')
+					" " +
+					this.faults.join(" | ")
 			);
-		return new this.PostofficeBranchRecord({ branchDocument: this.branchDocument });
+		return new this.PostofficeBranchRecord({
+			branchDocument: this.branchDocument,
+		});
 	}
 }
 
@@ -332,37 +347,41 @@ export class PostofficeBranchRecordBuilder implements IPostofficeBranchRecordBui
 
 const fixEmptyNulledString = (data: { fieldValue: any; fieldName: string }) => {
 	let returnFieldValue = data.fieldValue;
-	if (typeof returnFieldValue === 'object')
+	if (typeof returnFieldValue === "object")
 		returnFieldValue = JSON.stringify(returnFieldValue, null, 3);
-	if (typeof returnFieldValue !== 'string') return returnFieldValue;
-	return returnFieldValue ? (returnFieldValue.length ? returnFieldValue : 'EMPTY') : 'NULL';
+	if (typeof returnFieldValue !== "string") return returnFieldValue;
+	return returnFieldValue
+		? returnFieldValue.length
+			? returnFieldValue
+			: "EMPTY"
+		: "NULL";
 };
 
 const fixIncomingXhrBranch = (data: { rawXhrObject: IXhrBranch }) => {
 	const { rawXhrObject } = data;
 	rawXhrObject.branchnameEN = fixEmptyNulledString({
 		fieldValue: rawXhrObject.branchnameEN,
-		fieldName: 'branchnameEN',
+		fieldName: "branchnameEN",
 	});
 	rawXhrObject.city = fixEmptyNulledString({
 		fieldValue: rawXhrObject.city,
-		fieldName: 'city',
+		fieldName: "city",
 	});
 	rawXhrObject.cityEN = fixEmptyNulledString({
 		fieldValue: rawXhrObject.cityEN,
-		fieldName: 'cityEN',
+		fieldName: "cityEN",
 	});
 	rawXhrObject.street = fixEmptyNulledString({
 		fieldValue: rawXhrObject.street,
-		fieldName: 'street',
+		fieldName: "street",
 	});
 	rawXhrObject.streetEN = fixEmptyNulledString({
 		fieldValue: rawXhrObject.streetEN,
-		fieldName: 'streetEN',
+		fieldName: "streetEN",
 	});
 	rawXhrObject.streetcode = fixEmptyNulledString({
 		fieldValue: rawXhrObject.streetcode,
-		fieldName: 'streetcode',
+		fieldName: "streetcode",
 	});
 };
 
@@ -375,32 +394,34 @@ Creates PostofficeBranchRecordBuilder using ISingleBranchQueryResponse*/
 // ####################################################################
 
 export interface IBuildBranchFromSingleBranchResponse {
-	(data: { rawQueryResponse: ISingleBranchQueryResponse }): IPostofficeBranchRecordBuilder;
+	(data: {
+		rawQueryResponse: ISingleBranchQueryResponse;
+	}): IPostofficeBranchRecordBuilder;
 }
 
-export const useSingleBranchQueryResponse: IBuildBranchFromSingleBranchResponse = (data: {
-	rawQueryResponse: ISingleBranchQueryResponse;
-}) => {
-	const { _source } = data.rawQueryResponse;
-	const builder: IPostofficeBranchRecordBuilder = new PostofficeBranchRecordBuilder()
-		.withBranchId({ id: _source.id })
-		.withBranchNumber({ branchnumber: _source.branchnumber })
-		.withBranchName({ branchname: _source.branchname })
-		.withBranchNameEN({ branchnameEN: _source.branchnameEN })
-		.withCity({ city: _source.city })
-		.withCityEN({ cityEN: _source.cityEN })
-		.withStreet({ street: _source.street })
-		.withStreetEN({ streetEN: _source.streetEN })
-		.withStreetCode({ streetcode: _source.streetcode })
-		.withZip({ zip: _source.zip })
-		.withQnomyCode({ qnomycode: _source.qnomycode })
-		.withQnomyWaitTimeCode({ qnomyWaitTimeCode: _source.qnomyWaitTimeCode })
-		.withHasZimunTor({ haszimuntor: _source.haszimuntor })
-		.withIsMakeAppointment({ isMakeAppointment: _source.isMakeAppointment })
-		.withLocation({ location: _source.location })
-		.withServices({ services: _source.services });
-	return builder;
-};
+export const useSingleBranchQueryResponse: IBuildBranchFromSingleBranchResponse =
+	(data: { rawQueryResponse: ISingleBranchQueryResponse }) => {
+		const { _source } = data.rawQueryResponse;
+		const builder: IPostofficeBranchRecordBuilder =
+			new PostofficeBranchRecordBuilder()
+				.withBranchId({ id: _source.id })
+				.withBranchNumber({ branchnumber: _source.branchnumber })
+				.withBranchName({ branchname: _source.branchname })
+				.withBranchNameEN({ branchnameEN: _source.branchnameEN })
+				.withCity({ city: _source.city })
+				.withCityEN({ cityEN: _source.cityEN })
+				.withStreet({ street: _source.street })
+				.withStreetEN({ streetEN: _source.streetEN })
+				.withStreetCode({ streetcode: _source.streetcode })
+				.withZip({ zip: _source.zip })
+				.withQnomyCode({ qnomycode: _source.qnomycode })
+				.withQnomyWaitTimeCode({ qnomyWaitTimeCode: _source.qnomyWaitTimeCode })
+				.withHasZimunTor({ haszimuntor: _source.haszimuntor })
+				.withIsMakeAppointment({ isMakeAppointment: _source.isMakeAppointment })
+				.withLocation({ location: _source.location })
+				.withServices({ services: _source.services });
+		return builder;
+	};
 
 /*
 Creates PostofficeBranchRecordBuilder using IXhrBranch*/
@@ -410,37 +431,108 @@ export interface IBuildBranchFromRawXhrObject {
 	(data: { rawXhrObject: IXhrBranch }): IPostofficeBranchRecordBuilder;
 }
 
-export const useXhrLoadBranches: IBuildBranchFromRawXhrObject = (data: {
-	rawXhrObject: IXhrBranch;
+export interface IUrlAndBody {
+	url: string;
+	body: { branches: any };
+}
+
+export const useInterceptorResults = async (args: {
+	intercepted: StringedInterceptorResults;
+	logConstructor: ILogMessageConstructor;
 }) => {
-	const { rawXhrObject } = data;
+	args.logConstructor.addLogHeader("useInterceptorResults");
+	args.logConstructor.createLogMessage({ subject: "Start" });
 
-	fixIncomingXhrBranch({ rawXhrObject: rawXhrObject });
+	const branches = await stringedResultsToBranches({
+		intercepted: args.intercepted,
+		logConstructor: args.logConstructor,
+	});
 
-	const builder: IPostofficeBranchRecordBuilder = new PostofficeBranchRecordBuilder()
-		.withBranchId({ id: rawXhrObject.id })
-		.withBranchNumber({ branchnumber: rawXhrObject.branchnumber })
-		.withBranchName({ branchname: rawXhrObject.branchname })
-		.withBranchNameEN({ branchnameEN: rawXhrObject.branchnameEN })
-		.withCity({ city: rawXhrObject.city })
-		.withCityEN({ cityEN: rawXhrObject.cityEN })
-		.withStreet({ street: rawXhrObject.street })
-		.withStreetEN({ streetEN: rawXhrObject.streetEN })
-		.withStreetCode({ streetcode: rawXhrObject.streetcode })
-		.withZip({ zip: rawXhrObject.zip })
-		.withQnomyCode({ qnomycode: rawXhrObject.qnomycode })
-		.withQnomyWaitTimeCode({ qnomyWaitTimeCode: rawXhrObject.qnomyWaitTimeCode })
-		.withHasZimunTor({ haszimuntor: rawXhrObject.haszimuntor })
-		.withIsMakeAppointment({
-			isMakeAppointment: rawXhrObject.isMakeAppointment ? 1 : 0,
-		})
-		.withLocation({
-			location: {
-				lat: rawXhrObject.geocode_latitude,
-				lon: rawXhrObject.geocode_longitude,
-			},
-		})
-		.withServices({ services: [] });
+	const branchRecords = branches.map((branch) => {
+		fixIncomingXhrBranch({ rawXhrObject: branch });
+		const builder: IPostofficeBranchRecordBuilder =
+			new PostofficeBranchRecordBuilder()
+				.withBranchId({ id: branch.id })
+				.withBranchNumber({ branchnumber: branch.branchnumber })
+				.withBranchName({ branchname: branch.branchname })
+				.withBranchNameEN({ branchnameEN: branch.branchnameEN })
+				.withCity({ city: branch.city })
+				.withCityEN({ cityEN: branch.cityEN })
+				.withStreet({ street: branch.street })
+				.withStreetEN({ streetEN: branch.streetEN })
+				.withStreetCode({ streetcode: branch.streetcode })
+				.withZip({ zip: branch.zip })
+				.withQnomyCode({ qnomycode: branch.qnomycode })
+				.withQnomyWaitTimeCode({
+					qnomyWaitTimeCode: branch.qnomyWaitTimeCode,
+				})
+				.withHasZimunTor({ haszimuntor: branch.haszimuntor })
+				.withIsMakeAppointment({
+					isMakeAppointment: branch.isMakeAppointment ? 1 : 0,
+				})
+				.withLocation({
+					location: {
+						lat: branch.geocode_latitude,
+						lon: branch.geocode_longitude,
+					},
+				})
+				.withServices({ services: [] });
+		return builder.build();
+	});
+	args.logConstructor.createLogMessage({ subject: "End" });
+	args.logConstructor.popLogHeader();
+	return branchRecords;
+};
 
-	return builder;
+const stringedResultsToBranches = async (args: {
+	intercepted: StringedInterceptorResults;
+	logConstructor: ILogMessageConstructor;
+}) => {
+	args.logConstructor.addLogHeader("stringedResultsToBranches");
+	args.logConstructor.createLogMessage({ subject: "Start" });
+	const responses = args.intercepted.responses;
+	if (!responses || !Array.isArray(responses))
+		throw Error(
+			args.logConstructor.createLogMessage({
+				subject: "intercepted Object has no responses to parse",
+			})
+		);
+
+	const responseDataArray = await Promise.all(
+		responses.map((response) => JSON.parse(response))
+	);
+
+	const filteredResponses = responseDataArray.reduce(
+		(accamulator: IUrlAndBody[], currentValue: any): IUrlAndBody[] => {
+			const url = currentValue.url;
+			const body = currentValue.body;
+			if (url === BRANCHES_XHR_RESPONSE_URL && typeof body === "object") {
+				accamulator.push({
+					url,
+					body,
+				});
+			}
+			return accamulator;
+		},
+		[]
+	);
+
+	if (!filteredResponses.length)
+		throw Error(
+			args.logConstructor.createLogMessage({
+				subject: "there are no valid responses",
+			})
+		);
+
+	const branches = filteredResponses[0].body.branches;
+	if (!branches || !Array.isArray(branches))
+		throw Error(
+			args.logConstructor.createLogMessage({
+				subject: "branches array is malformed",
+			})
+		);
+
+	args.logConstructor.createLogMessage({ subject: "End" });
+	args.logConstructor.popLogHeader();
+	return branches;
 };
