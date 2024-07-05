@@ -507,12 +507,12 @@ testStartUpdateThenContinue(true);
 // Ip Management: message handaling
 // ################################
 // ################################
-/*
+
 const {
 	testHandleStartEndpoint,
 } = require('./js-build/services/updateAppointments/workerThreads/ipManager/Tests/MessageHandler');
-*/
-// testHandleStartEndpoint();
+
+testHandleStartEndpoint();
 
 // ##############################################################################################
 // ### Shared  ##################################################################################
