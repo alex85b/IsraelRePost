@@ -1,6 +1,8 @@
-import { InlineScript, QueryDslQueryContainer } from '@elastic/elasticsearch/lib/api/types';
-import { UpdateByQueryBuilder } from '../../shared/requestBuilders/UpdateByQueryBuilder';
-import { INewServiceRecord } from '../../../../data/elastic/BranchModel';
+import {
+	InlineScript,
+	QueryDslQueryContainer,
+} from "@elastic/elasticsearch/lib/api/types";
+import { UpdateByQueryBuilder } from "../../shared/requestBuilders/UpdateByQueryBuilder";
 
 // ##############################################
 // ### Interfaces ###############################
@@ -12,8 +14,8 @@ export interface ICustomUpdateByQuery {
 }
 
 interface ISpecificServiceScript extends InlineScript {
-	source: 'ctx._source.services = params.updatedServicesArray';
-	lang: 'painless';
+	source: "ctx._source.services = params.updatedServicesArray";
+	lang: "painless";
 	params: {};
 }
 
@@ -35,8 +37,8 @@ export const updateBranchServicesRequest = (buildData: {
 		term: { _id: buildData.branchID },
 	};
 	const SPECIFIC_SERVICE_SCRIPT: ISpecificServiceScript = {
-		source: 'ctx._source.services = params.updatedServicesArray',
-		lang: 'painless',
+		source: "ctx._source.services = params.updatedServicesArray",
+		lang: "painless",
 		params: buildData.params,
 	};
 

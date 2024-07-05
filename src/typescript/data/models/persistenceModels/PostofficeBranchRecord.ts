@@ -1,13 +1,7 @@
 import {
 	IXhrBranch,
-	InterceptorResults,
 	StringedInterceptorResults,
 } from "../../../services/updateBranches/helpers/scrape/base/PuppeteerClient";
-import {
-	IDocumentBranch,
-	INewServiceRecord,
-	ISingleBranchQueryResponse,
-} from "../../elastic/BranchModel";
 import { branchServicesFromRecords } from "./PostofficeBranchServices";
 import {
 	isValidNumber,
@@ -15,7 +9,12 @@ import {
 	validateAndAssign,
 } from "../shared/FieldValidation";
 import { ILogMessageConstructor } from "../../../shared/classes/ConstructLogMessage";
-import { BRANCHES_XHR_RESPONSE_URL } from "../../../services/updateBranches/helpers/scrape/ScrapeBranches";
+import { BRANCHES_XHR_RESPONSE_URL } from "../../../shared/constants/ApiEndpoints";
+import {
+	INewServiceRecord,
+	IDocumentBranch,
+	ISingleBranchQueryResponse,
+} from "../../../api/elastic/branchServices/BranchServicesIndexing";
 
 // ###########################################################################################
 // ### Builder and Builder-product Interfaces ################################################
@@ -427,8 +426,11 @@ export const useSingleBranchQueryResponse: IBuildBranchFromSingleBranchResponse 
 Creates PostofficeBranchRecordBuilder using IXhrBranch*/
 // ####################################################
 
-export interface IBuildBranchFromRawXhrObject {
-	(data: { rawXhrObject: IXhrBranch }): IPostofficeBranchRecordBuilder;
+export interface IUseInterceptorResults {
+	(args: {
+		intercepted: StringedInterceptorResults;
+		logConstructor: ILogMessageConstructor;
+	}): Promise<IPostofficeBranchRecord[]>;
 }
 
 export interface IUrlAndBody {
@@ -436,10 +438,10 @@ export interface IUrlAndBody {
 	body: { branches: any };
 }
 
-export const useInterceptorResults = async (args: {
+export const useInterceptorResults: IUseInterceptorResults = async (args: {
 	intercepted: StringedInterceptorResults;
 	logConstructor: ILogMessageConstructor;
-}) => {
+}): Promise<IPostofficeBranchRecord[]> => {
 	args.logConstructor.addLogHeader("useInterceptorResults");
 	args.logConstructor.createLogMessage({ subject: "Start" });
 

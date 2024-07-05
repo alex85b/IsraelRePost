@@ -1,14 +1,13 @@
-import express, { Request, Response, NextFunction } from 'express';
-import dotenv from 'dotenv';
-import { splitBranchesArray } from '../common/SplitBranchesArray';
-import { BranchModule } from '../data/elastic/BranchModel';
+import express, { Request, Response, NextFunction } from "express";
+import dotenv from "dotenv";
+import { splitBranchesArray } from "../common/SplitBranchesArray";
 
 dotenv.config();
 
 const router = express.Router();
 
 router.post(
-	'/api/scrape/all-time-slots',
+	"/api/scrape/all-time-slots",
 	async (req: Request, res: Response, next: NextFunction) => {
 		try {
 			// const branches = new BranchModule();
@@ -36,7 +35,7 @@ router.post(
 			// const remainingBranches = manager.getWorkLoadArray();
 
 			// res.status(200).send({ workersStatus, workersReport, remainingBranches });
-			res.status(200).send('Done - Empty');
+			res.status(200).send("Done - Empty");
 		} catch (error) {
 			console.log(error);
 			next(error as Error);

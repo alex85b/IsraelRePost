@@ -2,9 +2,9 @@ import {
 	IDateError,
 	IErrorMapping,
 	IServiceError,
-} from '../../../api/elastic/updateErrors/UpdateErrorsIndexing';
-import { ISingleErrorQueryResponse } from '../../elastic/ErrorIndexService';
-import { isValidNumber, isValidString, validateAndAssign } from '../shared/FieldValidation';
+	ISingleErrorQueryResponse,
+} from "../../../api/elastic/updateErrors/UpdateErrorsIndexing";
+import { isValidString, validateAndAssign } from "../shared/FieldValidation";
 
 // ############################################################################################
 // ### Interfaces #############################################################################
@@ -13,8 +13,16 @@ import { isValidNumber, isValidString, validateAndAssign } from '../shared/Field
 export interface IPostofficeUpdateErrorBuilder {
 	addUserError(data: { userError: string }): this;
 	addServiceError(data: { serviceId?: string; serviceError: string }): this;
-	addDateError(data: { serviceId: string; calendarId?: string; datesError: string }): this;
-	addTimesError(data: { serviceId: string; calendarId: string; timesError: string }): this;
+	addDateError(data: {
+		serviceId: string;
+		calendarId?: string;
+		datesError: string;
+	}): this;
+	addTimesError(data: {
+		serviceId: string;
+		calendarId: string;
+		timesError: string;
+	}): this;
 	build(branchId: string): IPostofficeUpdateError;
 }
 
@@ -40,7 +48,9 @@ interface IUpdateErrorObject {
 // ### Builder Class ##########################################################################
 // ############################################################################################
 
-export class PostofficeUpdateErrorBuilder implements IPostofficeUpdateErrorBuilder {
+export class PostofficeUpdateErrorBuilder
+	implements IPostofficeUpdateErrorBuilder
+{
 	/*
 	Nested inner class that encapsulates Update-error record*/
 	private PostofficeUpdateError = class implements IPostofficeUpdateError {
@@ -59,7 +69,9 @@ export class PostofficeUpdateErrorBuilder implements IPostofficeUpdateErrorBuild
 		}
 
 		getErrorDocument(): IErrorMapping {
-			return JSON.parse(JSON.stringify(this.updateErrorDocument)) as IErrorMapping;
+			return JSON.parse(
+				JSON.stringify(this.updateErrorDocument)
+			) as IErrorMapping;
 		}
 
 		getBranchId(): string {
@@ -72,7 +84,8 @@ export class PostofficeUpdateErrorBuilder implements IPostofficeUpdateErrorBuild
 
 		toString(): string {
 			return (
-				`Branch ID:${this.branchId} ` + JSON.stringify(this.updateErrorDocument, null, 3)
+				`Branch ID:${this.branchId} ` +
+				JSON.stringify(this.updateErrorDocument, null, 3)
 			);
 		}
 	};
@@ -83,15 +96,15 @@ export class PostofficeUpdateErrorBuilder implements IPostofficeUpdateErrorBuild
 
 	// This is a demo.
 	private demoErrorObject: IUpdateErrorObject = {
-		userError: '',
+		userError: "",
 		services: {
-			key1: { serviceId: 'key1', serviceError: 'E1', dates: {} },
+			key1: { serviceId: "key1", serviceError: "E1", dates: {} },
 			key2: {
-				serviceId: 'key2',
-				serviceError: 'E2',
+				serviceId: "key2",
+				serviceError: "E2",
 				dates: {
-					DKey1: { calendarId: 'Dkey1', datesError: 'DE1', timesError: '' },
-					DKey2: { calendarId: 'Dkey2', datesError: '', timesError: 'TE1' },
+					DKey1: { calendarId: "Dkey1", datesError: "DE1", timesError: "" },
+					DKey2: { calendarId: "Dkey2", datesError: "", timesError: "TE1" },
 				},
 			},
 		},
@@ -99,7 +112,7 @@ export class PostofficeUpdateErrorBuilder implements IPostofficeUpdateErrorBuild
 
 	constructor() {
 		this.updateErrorObject = {
-			userError: '',
+			userError: "",
 			services: {},
 		};
 		this.faults = [];
@@ -112,16 +125,16 @@ export class PostofficeUpdateErrorBuilder implements IPostofficeUpdateErrorBuild
 			value: data.userError,
 			validatorFunction: isValidString,
 			assignTarget: this.updateErrorObject,
-			assignKey: 'userError',
+			assignKey: "userError",
 			faults: this.faults,
-			errorMessage: 'userError string is invalid',
+			errorMessage: "userError string is invalid",
 		});
 		return this;
 	}
 
 	addServiceError(data: { serviceId?: string; serviceError: string }) {
 		this.errorCounter++;
-		let actualId = 'place-holder';
+		let actualId = "place-holder";
 		if (isValidString(data.serviceId)) actualId = data.serviceId!;
 		const vServiceError = isValidString(data.serviceError);
 		if (vServiceError) {
@@ -136,9 +149,13 @@ export class PostofficeUpdateErrorBuilder implements IPostofficeUpdateErrorBuild
 		return this;
 	}
 
-	addDateError(data: { serviceId: string; calendarId?: string; datesError: string }) {
+	addDateError(data: {
+		serviceId: string;
+		calendarId?: string;
+		datesError: string;
+	}) {
 		this.errorCounter++;
-		let actualDateId = 'place-holder';
+		let actualDateId = "place-holder";
 		if (isValidString(data.calendarId)) actualDateId = data.calendarId!;
 		const vServiceId = isValidString(data.serviceId);
 		const vDatesError = isValidString(data.datesError);
@@ -146,20 +163,23 @@ export class PostofficeUpdateErrorBuilder implements IPostofficeUpdateErrorBuild
 			if (!this.updateErrorObject.services[data.serviceId]) {
 				this.updateErrorObject.services[data.serviceId] = {
 					serviceId: data.serviceId,
-					serviceError: '',
+					serviceError: "",
 					dates: {},
 				};
 			}
-			if (!this.updateErrorObject.services[data.serviceId]?.dates[actualDateId]) {
+			if (
+				!this.updateErrorObject.services[data.serviceId]?.dates[actualDateId]
+			) {
 				this.updateErrorObject.services[data.serviceId].dates[actualDateId] = {
 					calendarId: actualDateId,
 					datesError: data.datesError,
-					timesError: '',
+					timesError: "",
 				};
 				return this;
 			}
-			this.updateErrorObject.services[data.serviceId].dates[actualDateId].datesError =
-				data.datesError;
+			this.updateErrorObject.services[data.serviceId].dates[
+				actualDateId
+			].datesError = data.datesError;
 			return this;
 		}
 		if (!vServiceId) this.faults.push(`invalid serviceId`);
@@ -167,7 +187,11 @@ export class PostofficeUpdateErrorBuilder implements IPostofficeUpdateErrorBuild
 		return this;
 	}
 
-	addTimesError(data: { serviceId: string; calendarId: string; timesError: string }) {
+	addTimesError(data: {
+		serviceId: string;
+		calendarId: string;
+		timesError: string;
+	}) {
 		this.errorCounter++;
 		const vServiceId = isValidString(data.serviceId);
 		const vCalendarId = isValidString(data.calendarId);
@@ -178,20 +202,22 @@ export class PostofficeUpdateErrorBuilder implements IPostofficeUpdateErrorBuild
 			if (!service) {
 				this.updateErrorObject.services[data.serviceId] = {
 					serviceId: data.serviceId,
-					serviceError: '',
+					serviceError: "",
 					dates: {},
 				};
 			}
 			if (!date) {
-				this.updateErrorObject.services[data.serviceId].dates[data.calendarId] = {
-					calendarId: data.calendarId,
-					datesError: '',
-					timesError: data.timesError,
-				};
+				this.updateErrorObject.services[data.serviceId].dates[data.calendarId] =
+					{
+						calendarId: data.calendarId,
+						datesError: "",
+						timesError: data.timesError,
+					};
 				return this;
 			}
-			this.updateErrorObject.services[data.serviceId].dates[data.calendarId].timesError =
-				data.timesError;
+			this.updateErrorObject.services[data.serviceId].dates[
+				data.calendarId
+			].timesError = data.timesError;
 			return this;
 		}
 		if (!vServiceId) this.faults.push(`invalid serviceId`);
@@ -205,15 +231,19 @@ export class PostofficeUpdateErrorBuilder implements IPostofficeUpdateErrorBuild
 			userError: this.updateErrorObject.userError,
 			services: [],
 		};
-		errorRecord.services = Object.keys(this.updateErrorObject.services).map((sId) => {
-			const tempIService = this.updateErrorObject.services[sId];
-			const newService: IServiceError = {
-				serviceId: tempIService.serviceId,
-				serviceError: tempIService.serviceError,
-				dates: Object.keys(tempIService.dates).map((dId) => tempIService.dates[dId]),
-			};
-			return newService;
-		});
+		errorRecord.services = Object.keys(this.updateErrorObject.services).map(
+			(sId) => {
+				const tempIService = this.updateErrorObject.services[sId];
+				const newService: IServiceError = {
+					serviceId: tempIService.serviceId,
+					serviceError: tempIService.serviceError,
+					dates: Object.keys(tempIService.dates).map(
+						(dId) => tempIService.dates[dId]
+					),
+				};
+				return newService;
+			}
+		);
 		return errorRecord;
 	}
 
@@ -221,10 +251,10 @@ export class PostofficeUpdateErrorBuilder implements IPostofficeUpdateErrorBuild
 		if (!isValidString(branchId)) this.faults.push(`invalid branchId`);
 		if (this.faults.length)
 			throw Error(
-				`[UpdateErrorRecord] ErrorRecord-${branchId ?? 'Faulty ID'} Faults : ` +
+				`[UpdateErrorRecord] ErrorRecord-${branchId ?? "Faulty ID"} Faults : ` +
 					JSON.stringify(this.updateErrorObject, null, 3) +
-					' ' +
-					this.faults.join(' | ')
+					" " +
+					this.faults.join(" | ")
 			);
 		const errorRecord: IErrorMapping = this.convertToIErrorMapping();
 		return new this.PostofficeUpdateError({
@@ -243,7 +273,8 @@ export const useSingleErrorQueryResponse = (data: {
 	rawQueryResponse: ISingleErrorQueryResponse;
 }) => {
 	const source = data?.rawQueryResponse?._source;
-	const builder: IPostofficeUpdateErrorBuilder = new PostofficeUpdateErrorBuilder();
+	const builder: IPostofficeUpdateErrorBuilder =
+		new PostofficeUpdateErrorBuilder();
 	builder.addUserError({ userError: source?.userError });
 	if (Array.isArray(source.services) && source.services.length) {
 		source.services.forEach((service) => {

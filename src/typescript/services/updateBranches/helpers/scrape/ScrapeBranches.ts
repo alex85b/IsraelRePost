@@ -1,24 +1,18 @@
 import { HTTPResponse } from "puppeteer";
-import * as fs from "fs";
 
 import {
-	IXhrLoadBranches,
-	InterceptorResults,
 	NetworkTrafficCapture,
 	RequestHandler,
 	ResponseHandler,
 	StringedInterceptorResults,
 	buildPuppeteerBrowser,
 	buildPuppeteerPage,
-	extractHtmlToken,
 	navigateToUrl,
 } from "./base/PuppeteerClient";
 import { ConstructLogMessage } from "../../../../shared/classes/ConstructLogMessage";
 import { URLs } from "../../../../common/urls";
+import { BRANCHES_XHR_RESPONSE_URL } from "../../../../shared/constants/ApiEndpoints";
 
-const MODULE_NAME = "Scrape Branches";
-export const BRANCHES_XHR_RESPONSE_URL =
-	"https://israelpost.co.il/umbraco/Surface/Branches/LoadBranches";
 const skip: RequestHandler = () => {
 	return Promise.resolve(false);
 };

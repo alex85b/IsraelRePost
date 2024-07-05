@@ -1,20 +1,26 @@
-import { IBranchIdQnomyCodePair } from '../../../../data/models/persistenceModels/PostofficeBranchIdCodePair';
+import { IBranchIdQnomyCodePair } from "../../../../data/models/persistenceModels/PostofficeBranchIdCodePair";
 import {
 	IPostofficeBranchServicesBuilder,
 	PostofficeBranchServicesBuilder,
-} from '../../../../data/models/persistenceModels/PostofficeBranchServices';
+} from "../../../../data/models/persistenceModels/PostofficeBranchServices";
 import {
 	IPostofficeUpdateErrorBuilder,
 	PostofficeUpdateErrorBuilder,
-} from '../../../../data/models/persistenceModels/UpdateErrorRecord';
-import { IPostofficeBranchesRepository } from '../../../../data/repositories/PostofficeBranchesRepository';
-import { IUpdateErrorRecordsRepository } from '../../../../data/repositories/UpdateErrorRecordsRepository';
+} from "../../../../data/models/persistenceModels/UpdateErrorRecord";
+import { IPostofficeBranchesRepository } from "../../../../data/repositories/PostofficeBranchesRepository";
+import { IUpdateErrorRecordsRepository } from "../../../../data/repositories/UpdateErrorRecordsRepository";
 import {
 	ILogMessageConstructor,
 	ConstructLogMessage,
-} from '../../../../shared/classes/ConstructLogMessage';
-import { IRequestTracker, RequestTrackerReason } from '../consumptionTracker/RequestTracker';
-import { CreateUserNode, IPostofficeRequestNode } from './PostofficeRequestNodes';
+} from "../../../../shared/classes/ConstructLogMessage";
+import {
+	IRequestTracker,
+	RequestTrackerReason,
+} from "../consumptionTracker/RequestTracker";
+import {
+	CreateUserNode,
+	IPostofficeRequestNode,
+} from "./PostofficeRequestNodes";
 
 export interface IConstructServicesRecord {
 	constructRecord(args: {
@@ -27,7 +33,7 @@ export interface IConstructServicesRecord {
 	}>;
 
 	continuePausedConstruction(args: { endpointProxyString?: string }): Promise<{
-		status: RequestTrackerReason | 'empty queue';
+		status: RequestTrackerReason | "empty queue";
 		currentIdQnomycode: IBranchIdQnomyCodePair | undefined;
 		servicesBuilder: IPostofficeBranchServicesBuilder;
 		errorsBuilder: IPostofficeUpdateErrorBuilder;
@@ -51,7 +57,7 @@ export class ConstructServicesRecord implements IConstructServicesRecord {
 		this.requestNodesQueue = [];
 		this.buildErrors = new PostofficeUpdateErrorBuilder();
 		this.buildServices = new PostofficeBranchServicesBuilder();
-		this.messageBuilder = new ConstructLogMessage(['ConstructServicesRecord']);
+		this.messageBuilder = new ConstructLogMessage(["ConstructServicesRecord"]);
 	}
 
 	async constructRecord(args: {
@@ -62,38 +68,49 @@ export class ConstructServicesRecord implements IConstructServicesRecord {
 		servicesBuilder: IPostofficeBranchServicesBuilder;
 		errorsBuilder: IPostofficeUpdateErrorBuilder;
 	}> {
-		this.messageBuilder.addLogHeader('constructRecord');
-		this.serviceIdAndQnomycode = args.serviceIdAndQnomycode;
-		this.setupQueue(args);
-		const response = await this.runBfs();
-		return {
-			status: response,
-			servicesBuilder: this.buildServices,
-			errorsBuilder: this.buildErrors,
-		};
+		this.messageBuilder.addLogHeader("constructRecord");
+		try {
+			this.serviceIdAndQnomycode = args.serviceIdAndQnomycode;
+			this.setupQueue(args);
+			const response = await this.runBfs();
+			return {
+				status: response,
+				servicesBuilder: this.buildServices,
+				errorsBuilder: this.buildErrors,
+			};
+		} finally {
+			this.messageBuilder.popLogHeader();
+		}
 	}
 
-	async continuePausedConstruction(args: { endpointProxyString?: string }): Promise<{
-		status: RequestTrackerReason | 'empty queue';
+	async continuePausedConstruction(args: {
+		endpointProxyString?: string;
+	}): Promise<{
+		status: RequestTrackerReason | "empty queue";
 		currentIdQnomycode: IBranchIdQnomyCodePair | undefined;
 		servicesBuilder: IPostofficeBranchServicesBuilder;
 		errorsBuilder: IPostofficeUpdateErrorBuilder;
 	}> {
-		if (this.requestNodesQueue.length == 0) {
+		this.messageBuilder.addLogHeader("continuePausedConstruction");
+		try {
+			if (this.requestNodesQueue.length == 0) {
+				return {
+					status: "empty queue",
+					currentIdQnomycode: this.serviceIdAndQnomycode,
+					servicesBuilder: this.buildServices,
+					errorsBuilder: this.buildErrors,
+				};
+			}
+			const response = await this.runBfs();
 			return {
-				status: 'empty queue',
+				status: response,
 				currentIdQnomycode: this.serviceIdAndQnomycode,
 				servicesBuilder: this.buildServices,
 				errorsBuilder: this.buildErrors,
 			};
+		} finally {
+			this.messageBuilder.popLogHeader();
 		}
-		const response = await this.runBfs();
-		return {
-			status: response,
-			currentIdQnomycode: this.serviceIdAndQnomycode,
-			servicesBuilder: this.buildServices,
-			errorsBuilder: this.buildErrors,
-		};
 	}
 
 	private setupQueue(args: {
@@ -115,7 +132,7 @@ export class ConstructServicesRecord implements IConstructServicesRecord {
 			new CreateUserNode({
 				servicesModelBuilder: this.buildServices,
 				errorModelBuilder: this.buildErrors,
-				qnomyCodeLocationId: String(args.serviceIdAndQnomycode.qnomycode) ?? '',
+				qnomyCodeLocationId: String(args.serviceIdAndQnomycode.qnomycode) ?? "",
 				endpointProxyString: args.endpointProxyString,
 			})
 		);
@@ -135,6 +152,6 @@ export class ConstructServicesRecord implements IConstructServicesRecord {
 				this.requestNodesQueue.push(childNodes[index]);
 			}
 		}
-		return 'OK';
+		return "OK";
 	}
 }

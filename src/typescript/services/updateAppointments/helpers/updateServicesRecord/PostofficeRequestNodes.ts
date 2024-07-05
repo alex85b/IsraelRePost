@@ -1,32 +1,32 @@
-import { omit } from '../../../../api/elastic/base/ElasticsearchUtils';
-import { postofficeApiCall } from '../../../../api/postOfficeCalls/base/PostofficeApiCall';
-import { IPostofficeRequestAxiosConfig } from '../../../../api/postOfficeCalls/base/PostofficeRequestConfig';
-import { buildUserCallConfig } from '../../../../api/postOfficeCalls/requestConfigs/CreateUserConfig';
-import { buildDatesCallConfig } from '../../../../api/postOfficeCalls/requestConfigs/FetchDatesConfig';
-import { buildServicesCallConfig } from '../../../../api/postOfficeCalls/requestConfigs/FetchServicesConfig';
-import { buildTimesCallConfig } from '../../../../api/postOfficeCalls/requestConfigs/FetchTimesConfig';
+import { omit } from "../../../../api/elastic/base/ElasticsearchUtils";
+import { postofficeApiCall } from "../../../../api/postOfficeCalls/base/PostofficeApiCall";
+import { IPostofficeRequestAxiosConfig } from "../../../../api/postOfficeCalls/base/PostofficeRequestConfig";
+import { buildUserCallConfig } from "../../../../api/postOfficeCalls/requestConfigs/CreateUserConfig";
+import { buildDatesCallConfig } from "../../../../api/postOfficeCalls/requestConfigs/FetchDatesConfig";
+import { buildServicesCallConfig } from "../../../../api/postOfficeCalls/requestConfigs/FetchServicesConfig";
+import { buildTimesCallConfig } from "../../../../api/postOfficeCalls/requestConfigs/FetchTimesConfig";
 import {
 	IExpectedDatesResponse,
 	IRequestDatesResponse,
 	RequestDatesResponse,
-} from '../../../../data/models/dataTransferModels/postofficeResponses/RequestDatesResponse';
+} from "../../../../data/models/dataTransferModels/postofficeResponses/RequestDatesResponse";
 import {
 	IExpectedServiceResponse,
 	IRequestServicesResponse,
 	RequestServicesResponse,
-} from '../../../../data/models/dataTransferModels/postofficeResponses/RequestServicesResponse';
+} from "../../../../data/models/dataTransferModels/postofficeResponses/RequestServicesResponse";
 import {
 	IExpectedTimesResponse,
 	IRequestTimesResponse,
 	RequestTimesResponse,
-} from '../../../../data/models/dataTransferModels/postofficeResponses/RequestTimesResponse';
+} from "../../../../data/models/dataTransferModels/postofficeResponses/RequestTimesResponse";
 import {
 	IExpectedUserResponse,
 	IRequestUserResponse,
 	RequestUserResponse,
-} from '../../../../data/models/dataTransferModels/postofficeResponses/RequestUserResponse';
-import { IPostofficeBranchServicesBuilder } from '../../../../data/models/persistenceModels/PostofficeBranchServices';
-import { IPostofficeUpdateErrorBuilder } from '../../../../data/models/persistenceModels/UpdateErrorRecord';
+} from "../../../../data/models/dataTransferModels/postofficeResponses/RequestUserResponse";
+import { IPostofficeBranchServicesBuilder } from "../../../../data/models/persistenceModels/PostofficeBranchServices";
+import { IPostofficeUpdateErrorBuilder } from "../../../../data/models/persistenceModels/UpdateErrorRecord";
 
 /*
 This Module will be a demo of using nodes encapsulate a multilevel "get services" process.
@@ -69,12 +69,12 @@ export class CreateUserNode implements IPostofficeRequestNode {
 	toString(): string {
 		const { ARRAffinity, ARRAffinitySameSite, GCLB, CentralJWTCookie } =
 			this.requestUserResponse?.getCookies() ?? {};
-		const token = this.requestUserResponse?.getToken() ?? '';
-		return `\nARRAffinity : ${ARRAffinity ?? ''}
-		\nARRAffinitySameSite : ${ARRAffinitySameSite ?? ''}
-		\nGCLB : ${GCLB ?? ''}
-		\nCentralJWTCookie : ${CentralJWTCookie ?? ''}
-		\nToken : ${token ?? ''}`;
+		const token = this.requestUserResponse?.getToken() ?? "";
+		return `\nARRAffinity : ${ARRAffinity ?? ""}
+		\nARRAffinitySameSite : ${ARRAffinitySameSite ?? ""}
+		\nGCLB : ${GCLB ?? ""}
+		\nCentralJWTCookie : ${CentralJWTCookie ?? ""}
+		\nToken : ${token ?? ""}`;
 	}
 
 	async performRequest(): Promise<IPostofficeRequestNode[]> {
@@ -82,7 +82,9 @@ export class CreateUserNode implements IPostofficeRequestNode {
 			this.endpointProxyString
 		);
 		try {
-			const rawResponse = await postofficeApiCall<IExpectedUserResponse>(axiosConfig);
+			const rawResponse = await postofficeApiCall<IExpectedUserResponse>(
+				axiosConfig
+			);
 			this.requestUserResponse = new RequestUserResponse.Builder()
 				.useAxiosResponse(rawResponse)
 				.build();
@@ -96,8 +98,10 @@ export class CreateUserNode implements IPostofficeRequestNode {
 				}),
 			];
 		} catch (error) {
-			const partialError = omit(error as Error, 'stack');
-			this.errorModelBuilder.addUserError({ userError: JSON.stringify(partialError, null) });
+			const partialError = omit(error as Error, "stack");
+			this.errorModelBuilder.addUserError({
+				userError: JSON.stringify(partialError, null),
+			});
 			return [];
 		}
 	}
@@ -137,9 +141,13 @@ export class FetchServicesNode implements IPostofficeRequestNode {
 		});
 		const datesRequestNodes: IPostofficeRequestNode[] = [];
 		try {
-			const rawResponse = await postofficeApiCall<IExpectedServiceResponse>(axiosConfig);
+			const rawResponse = await postofficeApiCall<IExpectedServiceResponse>(
+				axiosConfig
+			);
 			const requestServicesResponse: IRequestServicesResponse =
-				new RequestServicesResponse.Builder().useAxiosResponse(rawResponse).build();
+				new RequestServicesResponse.Builder()
+					.useAxiosResponse(rawResponse)
+					.build();
 			const servicesArray = requestServicesResponse.getServices();
 
 			servicesArray.forEach((service) => {
@@ -150,7 +158,7 @@ export class FetchServicesNode implements IPostofficeRequestNode {
 				});
 				datesRequestNodes.push(
 					new FetchDatesNode({
-						serviceId: String(service.serviceId ?? ''),
+						serviceId: String(service.serviceId ?? ""),
 						errorModelBuilder: this.errorModelBuilder,
 						servicesModelBuilder: this.servicesModelBuilder,
 						requestUserResponse: this.requestUserResponse,
@@ -202,10 +210,13 @@ export class FetchDatesNode implements IPostofficeRequestNode {
 		});
 		const timesRequestNodes: IPostofficeRequestNode[] = [];
 		try {
-			const rawResponse = await postofficeApiCall<IExpectedDatesResponse>(axiosConfig);
-			const requestDatesResponse: IRequestDatesResponse = new RequestDatesResponse.Builder()
-				.useAxiosResponse(rawResponse)
-				.build();
+			const rawResponse = await postofficeApiCall<IExpectedDatesResponse>(
+				axiosConfig
+			);
+			const requestDatesResponse: IRequestDatesResponse =
+				new RequestDatesResponse.Builder()
+					.useAxiosResponse(rawResponse)
+					.build();
 			const datesArray = requestDatesResponse.getDates();
 			datesArray.forEach((date) => {
 				const { calendarDate, calendarId } = date;
@@ -216,7 +227,7 @@ export class FetchDatesNode implements IPostofficeRequestNode {
 				});
 				timesRequestNodes.push(
 					new FetchTimesNode({
-						serviceId: String(this.serviceId ?? ''),
+						serviceId: String(this.serviceId ?? ""),
 						errorModelBuilder: this.errorModelBuilder,
 						servicesModelBuilder: this.servicesModelBuilder,
 						requestUserResponse: this.requestUserResponse,
@@ -273,10 +284,13 @@ export class FetchTimesNode implements IPostofficeRequestNode {
 			endpointProxyString: this.endpointProxyString,
 		});
 		try {
-			const rawResponse = await postofficeApiCall<IExpectedTimesResponse>(axiosConfig);
-			const requestDatesResponse: IRequestTimesResponse = new RequestTimesResponse.Builder()
-				.useAxiosResponse(rawResponse)
-				.build();
+			const rawResponse = await postofficeApiCall<IExpectedTimesResponse>(
+				axiosConfig
+			);
+			const requestDatesResponse: IRequestTimesResponse =
+				new RequestTimesResponse.Builder()
+					.useAxiosResponse(rawResponse)
+					.build();
 			this.servicesModelBuilder.addHours({
 				serviceId: this.serviceId,
 				calendarId: this.calendarId,

@@ -1,10 +1,10 @@
-import { AxiosResponse } from 'axios';
-import { IElasticBulkResponse } from '../../../elastic/BaseElastic';
-import { extractResponseData } from './shared/ExtractResponseData';
+import { AxiosResponse } from "axios";
+import { extractResponseData } from "./shared/ExtractResponseData";
+import { IElasticBulkResponse } from "../../../../api/elastic/base/ElasticsearchClient";
 
 export interface IBulkCreateUpdateResponseData {
 	branchID: string;
-	status: 'created' | 'updated' | 'failed';
+	status: "created" | "updated" | "failed";
 }
 
 export interface IBulkCreateUpdateResponse {
@@ -38,23 +38,29 @@ export class BulkCreateUpdateResponse implements IBulkCreateUpdateResponse {
 
 	toStringSuccessful() {
 		return (
-			'[Successful]' +
+			"[Successful]" +
 			this.successful
 				.map((item) => {
-					return [`Branch ID: ${item.branchID}`, `Status : ${item.status}`].join('\n');
+					return [
+						`Branch ID: ${item.branchID}`,
+						`Status : ${item.status}`,
+					].join("\n");
 				})
-				.join('\n\n')
+				.join("\n\n")
 		);
 	}
 
 	toStringFailed() {
 		return (
-			'[Failed]' +
+			"[Failed]" +
 			this.failed
 				.map((item) => {
-					return [`Branch ID: ${item.branchID}`, `Status : ${item.status}`].join('\n');
+					return [
+						`Branch ID: ${item.branchID}`,
+						`Status : ${item.status}`,
+					].join("\n");
 				})
-				.join('\n\n')
+				.join("\n\n")
 		);
 	}
 
@@ -82,9 +88,13 @@ export class BulkCreateUpdateResponse implements IBulkCreateUpdateResponse {
 		private createdCounter = 0;
 
 		useAxiosResponse(
-			rawResponse: Omit<AxiosResponse<IElasticBulkResponse, any>, 'request' | 'config'>
+			rawResponse: Omit<
+				AxiosResponse<IElasticBulkResponse, any>,
+				"request" | "config"
+			>
 		) {
-			const bulkResponse = extractResponseData<IElasticBulkResponse>(rawResponse);
+			const bulkResponse =
+				extractResponseData<IElasticBulkResponse>(rawResponse);
 			const { items, errors } = bulkResponse;
 
 			items.forEach((item) => {
@@ -97,12 +107,15 @@ export class BulkCreateUpdateResponse implements IBulkCreateUpdateResponse {
 
 				if (faults.length)
 					throw Error(
-						'[BulkCreateUpdateResponse] : ' +
-							faults.join(' | ') +
+						"[BulkCreateUpdateResponse] : " +
+							faults.join(" | ") +
 							JSON.stringify(item, null, 3)
 					);
 
-				if (item?.index?._shards.successful > 0 && item?.index?._shards.failed === 0) {
+				if (
+					item?.index?._shards.successful > 0 &&
+					item?.index?._shards.failed === 0
+				) {
 					this.successful.push({
 						branchID: item?.index?._id,
 						status: item?.index?.result,
@@ -111,10 +124,10 @@ export class BulkCreateUpdateResponse implements IBulkCreateUpdateResponse {
 					item?.index?._shards.successful === 0 &&
 					item?.index?._shards.failed > 0
 				) {
-					this.failed.push({ branchID: item?.index?._id, status: 'failed' });
+					this.failed.push({ branchID: item?.index?._id, status: "failed" });
 				} else
 					throw Error(
-						'[BulkCreateUpdateResponse] items success\fail count is invalid : ' +
+						"[BulkCreateUpdateResponse] items success\fail count is invalid : " +
 							JSON.stringify(item, null, 3)
 					);
 			});
@@ -128,13 +141,15 @@ export class BulkCreateUpdateResponse implements IBulkCreateUpdateResponse {
 			failed: number;
 		}): string[] {
 			const faults: string[] = [];
-			if (typeof data.id !== 'string' || !data.id.length) faults.push('item id is invalid');
-			if (data.result == 'created') this.createdCounter++;
-			else if (data.result == 'updated') this.updatedCounter++;
-			else faults.push('item result is invalid');
-			if (typeof data.successful !== 'number')
-				faults.push('item successful count is invalid');
-			if (typeof data.failed !== 'number') faults.push('item failed count is invalid');
+			if (typeof data.id !== "string" || !data.id.length)
+				faults.push("item id is invalid");
+			if (data.result == "created") this.createdCounter++;
+			else if (data.result == "updated") this.updatedCounter++;
+			else faults.push("item result is invalid");
+			if (typeof data.successful !== "number")
+				faults.push("item successful count is invalid");
+			if (typeof data.failed !== "number")
+				faults.push("item failed count is invalid");
 			return faults;
 		}
 

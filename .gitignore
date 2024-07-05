@@ -5,3 +5,7 @@ elastic-cert
 src/js-build
 SmartProxy.txt
 WebShare.txt
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/

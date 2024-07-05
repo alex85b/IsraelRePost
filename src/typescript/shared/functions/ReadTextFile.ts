@@ -1,6 +1,6 @@
-import fs from 'fs';
-import * as readline from 'readline';
-import * as dotenv from 'dotenv';
+import fs from "fs";
+import * as readline from "readline";
+import * as dotenv from "dotenv";
 dotenv.config();
 
 interface IFileReader {
@@ -20,7 +20,7 @@ export const readLocalFile: IFileReader = async (args: {
 		crlfDelay: Infinity,
 	});
 
-	lineReader.on('line', (line) => {
+	lineReader.on("line", (line) => {
 		if (args.lineSplit) {
 			const lineArray = line.split(args.lineSplit);
 			fileLines.push(lineArray);
@@ -30,7 +30,7 @@ export const readLocalFile: IFileReader = async (args: {
 	});
 
 	return new Promise<string[][]>((resolve) => {
-		lineReader.on('close', () => {
+		lineReader.on("close", () => {
 			resolve(fileLines);
 		});
 	});

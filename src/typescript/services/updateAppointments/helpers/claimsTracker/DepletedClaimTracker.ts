@@ -1,8 +1,11 @@
 import {
 	SharedMemoryBuilder,
 	getMemoryViewParameters,
-} from '../../../../data/models/dataTransferModels/ThreadSharedMemory';
-import { AtomicArrayWriter, IAtomicArrayWriter } from '../concurrency/AtomicArrayWriter';
+} from "../../../../data/models/dataTransferModels/ThreadSharedMemory";
+import {
+	AtomicArrayWriter,
+	IAtomicArrayWriter,
+} from "../concurrency/AtomicArrayWriter";
 
 export type DepletedClaimsTrackerResponse = {
 	authorized: boolean;
@@ -22,7 +25,8 @@ export class DepletedClaimsTracker implements ITrackDepletedClaims {
 	private lastRequestNumber: number;
 
 	constructor(args?: { synchronization: IAtomicArrayWriter }) {
-		if (args && args.synchronization) this.synchronization = args.synchronization;
+		if (args && args.synchronization)
+			this.synchronization = args.synchronization;
 		else {
 			this.synchronization = new AtomicArrayWriter({
 				memoryView: new SharedMemoryBuilder()
@@ -37,7 +41,10 @@ export class DepletedClaimsTracker implements ITrackDepletedClaims {
 	}
 
 	track(): DepletedClaimsTrackerResponse {
-		const incrementResult = this.synchronization.addToCellValue({ cell: 0, value: 1 });
+		const incrementResult = this.synchronization.addToCellValue({
+			cell: 0,
+			value: 1,
+		});
 
 		/*
         Current value after increment must be a bigger number, unless overflow ocurred*/

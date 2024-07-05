@@ -1,15 +1,26 @@
+import { useInterceptorResults } from "../../data/models/persistenceModels/PostofficeBranchRecord";
 import {
 	IPostofficeBranchesRepository,
 	PostofficeBranchesRepository,
-} from '../../data/repositories/PostofficeBranchesRepository';
-import { filterByMakeAppointments } from './helpers/scrape/FilterBranches';
-import { scrapeXhrObjects } from './helpers/scrape/ScrapeBranches';
+} from "../../data/repositories/PostofficeBranchesRepository";
+import { ConstructLogMessage } from "../../shared/classes/ConstructLogMessage";
+import { filterByMakeAppointments } from "./helpers/scrape/FilterBranches";
+import { scrapeBrowserResponses } from "./helpers/scrape/ScrapeBranches";
 
 export const addUpdateBranches = async () => {
-	const branchesWithoutAppointments = await fetchNewBranches();
-	const branchRepo: IPostofficeBranchesRepository = new PostofficeBranchesRepository();
-	const bulkAddResponse = await branchRepo.writeUpdateBranches(branchesWithoutAppointments);
-	console.log('[addUpdateBranches] bulkAddResponse : ', bulkAddResponse.countResponseItems());
+	const filteredBranches = await fetchNewBranches();
+
+	const branchRepo: IPostofficeBranchesRepository =
+		new PostofficeBranchesRepository();
+
+	const bulkAddResponse = await branchRepo.writeUpdateBranches(
+		filteredBranches
+	);
+
+	console.log(
+		"[addUpdateBranches] bulkAddResponse : ",
+		bulkAddResponse.countResponseItems()
+	);
 	return {
 		successful: bulkAddResponse.getSuccessful(),
 		failed: bulkAddResponse.getFailed(),
@@ -18,9 +29,18 @@ export const addUpdateBranches = async () => {
 
 export const deleteAddBranches = async () => {
 	const branchesWithoutAppointments = await fetchNewBranches();
-	const branchRepo: IPostofficeBranchesRepository = new PostofficeBranchesRepository();
-	const bulkAddResponse = await branchRepo.deleteWriteBranches(branchesWithoutAppointments);
-	console.log('[deleteAddBranches] bulkAddResponse : ', bulkAddResponse.countResponseItems());
+
+	const branchRepo: IPostofficeBranchesRepository =
+		new PostofficeBranchesRepository();
+
+	const bulkAddResponse = await branchRepo.deleteWriteBranches(
+		branchesWithoutAppointments
+	);
+
+	console.log(
+		"[deleteAddBranches] bulkAddResponse : ",
+		bulkAddResponse.countResponseItems()
+	);
 	return {
 		successful: bulkAddResponse.getSuccessful(),
 		failed: bulkAddResponse.getFailed(),
@@ -28,6 +48,10 @@ export const deleteAddBranches = async () => {
 };
 
 const fetchNewBranches = async () => {
-	const unfilteredBranches = await scrapeXhrObjects();
-	return filterByMakeAppointments(unfilteredBranches);
+	const responses = await scrapeBrowserResponses();
+	const branchRecords = await useInterceptorResults({
+		intercepted: responses,
+		logConstructor: new ConstructLogMessage(["fetchNewBranches"]),
+	});
+	return filterByMakeAppointments({ branchRecords });
 };
