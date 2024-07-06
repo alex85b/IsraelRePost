@@ -1,4 +1,4 @@
-import { ISingleBranchQueryResponse } from '../data/elastic/BranchModel';
+import { ISingleBranchQueryResponse } from "../api/elastic/branchServices/BranchServicesIndexing";
 
 export const splitBranchesArray = (
 	branchesArray: ISingleBranchQueryResponse[],
@@ -8,6 +8,6 @@ export const splitBranchesArray = (
 	for (let i = 0; i < branchesArray.length; i += chunkSize) {
 		result.push(branchesArray.slice(i, i + chunkSize));
 	}
-	console.log('[splitArray] Done');
+	console.log("[splitArray] Done");
 	return result;
 };

@@ -1,191 +1,539 @@
 console.log('### Initiate Tests of IsraelRePost ###');
 
-const { testE2E } = require('./js-build/test/threads/e2e');
-testE2E(false);
-
 // ##############################################################################################
-// ### Test Generators of proxy endpoints #######################################################
+// ### Elastic APIs #############################################################################
 // ##############################################################################################
 
+
+// Basic Elasticsearch 'Client' for communication using https
+// ##########################################################
+// ##########################################################
 /*
-Classes that translate various (and differently constructed) proxy data file,
-Into an uniform object*/
-// ##########################################################################
-// ##########################################################################
-
-const {
-	smartProxyObjects,
-	webShareProxyObject,
-} = require('./js-build/test/proxy-collection/testProxyObjects');
-
-smartProxyObjects(false);
-webShareProxyObject(false);
-
-// ##############################################################################################
-// ### Test Israel-post APIs ####################################################################
-// ##############################################################################################
-
-/*
-Fetch an Israel-post's branch appointments,
-Chain a series of requests to Israel-post APIs*/
-// #############################################
-// #############################################
-const { testAPIs } = require('./js-build/test/suites/IsraelPostsAPIs');
-
-testAPIs(false);
-
-// ##############################################################################################
-// ### Test Nodes That Envelops Israel-post APIs ################################################
-// ##############################################################################################
-
-const { testNodes } = require('./js-build/test/suites/RequestNodes');
-
-testNodes(false);
-
-// ##############################################################################################
-// ### Test Counters (Atomic and Mutex protected) And Request Limiters ##########################
-// ##############################################################################################
-
-/*
-Ip-Manager and Appointments-Updater threads use Shared-memory,
-In order to track consumption of Israel-post-request,
-Currently i use 2 type of request limiters, and a reset-on-event logic,
-Those implement an Atomic counter and Mutex.*/
-
-/*
-Base Atomic Counter (Single Cell Array), used to construct Request-limiter,
-Will be made deprecated and replaced by an Array-Counter*/
-// ########################################################################
-// ########################################################################
-const {
-	testNaturalNumbersCounter,
-} = require('./js-build/test/atomic-counter/TestIncrementalCounter');
-
-testNaturalNumbersCounter(false);
-
-/*
-Base Array-Counter, used to construct Request-limiter*/
-// ####################################################
-// ####################################################
-const {
-	Test_BoundaryAwareIncrementalCounter,
-} = require('./js-build/test/atomic-counter/TestBoundaryAwareCounter');
-
-Test_BoundaryAwareIncrementalCounter(false);
-
-/*
-A Request-limiter, determines if a minutely limit has been reached */
-// ##################################################################
-// ##################################################################
-const {
-	testLimitPerMinuteThreaded,
-	testLimitPerMinute,
-} = require('./js-build/test/atomic-counter/count-request/TestLimitRequests');
-
-testLimitPerMinuteThreaded(false);
-testLimitPerMinute(false);
-
-/*
-The 'second half' of Request-limiter, This resets Request-limiter*/
-// ################################################################
-// ################################################################
-const {
-	testResetLimitPerMinute,
-} = require('./js-build/test/atomic-counter/reset-on-depleted/TestIResetRequestLimiter');
-
-testResetLimitPerMinute(false);
-
-/*
-The concept of Mutex as a Request-batch-limiter*/
-// ##############################################
-// ##############################################
-const { testMutexCounter } = require('./js-build/test/async-mutex/base-mutex/TestAsyncMutex');
-
-testMutexCounter(false);
-
-/*
-A Request-batch-limiter that allows to
-Determine if a hourly Request-limit has been reached*/
-// ###################################################
-// ###################################################
-const {
-	testLimitPerHour,
-} = require('./js-build/test/async-mutex/consumed-batch/TestLimitRequestsBatch');
-
-testLimitPerHour(false);
-
-// ##############################################################################################
-// ### Test Cloud-Redis Atomic Queue ############################################################
-// ##############################################################################################
-
-/*
-Implements a Redis-Cloud database to provide,
-Independent and thread safe branches-to-update Queue*/
-// ###################################################
-const { testBranchesToProcess } = require('./js-build/test/redis/testRedis');
-
-testBranchesToProcess(false);
-
-// ##############################################################################################
-// ### Test Appointment-Fetching Worker-Thread ##################################################
-// ##############################################################################################
-
-/*
-This is the third part of Appointment Update Process,
-'Appointment-Fetching' handles fetching and persisting appointments
-Of israel-post branches*/
-// #################################################################
-// #################################################################
-const {
-	TestAppointments,
-} = require('./js-build/test/handlers/massage-handlers/Appointments/TestAppointments');
-
-TestAppointments(false);
-
-// ##############################################################################################
-// ### Test Request-Allotment Worker-Thread #####################################################
-// ##############################################################################################
-
-/*
-This is the second part of Appointment Update Process,
-'Request-Allotment' handles limiting requests to israel post*/
-// ###########################################################
-// ###########################################################
-const {
-	TestIpManagers,
-} = require('./js-build/test/handlers/massage-handlers/IpManagers/TestIpManagers');
-
-TestIpManagers(false);
-
-// ##############################################################################################
-// ### New Messaging Concept ####################################################################
-// ##############################################################################################
-
-/*
-Tests how to send an Enum values as a messages*/
-// #############################################
-// #############################################
-const { testEnumMessages } = require('./js-build/test/messaging/enums/TestEnumMessages');
-testEnumMessages(false);
-
-const {
-	testHandlersAsStringType,
-	testHandlersAsEnums,
-	testHandlersEnumsAndFunctions,
-} = require('./js-build/test/messaging/handlers/HandlerFunctionConcept');
-testHandlersAsStringType(false);
-testHandlersAsEnums(false);
-testHandlersEnumsAndFunctions(false);
-
-//////////////////////////////////////////////////////////////////////////////////////////////////
-
 const {
 	createIndex,
 	getIndexMapping,
 	getInstance,
 	negativePingIndex,
 	positivePingIndex,
-} = require('./js-build/test/api/elastic/base/testElasticsearchClient');
+	searchIndex,
+	addUpdateRecord,
+	deleteIndex,
+	bulkAdd,
+	deleteRecordsByQ,
+	updateRecordByQ,
+} = require('./js-build/api/elastic/base/Tests/ElasticsearchClient');
+ */
 
+/* This class has more abilities that are not tested directly */
+
+/*
+getInstance();
+createIndex();
+getIndexMapping();
+deleteIndex();
 negativePingIndex();
 positivePingIndex();
+searchIndex();
+addUpdateRecord();
+bulkAdd();
+deleteRecordsByQ();
+updateRecordByQ();
+*/
+
+
+// Queries that are specific to 'Branch' index
+// ###########################################
+// ###########################################
+
+/*
+const {
+	construct: branchConstruct,
+	fetchAllBranches,
+	branchesWithoutServices,
+	getBranchesExcluding,
+	bulkAddBranches,
+	updateBranchServices,
+	fetchAllQnomyCodes,
+	createBranchIndex,
+	deleteAllBranches,
+	deleteBranchIndex,
+} = require('./js-build/api/elastic/branchServices/Tests/BranchServicesIndexing');
+*/
+
+/*
+branchConstruct();
+fetchAllBranches();
+branchesWithoutServices();
+getBranchesExcluding();
+bulkAddBranches();
+updateBranchServices();
+fetchAllQnomyCodes();
+createBranchIndex();
+deleteAllBranches();
+deleteBranchIndex();
+*/
+
+// Queries that are specific to 'Errors' index
+// ###########################################
+// ###########################################
+
+/*
+const {
+	construct: errorsConstruct,
+	fetchAllErrors,
+	updateAddError,
+	deleteAllErrors,createErrorIndex
+} = require('./js-build/api/elastic/updateErrors/Tests/UpdateErrorsIndexing');
+*/
+
+/*
+errorsConstruct();
+fetchAllErrors();
+updateAddError();
+deleteAllErrors();
+createErrorIndex();
+*/
+
+// ##############################################################################################
+// ### Redis Cloud APIs #########################################################################
+// ##############################################################################################
+
+
+// Redis Cloud Queue Utility Functions
+// ###################################
+// ###################################
+/*
+const {
+	deserializeItems,
+	getRedisCloudData,
+} = require('./js-build/api/redisCloud/base/Tests/RedisQueueUtils');
+*/
+
+/*
+getRedisCloudData();
+deserializeItems();
+*/
+
+// Basic Redis Cloud Queue Client
+// ##############################
+// ##############################
+/*
+const {
+	construct: constructRedisQueue,
+	enqueue,
+	dequeue,
+	exists,
+	bEnqueue,
+	bDequeueAll,
+	qSize,
+} = require('./js-build/api/redisCloud/base/Tests/RedisQueueClient');
+*/
+
+/*
+constructRedisQueue();
+enqueue();
+dequeue();
+exists();
+bEnqueue();
+bDequeueAll();
+qSize();
+*/
+
+// ##############################################################################################
+// ### Israel Post API Requests  ################################################################
+// ##############################################################################################
+
+// Check the Basic 'Perform Request' Function: User Request
+// ########################################################
+// ########################################################
+/*
+const {
+	buildAndPerformUserRequest,
+} = require('./js-build/api/postOfficeCalls/base/Tests/PostofficeApiCall');
+*/
+// buildAndPerformUserRequest();
+
+// Build Post Office Configuration: Check Construction
+// ###################################################
+// ###################################################
+/*
+const {
+	multipleConfigBuildsInSingleRun,
+} = require('./js-build/api/postOfficeCalls/base/Tests/PostofficeRequestConfig');
+*/
+// multipleConfigBuildsInSingleRun();
+
+// Perform Request: User Request
+// #############################
+// #############################
+/*
+const {
+	makeUserRequest,
+	makeUserRequestWithProxy,
+} = require('./js-build/api/postOfficeCalls/requestConfigs/Tests/CreateUserConfig');
+*/
+
+/*
+makeUserRequest();
+makeUserRequestWithProxy();
+*/
+
+// Perform Request: Services Request
+// #################################
+// #################################
+/*
+const {
+	makeServicesRequest,
+	makeServicesRequestWithProxy,
+} = require('./js-build/api/postOfficeCalls/requestConfigs/Tests/FetchServicesConfig');
+*/
+/*
+makeServicesRequest();
+makeServicesRequestWithProxy();
+*/
+
+// Perform Request: Dates Request
+// ##############################
+// ##############################
+/*
+const {
+	makeDatesRequest,
+	makeDatesRequestWithProxy,
+} = require('./js-build/api/postOfficeCalls/requestConfigs/Tests/FetchDatesConfig');
+*/
+/*
+makeDatesRequest();
+makeDatesRequestWithProxy();
+*/
+
+// Perform Request: Times Request
+// ##############################
+// ##############################
+/*
+const {
+	makeTimesRequest,
+	makeTimesRequestWithProxy,
+} = require('./js-build/api/postOfficeCalls/requestConfigs/Tests/FetchTimesConfig');
+*/
+/*
+makeTimesRequest();
+makeTimesRequestWithProxy();
+*/
+
+// ##############################################################################################
+// ### Repositories #############################################################################
+// ##############################################################################################
+
+// Test Branches Repository
+// ########################
+// ########################
+/*
+const {
+	getAllBranches,
+	getAllBranchesIdAndQnomyCode,
+	getAllBranchesIdAndQnomyCodeExcluding,
+	testUpdateBranchServices,
+} = require('./js-build/data/repositories/Tests/PostofficeBranchesRepository');
+*/
+/*
+getAllBranches();
+getAllBranchesIdAndQnomyCode();
+getAllBranchesIdAndQnomyCodeExcluding();
+testUpdateBranchServices();
+*/
+
+// Test Errors Repository
+// ######################
+// ######################
+/*
+const {
+	getAllErrors,
+	addUpdateErrorRecord,
+} = require('./js-build/data/repositories/Tests/UpdateErrorRecordsRepository');
+*/
+/*
+getAllErrors();
+addUpdateErrorRecord();
+*/
+
+// Test Qnomycode, Branch ID pairs  Repository
+// ###########################################
+// ###########################################
+/*
+const {
+	replaceUnprocessedQueue,
+	popPushPair,
+	popAllPairs,
+} = require('./js-build/data/repositories/Tests/PostofficeCodeIdPairsRepository');
+*/
+/*
+replaceUnprocessedQueue();
+popPushPair();
+popAllPairs();
+*/
+
+// ##############################################################################################
+// ### Models ###################################################################################
+// ##############################################################################################
+
+// Post Office Branch Services
+// ###########################
+// ###########################
+/*
+const {
+	constructNewServiceRecord,
+	useServiceRecord,
+} = require('./js-build/data/models/persistenceModels/Tests/PostofficeBranchServices');
+*/
+/*
+constructNewServiceRecord();
+useServiceRecord();
+*/
+
+// Update Error Record
+// ###################
+// ###################
+/*
+const {
+	useErrorRecord,
+	testUserErrorConstruction,
+	testServiceErrorConstruction,
+	testDatesErrorConstruction,
+	testTimesErrorConstruction,
+} = require('./js-build/data/models/persistenceModels/Tests/UpdateErrorRecord');
+*/
+/*
+useErrorRecord();
+testUserErrorConstruction();
+testServiceErrorConstruction();
+testDatesErrorConstruction();
+testTimesErrorConstruction();
+*/
+
+// Proxy Endpoint String
+// #####################
+// #####################
+/*
+const {
+	endpointProxiesStrings,
+} = require('./js-build/data/models/dataTransferModels/Tests/ProxyEndpointString');
+*/
+// endpointProxiesStrings();
+
+// ##############################################################################################
+// ### Services  ################################################################################
+// ##############################################################################################
+
+/*
+	Verified Puppeteer can scrape 'LoadBranches' response,
+	producing raw string responses including URL,
+	headers, body, and more
+*/
+// Scrape Browser Responses - as String array
+// ##########################################
+// ##########################################
+/*
+const {
+	testScrapeBrowserResponses,
+} = require('./js-build/services/updateBranches/helpers/scrape/Tests/ScrapeBranches');
+*/
+// testScrapeBrowserResponses();
+
+
+// Scrape Filter Validate and Persist branches
+// ###########################################
+// ###########################################
+/*
+const {
+	testDeleteAddBranches,
+	testAddUpdateBranches,
+} = require('./js-build/services/updateBranches/Tests/UpdateBranches');
+*/
+/*
+testDeleteAddBranches();
+testAddUpdateBranches();
+*/
+
+// Wraps Thread communication
+// ##########################
+// ##########################
+/*
+const {
+	testWorkerWrapper,
+} = require('./js-build/services/updateAppointments/helpers/threadCommunication/Tests/CommunicationWrappers');
+*/
+// testWorkerWrapper();
+
+// Check thread shared memory
+// ##########################
+// ##########################
+/*
+const {
+	constructNewMemoryView,
+	checkIfMemoryView,
+} = require('./js-build/data/models/dataTransferModels/Tests/ThreadSharedMemory');
+*/
+/*
+constructNewMemoryView();
+checkIfMemoryView();
+*/
+
+// Check Atomically synchronised Writing to memory
+// ###############################################
+// ###############################################
+/*
+const {
+	testSetCellValue,
+	testReplaceExpectedValue,
+	testAddToCellValue,
+} = require('./js-build/services/updateAppointments/helpers/concurrency/Tests/AtomicArrayWriter');
+*/
+/*
+testSetCellValue();
+testReplaceExpectedValue();
+testAddToCellValue();
+*/
+
+// Check Atomically synchronised Writing to memory
+// ###############################################
+// ###############################################
+/*
+const {
+	testSingleThreadTracking,
+	testMultiThreadedTracking,
+	testLimitReset,
+} = require('./js-build/services/updateAppointments/helpers/consumptionTracker/Tests/RequestTracker');
+*/
+/*
+testSingleThreadTracking();
+testMultiThreadedTracking();
+testLimitReset();
+*/
+
+// Check Mutually Exclusive Writing to memory
+// ##########################################
+// ##########################################
+/*
+const {
+	testBuildMutexRequestsBatchTracker,
+} = require('./js-build/services/updateAppointments/helpers/consumptionTracker/Tests/RequestsBatchTracker');
+*/
+// testBuildMutexRequestsBatchTracker();
+
+// Re set remote atomic queue that holds unprocessed branches
+// ##########################################################
+// ##########################################################
+/*
+const {
+	rePopulateUnprocessed,
+} = require('./js-build/services/updateAppointments/helpers/queueSetup/Tests/PopulateRedisQueue');
+*/
+// rePopulateUnprocessed();
+
+// Test Post Office API Requests as Nodes
+// ######################################
+// ######################################
+/*
+const {
+	testCreateUserNode,
+	testFetchServicesNode,
+	testFetchDatesNode,
+	testFetchTimesNode,
+	testCreateUserNodeUsingProxy,
+	testFetchServicesNodeUsingProxy,
+	testFetchDatesNodeUsingProxy,
+	testFetchTimesNodeUsingProxy,
+} = require('./js-build/services/updateAppointments/helpers/updateServicesRecord/Tests/PostofficeRequestNodes');
+*/
+/*
+testCreateUserNode();
+testFetchServicesNode();
+testFetchDatesNode();
+testFetchTimesNode();
+testCreateUserNodeUsingProxy();
+testFetchServicesNodeUsingProxy();
+testFetchDatesNodeUsingProxy();
+testFetchTimesNodeUsingProxy();
+*/
+
+// Test Branch Service Record Updater
+// ##################################
+// ##################################
+/*
+const {
+	testDepleteContinue,
+	testDepleteContinueUseProxy,
+} = require('./js-build/services/updateAppointments/helpers/updateServicesRecord/Tests/ConstructServicesRecord');
+*/
+/*
+testDepleteContinue();
+testDepleteContinueUseProxy();
+*/
+
+// Track the 'depleted' claims
+// ###########################
+// ###########################
+/*
+const {
+	testSingleThreadedDepletedTracker,
+	testMultiThreadedDepletedTracker,
+} = require('./js-build/services/updateAppointments/helpers/claimsTracker/Tests/DepletedClaimTracker');
+*/
+/*
+testSingleThreadedDepletedTracker();
+testMultiThreadedDepletedTracker();
+*/
+
+// Appointments Updater: message handaling
+// #######################################
+// #######################################
+/*
+const {
+	testHandleStartUpdate,
+	testHandleStartUpdateUseProxy,
+	testStartUpdateThenStop,
+	testStartUpdateThenEndUpdater,
+	testStartUpdateThenContinue,
+} = require('./js-build/services/updateAppointments/workerThreads/appointmentsUpdater/Tests/MessageHandlers');
+*/
+/*
+testHandleStartUpdate();
+testHandleStartUpdateUseProxy();
+testStartUpdateThenStop(true);
+testStartUpdateThenEndUpdater(true);
+testStartUpdateThenContinue(true);
+*/
+
+// Ip Management: message handaling
+// ################################
+// ################################
+
+const {
+	testHandleStartEndpoint,
+} = require('./js-build/services/updateAppointments/workerThreads/ipManager/Tests/MessageHandler');
+
+testHandleStartEndpoint();
+
+// ##############################################################################################
+// ### Shared  ##################################################################################
+// ##############################################################################################
+
+/*
+Functions*/
+// const { testReadExisting } = require('./js-build/shared/functions/Tests/ReadEnv');
+// testReadExisting();
+
+/*
+const {
+	testReadSmartProxyFile,
+	testReadWebShareFile,
+} = require('./js-build/shared/functions/Tests/ReadTextFile');
+*/
+/*
+testReadSmartProxyFile();
+testReadWebShareFile();
+*/
+
+// ##############################################################################################
+// ### Concepts  ################################################################################
+// ##############################################################################################
