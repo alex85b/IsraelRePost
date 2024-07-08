@@ -1,23 +1,23 @@
 export enum AppointmentsUpdatingMessages {
-	StartUpdates = 'start-updates',
-	StopUpdates = 'stop-updates',
-	EndUpdater = 'end-updater',
-	ContinueUpdates = 'continue-updates',
+	StartUpdates = "start-updates",
+	StopUpdates = "stop-updates",
+	EndUpdater = "end-updater",
+	ContinueUpdates = "continue-updates",
 }
 
 export enum IpManagerUpdaterMessages {
-	UpdaterDone = 'updater-done',
-	UpdaterDepleted = 'updater-depleted',
+	UpdaterDone = "updater-done",
+	UpdaterDepleted = "updater-depleted",
 }
 
 export enum IpManagerContinuesMessages {
-	StartEndpoint = 'start-endpoint',
-	StopEndpoint = 'stop-endpoint',
+	StartEndpoint = "start-endpoint",
+	EndEndpoint = "end-endpoint",
 }
 
 export enum ContinuesUpdateMessages {
-	ManagerDone = 'manager-done',
-	ManagerDepleted = 'manager-depleted',
+	ManagerDone = "manager-done",
+	ManagerDepleted = "manager-depleted",
 }
 
 export type ThreadMessage =

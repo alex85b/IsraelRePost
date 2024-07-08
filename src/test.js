@@ -504,16 +504,45 @@ testStartUpdateThenEndUpdater(true);
 testStartUpdateThenContinue(true);
 */
 
+// Appointments Updater: Test Thread Script
+// ########################################
+// ########################################
+/*
+const {testUpdaterThread,
+	testMultipleUpdaterThread,
+} = require('./js-build/services/updateAppointments/workerThreads/appointmentsUpdater/Tests/UpdaterThreadScript')
+*/
+/*
+testUpdaterThread();
+testMultipleUpdaterThread();
+*/
+
 // Ip Management: message handaling
 // ################################
 // ################################
 
 const {
 	testHandleStartEndpoint,
+	testHandleStartThenEndEndpoint
 } = require('./js-build/services/updateAppointments/workerThreads/ipManager/Tests/MessageHandler');
 
-testHandleStartEndpoint();
+// testHandleStartEndpoint();
+// testHandleStartThenEndEndpoint();
 
+// Ip Management: Test Thread Script
+// #################################
+// #################################
+
+/*
+const {
+	testSingleIpManagerThread,
+	testMultipleIpManagerThreads
+} = require('./js-build/services/updateAppointments/workerThreads/ipManager/Tests/IpManagerThreadScript')
+*/
+/*
+testSingleIpManagerThread();
+testMultipleIpManagerThreads();
+*/
 // ##############################################################################################
 // ### Shared  ##################################################################################
 // ##############################################################################################

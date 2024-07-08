@@ -5,6 +5,7 @@ import {
 	ThreadMessage,
 	IpManagerContinuesMessages,
 } from "../../../helpers/threadCommunication/Messages";
+
 console.log("** Test Message Handlers **");
 
 export const testHandleStartEndpoint = async () => {
@@ -33,6 +34,46 @@ export const testHandleStartEndpoint = async () => {
 
 	const message: ThreadMessage = IpManagerContinuesMessages.StartEndpoint;
 	communicationWrapper.sendMessage(message);
+};
+
+export const testHandleStartThenEndEndpoint = async () => {
+	console.log(
+		"** (1) Test Message Handlers | Test Handle Start Then End Endpoint **"
+	);
+
+	// Create a dummy worker for testing.
+	const communicationWrapper = new WorkerWrapper({
+		workerScript: path.join(__dirname, "IpManagerDummyStub.js"),
+		workerData: { proxyEndpoint: await getProxyEndpoint() },
+	});
+
+	communicationWrapper.setCallbacks({
+		onMessageCallback(message) {
+			console.log(
+				"[testHandleStartThenEndEndpoint] Incoming Message : ",
+				message
+			);
+			communicationWrapper.terminate();
+		},
+
+		onErrorCallback(error) {
+			console.log("[testHandleStartThenEndEndpoint] Error : ", error.message);
+		},
+
+		onExitCallback(exitCode) {
+			console.log("[testHandleStartThenEndEndpoint] Exit Code : ", exitCode);
+		},
+	});
+
+	const sMessage: ThreadMessage = IpManagerContinuesMessages.StartEndpoint;
+	const eMessage: ThreadMessage = IpManagerContinuesMessages.EndEndpoint;
+	new Promise<void>((resolve) => {
+		communicationWrapper.sendMessage(sMessage);
+		setTimeout(() => {
+			communicationWrapper.sendMessage(eMessage);
+			resolve();
+		}, 5000);
+	});
 };
 
 // ###############################################################################################

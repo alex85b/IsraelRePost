@@ -1,28 +1,28 @@
 import path from "path";
-import { RequestTracker } from "../../../helpers/consumptionTracker/RequestTracker";
-import { buildMutexRequestsBatchTracker } from "../../../helpers/consumptionTracker/RequestsBatchTracker";
-import { ParentPortWrapper } from "../../../helpers/threadCommunication/CommunicationWrappers";
-import { IpManagerContinuesMessages } from "../../../helpers/threadCommunication/Messages";
+import { threadId, parentPort, workerData } from "worker_threads";
 import {
-	HandleEndEndpoint,
+	MemoryView,
+	SharedMemoryBuilder,
+	getMemoryViewParameters,
+} from "../../../../data/models/dataTransferModels/ThreadSharedMemory";
+import { ConstructLogMessage } from "../../../../shared/classes/ConstructLogMessage";
+import { AtomicArrayWriter } from "../../helpers/concurrency/AtomicArrayWriter";
+import { buildMutexRequestsBatchTracker } from "../../helpers/consumptionTracker/RequestsBatchTracker";
+import { RequestTracker } from "../../helpers/consumptionTracker/RequestTracker";
+import { ParentPortWrapper } from "../../helpers/threadCommunication/CommunicationWrappers";
+import { IpManagerContinuesMessages } from "../../helpers/threadCommunication/Messages";
+import {
+	IEndpointStarter,
 	HandleStartEndpoint,
 	HandleUpdaterDepleted,
 	HandleUpdaterDone,
 	IEndpointEnder,
-	IEndpointRestart,
-	IEndpointStarter,
-} from "../MessageHandler";
-import { ConstructLogMessage } from "../../../../../shared/classes/ConstructLogMessage";
-import { parentPort, workerData, threadId } from "worker_threads";
-import {
-	ISharedMemoryBuilder,
-	MemoryView,
-	SharedMemoryBuilder,
-	getMemoryViewParameters,
-} from "../../../../../data/models/dataTransferModels/ThreadSharedMemory";
-import { AtomicArrayWriter } from "../../../helpers/concurrency/AtomicArrayWriter";
+	HandleEndEndpoint,
+} from "./MessageHandler";
 
-const logMessage = new ConstructLogMessage([`IpManagerDummyStub ${threadId}`]);
+const logMessage = new ConstructLogMessage([
+	`IpManagerThreadScript ${threadId}`,
+]);
 
 if (!parentPort)
 	throw Error(logMessage.createLogMessage({ subject: "Invalid parentPort" }));
@@ -54,8 +54,14 @@ const sharedMemory: MemoryView = new SharedMemoryBuilder()
 	.maxMemoryCellValue(50)
 	.neededCellAmount(2)
 	.build();
-const batchTracker = buildMutexRequestsBatchTracker(33);
-const requestsPerMinuteLimit = 16;
+
+sharedMemory[0] = threadId;
+
+// Israel Post Limits Requests per-minute, and per-hour.
+const requestsPerHourLimit = 285; // 300 is the actual maximum.
+const requestsPerMinuteLimit = 48; // 50 is the actual maximum.
+
+const batchTracker = buildMutexRequestsBatchTracker(requestsPerHourLimit);
 const sharedTracking = new RequestTracker({
 	atomicArrayWriter: new AtomicArrayWriter({
 		memoryView: sharedMemory,
@@ -68,9 +74,14 @@ const endpointStarter: IEndpointStarter = {
 	batchTracker,
 	sharedMemory,
 	parentCommunication,
-	requestsPerMinuteLimit: 16,
+	requestsPerMinuteLimit,
 	threadId,
-	updaterScriptPath: path.join(__dirname, "AppointmentsUpdateDummyStub.js"),
+	updaterScriptPath: path.join(
+		__dirname,
+		"..",
+		"appointmentsUpdater",
+		"UpdaterThreadScript.js"
+	),
 	proxyEndpoint: workerData.proxyEndpoint,
 };
 
@@ -101,7 +112,7 @@ parentCommunication.setCallbacks({
 	onMessageCallback(message) {
 		console.log(
 			logMessage.createLogMessage({
-				subject: "parentCommunication.setCallbacks",
+				subject: "Incoming Message",
 				message,
 			})
 		);

@@ -67,6 +67,7 @@ const updateStarter: IUpdateStarter = {
 	parentCommunication: communicationWrapper,
 	endpointProxyString: workerData.proxyEndpoint,
 	threadId,
+	parentId: 999,
 };
 
 logMessage.addLogHeader("onMessageCallback");

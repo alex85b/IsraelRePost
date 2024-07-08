@@ -72,6 +72,7 @@ const updateStarter: IUpdateStarter = {
 	parentCommunication: communicationWrapper,
 	endpointProxyString: workerData.proxyEndpoint,
 	threadId,
+	parentId: 999,
 };
 
 const startUpdates: HandlerClass<

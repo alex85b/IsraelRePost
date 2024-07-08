@@ -1,22 +1,22 @@
-import { IBranchIdQnomyCodePair } from '../../../../data/models/persistenceModels/PostofficeBranchIdCodePair';
-import { IPostofficeBranchServicesBuilder } from '../../../../data/models/persistenceModels/PostofficeBranchServices';
-import { IPostofficeUpdateErrorBuilder } from '../../../../data/models/persistenceModels/UpdateErrorRecord';
-import { IPostofficeBranchesRepository } from '../../../../data/repositories/PostofficeBranchesRepository';
-import { IPostofficeCodeIdPairsRepository } from '../../../../data/repositories/PostofficeCodeIdPairsRepository';
-import { IUpdateErrorRecordsRepository } from '../../../../data/repositories/UpdateErrorRecordsRepository';
+import { IBranchIdQnomyCodePair } from "../../../../data/models/persistenceModels/PostofficeBranchIdCodePair";
+import { IPostofficeBranchServicesBuilder } from "../../../../data/models/persistenceModels/PostofficeBranchServices";
+import { IPostofficeUpdateErrorBuilder } from "../../../../data/models/persistenceModels/UpdateErrorRecord";
+import { IPostofficeBranchesRepository } from "../../../../data/repositories/PostofficeBranchesRepository";
+import { IPostofficeCodeIdPairsRepository } from "../../../../data/repositories/PostofficeCodeIdPairsRepository";
+import { IUpdateErrorRecordsRepository } from "../../../../data/repositories/UpdateErrorRecordsRepository";
 import {
 	ConstructLogMessage,
 	ILogMessageConstructor,
-} from '../../../../shared/classes/ConstructLogMessage';
-import { IReseLocalTracking } from '../../helpers/consumptionTracker/RequestTracker';
-import { ICommunicationWrapper } from '../../helpers/threadCommunication/CommunicationWrappers';
-import { HandlerClass } from '../../helpers/threadCommunication/Handler';
+} from "../../../../shared/classes/ConstructLogMessage";
+import { IReseLocalTracking } from "../../helpers/consumptionTracker/RequestTracker";
+import { ICommunicationWrapper } from "../../helpers/threadCommunication/CommunicationWrappers";
+import { HandlerClass } from "../../helpers/threadCommunication/Handler";
 import {
 	AppointmentsUpdatingMessages,
 	IpManagerUpdaterMessages,
-} from '../../helpers/threadCommunication/Messages';
-import { IConstructServicesRecord } from '../../helpers/updateServicesRecord/ConstructServicesRecord';
-import { IStoppable } from '../shared/stoppable';
+} from "../../helpers/threadCommunication/Messages";
+import { IConstructServicesRecord } from "../../helpers/updateServicesRecord/ConstructServicesRecord";
+import { IStoppable } from "../shared/stoppable";
 
 // ###############################################################################################
 // ### Handle : Start update #####################################################################
@@ -29,11 +29,15 @@ export interface IUpdateStarter {
 	errorRecordsRepository: IUpdateErrorRecordsRepository;
 	branchesRepository: IPostofficeBranchesRepository;
 	threadId: number;
+	parentId: number;
 	endpointProxyString?: string;
 }
 
 export class HandleStartUpdates
-	extends HandlerClass<IUpdateStarter, AppointmentsUpdatingMessages.StartUpdates>
+	extends HandlerClass<
+		IUpdateStarter,
+		AppointmentsUpdatingMessages.StartUpdates
+	>
 	implements IStoppable
 {
 	private stopRequested: boolean;
@@ -43,35 +47,43 @@ export class HandleStartUpdates
 		super(buildArguments);
 		this.stopRequested = false;
 		this.logConstructor = new ConstructLogMessage([
-			'HandleStartUpdates',
+			"HandleStartUpdates",
+			`Parent ID ${this.data.parentId ?? -1}`,
 			`Thread ID ${this.data.threadId ?? -1}`,
 		]);
 	}
 
 	stop(): void {
-		this.logConstructor.addLogHeader('Stop request');
-		console.log(this.logConstructor.createLogMessage({ subject: 'Update stoppage' }));
+		this.logConstructor.addLogHeader("Stop request");
+		console.log(
+			this.logConstructor.createLogMessage({ subject: "Update stoppage" })
+		);
 		this.stopRequested = true;
 	}
 
 	async handle(): Promise<void> {
 		do {
-			const idQnomecodePair = await this.data.codeIdPairRepo.popUnprocessedPair();
+			const idQnomecodePair =
+				await this.data.codeIdPairRepo.popUnprocessedPair();
 			const response = await newUpdate({
 				...this.data,
 				branchIdQnomycode: idQnomecodePair,
 				logConstructor: this.logConstructor,
 			});
 			if (response === IpManagerUpdaterMessages.UpdaterDepleted) {
-				this.data.parentCommunication.sendMessage(IpManagerUpdaterMessages.UpdaterDepleted);
+				this.data.parentCommunication.sendMessage(
+					IpManagerUpdaterMessages.UpdaterDepleted
+				);
 				return; // break; End;
 			}
 			if (response === IpManagerUpdaterMessages.UpdaterDone) {
 				await this.data.codeIdPairRepo.pushProcessedPair(idQnomecodePair!);
-				this.data.parentCommunication.sendMessage(IpManagerUpdaterMessages.UpdaterDone);
+				this.data.parentCommunication.sendMessage(
+					IpManagerUpdaterMessages.UpdaterDone
+				);
 				return; // break; End;
 			}
-			if (response === 'OK') {
+			if (response === "OK") {
 				await this.data.codeIdPairRepo.pushProcessedPair(idQnomecodePair!);
 				// Next branch
 			}
@@ -135,7 +147,10 @@ export interface IUpdateContinuer extends IUpdateStarter {
 }
 
 export class HandleContinueUpdates
-	extends HandlerClass<IUpdateContinuer, AppointmentsUpdatingMessages.StartUpdates>
+	extends HandlerClass<
+		IUpdateContinuer,
+		AppointmentsUpdatingMessages.StartUpdates
+	>
 	implements IStoppable
 {
 	private stopRequested: boolean;
@@ -145,14 +160,17 @@ export class HandleContinueUpdates
 		super(buildArguments);
 		this.stopRequested = false;
 		this.logConstructor = new ConstructLogMessage([
-			'HandleContinueUpdates',
+			"HandleContinueUpdates",
+			`Parent ID ${this.data.parentId ?? -1}`,
 			`Thread ID ${this.data.threadId ?? -1}`,
 		]);
 	}
 
 	stop(): void {
-		this.logConstructor.addLogHeader('Stop request');
-		console.log(this.logConstructor.createLogMessage({ subject: 'Update stoppage' }));
+		this.logConstructor.addLogHeader("Stop request");
+		console.log(
+			this.logConstructor.createLogMessage({ subject: "Update stoppage" })
+		);
 		this.stopRequested = true;
 	}
 
@@ -164,30 +182,39 @@ export class HandleContinueUpdates
 			logConstructor: this.logConstructor,
 		});
 		if (status === IpManagerUpdaterMessages.UpdaterDepleted) {
-			this.data.parentCommunication.sendMessage(IpManagerUpdaterMessages.UpdaterDepleted);
+			this.data.parentCommunication.sendMessage(
+				IpManagerUpdaterMessages.UpdaterDepleted
+			);
 			return; // break; End;
 		}
-		if (status === 'OK' && currentIdQnomycode) {
+		if (status === "OK" && currentIdQnomycode) {
 			this.data.codeIdPairRepo.pushProcessedPair(currentIdQnomycode);
 		}
-		this.logConstructor.createLogMessage({ subject: 'Paused update was handled' });
+		this.logConstructor.createLogMessage({
+			subject: "Paused update was handled",
+		});
 		do {
-			const idQnomecodePair = await this.data.codeIdPairRepo.popUnprocessedPair();
+			const idQnomecodePair =
+				await this.data.codeIdPairRepo.popUnprocessedPair();
 			const response = await newUpdate({
 				...this.data,
 				branchIdQnomycode: idQnomecodePair,
 				logConstructor: this.logConstructor,
 			});
 			if (response === IpManagerUpdaterMessages.UpdaterDepleted) {
-				this.data.parentCommunication.sendMessage(IpManagerUpdaterMessages.UpdaterDepleted);
+				this.data.parentCommunication.sendMessage(
+					IpManagerUpdaterMessages.UpdaterDepleted
+				);
 				return; // break; End;
 			}
 			if (response === IpManagerUpdaterMessages.UpdaterDone) {
 				await this.data.codeIdPairRepo.pushProcessedPair(idQnomecodePair!);
-				this.data.parentCommunication.sendMessage(IpManagerUpdaterMessages.UpdaterDone);
+				this.data.parentCommunication.sendMessage(
+					IpManagerUpdaterMessages.UpdaterDone
+				);
 				return; // break; End;
 			}
-			if (response === 'OK') {
+			if (response === "OK") {
 				await this.data.codeIdPairRepo.pushProcessedPair(idQnomecodePair!);
 				// Next branch
 			}
@@ -207,17 +234,18 @@ const newUpdate = async (args: {
 	branchesRepository: IPostofficeBranchesRepository;
 	endpointProxyString?: string;
 }): Promise<
-	IpManagerUpdaterMessages.UpdaterDone | IpManagerUpdaterMessages.UpdaterDepleted | 'OK'
+	| IpManagerUpdaterMessages.UpdaterDone
+	| IpManagerUpdaterMessages.UpdaterDepleted
+	| "OK"
 > => {
 	if (!args.branchIdQnomycode) return IpManagerUpdaterMessages.UpdaterDone;
-	const { status, errorsBuilder, servicesBuilder } = await args.constructServices.constructRecord(
-		{
+	const { status, errorsBuilder, servicesBuilder } =
+		await args.constructServices.constructRecord({
 			serviceIdAndQnomycode: args.branchIdQnomycode,
 			endpointProxyString: args.endpointProxyString,
-		}
-	);
+		});
 	switch (status) {
-		case 'OK':
+		case "OK":
 			await persistRecord({
 				...args,
 				errorsBuilder,
@@ -225,8 +253,8 @@ const newUpdate = async (args: {
 				currentIdQnomycode: args.branchIdQnomycode,
 			});
 			return status;
-		case 'overflow':
-		case 'above limit':
+		case "overflow":
+		case "above limit":
 			console.log(
 				args.logConstructor.createLogMessage({
 					subject: `Branch ID ${args.branchIdQnomycode.branchId} Request tracker status`,
@@ -255,7 +283,7 @@ const continuePausedUpdate = async (args: {
 	branchesRepository: IPostofficeBranchesRepository;
 	endpointProxyString?: string;
 }): Promise<{
-	status: 'empty queue' | 'OK' | IpManagerUpdaterMessages.UpdaterDepleted;
+	status: "empty queue" | "OK" | IpManagerUpdaterMessages.UpdaterDepleted;
 	currentIdQnomycode: IBranchIdQnomyCodePair | undefined;
 }> => {
 	const { errorsBuilder, servicesBuilder, status, currentIdQnomycode } =
@@ -263,9 +291,13 @@ const continuePausedUpdate = async (args: {
 			endpointProxyString: args.endpointProxyString,
 		});
 	if (!currentIdQnomycode)
-		throw Error(args.logConstructor.createLogMessage({ subject: 'No Branch ID Qnomycode' }));
+		throw Error(
+			args.logConstructor.createLogMessage({
+				subject: "No Branch ID Qnomycode",
+			})
+		);
 	switch (status) {
-		case 'OK':
+		case "OK":
 			await persistRecord({
 				...args,
 				errorsBuilder,
@@ -273,23 +305,26 @@ const continuePausedUpdate = async (args: {
 				currentIdQnomycode,
 			});
 			return { status, currentIdQnomycode };
-		case 'empty queue':
+		case "empty queue":
 			console.log(
 				args.logConstructor.createLogMessage({
 					subject: `Update delayed due to ${status}`,
-					message: 'Branch ID ' + currentIdQnomycode.branchId,
+					message: "Branch ID " + currentIdQnomycode.branchId,
 				})
 			);
 			return { status, currentIdQnomycode: currentIdQnomycode };
-		case 'above limit':
-		case 'overflow':
+		case "above limit":
+		case "overflow":
 			console.log(
 				args.logConstructor.createLogMessage({
 					subject: `Update delayed due to ${status}`,
-					message: 'Branch ID ' + currentIdQnomycode.branchId,
+					message: "Branch ID " + currentIdQnomycode.branchId,
 				})
 			);
-			return { status: IpManagerUpdaterMessages.UpdaterDepleted, currentIdQnomycode };
+			return {
+				status: IpManagerUpdaterMessages.UpdaterDepleted,
+				currentIdQnomycode,
+			};
 		default:
 			throw Error(
 				args.logConstructor.createLogMessage({
@@ -312,12 +347,14 @@ const persistRecord = async (args: {
 	logConstructor: ILogMessageConstructor;
 }): Promise<void> => {
 	const errorModel = args.errorsBuilder.build(args.currentIdQnomycode.branchId);
-	const servicesModel = args.servicesBuilder.build(args.currentIdQnomycode.branchId);
+	const servicesModel = args.servicesBuilder.build(
+		args.currentIdQnomycode.branchId
+	);
 	if (errorModel.getErrorsCount() > 0) {
 		console.log(
 			args.logConstructor.createLogMessage({
-				subject: 'Update faulted',
-				message: 'Branch ID ' + args.currentIdQnomycode.branchId,
+				subject: "Update faulted",
+				message: "Branch ID " + args.currentIdQnomycode.branchId,
 			})
 		);
 		args.errorRecordsRepository.addUpdateErrorRecord({
@@ -326,8 +363,8 @@ const persistRecord = async (args: {
 	} else
 		console.log(
 			args.logConstructor.createLogMessage({
-				subject: 'Updated',
-				message: 'Branch ID ' + args.currentIdQnomycode.branchId,
+				subject: "Updated",
+				message: "Branch ID " + args.currentIdQnomycode.branchId,
 			})
 		);
 	args.branchesRepository.updateBranchServices({
