@@ -1,21 +1,21 @@
-export function getTodayDateObject(): {
-	date: string;
-	year: string;
-	month: string;
-	day: string;
-} {
-	const today = new Date();
-	const year = today.getFullYear();
-	// 'getMonth' returns a zero-based value: January == 0.
-	// padStart ensures that i have 2 'digits', it pads with 0 in case i have 1 digit.
-	const month = String(today.getMonth() + 1).padStart(2, '0');
-	// same procedure as month.
-	const day = String(today.getDate()).padStart(2, '0');
-	const dateString = `${year}-${month}-${day}`;
-	return {
-		date: dateString,
-		year: String(year),
-		month: String(month),
-		day: String(day),
-	};
-}
+// export function getTodayDateObject(): {
+// 	date: string;
+// 	year: string;
+// 	month: string;
+// 	day: string;
+// } {
+// 	const today = new Date();
+// 	const year = today.getFullYear();
+// 	// 'getMonth' returns a zero-based value: January == 0.
+// 	// padStart ensures that i have 2 'digits', it pads with 0 in case i have 1 digit.
+// 	const month = String(today.getMonth() + 1).padStart(2, '0');
+// 	// same procedure as month.
+// 	const day = String(today.getDate()).padStart(2, '0');
+// 	const dateString = `${year}-${month}-${day}`;
+// 	return {
+// 		date: dateString,
+// 		year: String(year),
+// 		month: String(month),
+// 		day: String(day),
+// 	};
+// }

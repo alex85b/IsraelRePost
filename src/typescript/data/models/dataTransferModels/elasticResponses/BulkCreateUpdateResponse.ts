@@ -1,6 +1,12 @@
 import { AxiosResponse } from "axios";
 import { extractResponseData } from "./shared/ExtractResponseData";
 import { IElasticBulkResponse } from "../../../../api/elastic/base/ElasticsearchClient";
+import { ErrorSource, ServiceError } from "../../../../errors/ServiceError";
+import {
+	ILogger,
+	WinstonClient,
+} from "../../../../shared/classes/WinstonClient";
+import { IPathTracker, PathStack } from "../../../../shared/classes/PathStack";
 
 export interface IBulkCreateUpdateResponseData {
 	branchID: string;
@@ -23,6 +29,8 @@ export class BulkCreateUpdateResponse implements IBulkCreateUpdateResponse {
 	private failed: IBulkCreateUpdateResponseData[];
 	private updatedCounter: number;
 	private createdCounter: number;
+	// private logger: ILogger;
+	// private pathStack: IPathTracker;
 
 	private constructor(buildData: {
 		successful: IBulkCreateUpdateResponseData[];
@@ -34,6 +42,8 @@ export class BulkCreateUpdateResponse implements IBulkCreateUpdateResponse {
 		this.failed = buildData.failed;
 		this.createdCounter = buildData.createdCounter;
 		this.updatedCounter = buildData.updatedCounter;
+		// this.pathStack = new PathStack().push("Bulk Create Update Response");
+		// this.logger = new WinstonClient({ pathStack: this.pathStack });
 	}
 
 	toStringSuccessful() {
@@ -86,6 +96,15 @@ export class BulkCreateUpdateResponse implements IBulkCreateUpdateResponse {
 		private failed: IBulkCreateUpdateResponseData[] = [];
 		private updatedCounter = 0;
 		private createdCounter = 0;
+		private logger: ILogger;
+		private pathStack: IPathTracker;
+
+		constructor() {
+			this.pathStack = new PathStack().push(
+				"Bulk Create Update Response Builder"
+			);
+			this.logger = new WinstonClient({ pathStack: this.pathStack });
+		}
 
 		useAxiosResponse(
 			rawResponse: Omit<
@@ -106,12 +125,15 @@ export class BulkCreateUpdateResponse implements IBulkCreateUpdateResponse {
 				});
 
 				if (faults.length)
-					throw Error(
-						"[BulkCreateUpdateResponse] : " +
-							faults.join(" | ") +
-							JSON.stringify(item, null, 3)
-					);
-
+					throw new ServiceError({
+						logger: this.logger,
+						source: ErrorSource.Database,
+						message: "Bulk update action failed",
+						details: {
+							faults: faults.join(" | "),
+							response: rawResponse,
+						},
+					});
 				if (
 					item?.index?._shards.successful > 0 &&
 					item?.index?._shards.failed === 0
@@ -126,10 +148,14 @@ export class BulkCreateUpdateResponse implements IBulkCreateUpdateResponse {
 				) {
 					this.failed.push({ branchID: item?.index?._id, status: "failed" });
 				} else
-					throw Error(
-						"[BulkCreateUpdateResponse] items success\fail count is invalid : " +
-							JSON.stringify(item, null, 3)
-					);
+					throw new ServiceError({
+						logger: this.logger,
+						source: ErrorSource.ThirdPartyAPI,
+						message: "Specific bulked update item has invalid succes counter",
+						details: {
+							bulkItem: item,
+						},
+					});
 			});
 			return this;
 		}

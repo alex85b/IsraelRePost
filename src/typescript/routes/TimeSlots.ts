@@ -1,6 +1,5 @@
 import express, { Request, Response, NextFunction } from "express";
 import dotenv from "dotenv";
-import { splitBranchesArray } from "../common/SplitBranchesArray";
 
 dotenv.config();
 

@@ -1,6 +1,9 @@
-import { readEnvironmentFile } from '../../../shared/functions/ReadEnv';
-import { readLocalFile } from '../../../shared/functions/ReadTextFile';
-import { isValidString, validateAndAssign } from '../shared/FieldValidation';
+import { ServiceError, ErrorSource } from "../../../errors/ServiceError";
+import { IPathTracker, PathStack } from "../../../shared/classes/PathStack";
+import { ILogger, WinstonClient } from "../../../shared/classes/WinstonClient";
+import { readEnvironmentFile } from "../../../shared/functions/ReadEnv";
+import { readLocalFile } from "../../../shared/functions/ReadTextFile";
+import { isValidString, validateAndAssign } from "../shared/FieldValidation";
 
 export type ProxyEndpointString = string;
 export interface IProxyEndpointBuilder {
@@ -14,23 +17,30 @@ export interface IProxyEndpointBuilder {
 
 export class ProxyEndpointBuilder implements IProxyEndpointBuilder {
 	private proxyEndpointObject = {
-		username: '',
-		password: '',
-		protocol: '',
-		address: '',
-		port: '',
+		username: "",
+		password: "",
+		protocol: "",
+		address: "",
+		port: "",
 	};
 
 	private faults: string[] = [];
+	private logger: ILogger;
+	private pathStack: IPathTracker;
+
+	constructor() {
+		this.pathStack = new PathStack().push("Proxy Endpoint String");
+		this.logger = new WinstonClient({ pathStack: this.pathStack });
+	}
 
 	useUsername(username: string): this {
 		validateAndAssign({
 			value: username,
 			validatorFunction: isValidString,
 			assignTarget: this.proxyEndpointObject,
-			assignKey: 'username',
+			assignKey: "username",
 			faults: this.faults,
-			errorMessage: 'proxy endpoint username is invalid',
+			errorMessage: "proxy endpoint username is invalid",
 		});
 		return this;
 	}
@@ -39,9 +49,9 @@ export class ProxyEndpointBuilder implements IProxyEndpointBuilder {
 			value: password,
 			validatorFunction: isValidString,
 			assignTarget: this.proxyEndpointObject,
-			assignKey: 'password',
+			assignKey: "password",
 			faults: this.faults,
-			errorMessage: 'proxy endpoint password is invalid',
+			errorMessage: "proxy endpoint password is invalid",
 		});
 		return this;
 	}
@@ -50,9 +60,9 @@ export class ProxyEndpointBuilder implements IProxyEndpointBuilder {
 			value: protocol,
 			validatorFunction: isValidString,
 			assignTarget: this.proxyEndpointObject,
-			assignKey: 'protocol',
+			assignKey: "protocol",
 			faults: this.faults,
-			errorMessage: 'proxy endpoint protocol is invalid',
+			errorMessage: "proxy endpoint protocol is invalid",
 		});
 		return this;
 	}
@@ -61,9 +71,9 @@ export class ProxyEndpointBuilder implements IProxyEndpointBuilder {
 			value: address,
 			validatorFunction: isValidString,
 			assignTarget: this.proxyEndpointObject,
-			assignKey: 'address',
+			assignKey: "address",
 			faults: this.faults,
-			errorMessage: 'proxy endpoint address is invalid',
+			errorMessage: "proxy endpoint address is invalid",
 		});
 		return this;
 	}
@@ -72,9 +82,9 @@ export class ProxyEndpointBuilder implements IProxyEndpointBuilder {
 			value: port,
 			validatorFunction: isValidString,
 			assignTarget: this.proxyEndpointObject,
-			assignKey: 'port',
+			assignKey: "port",
 			faults: this.faults,
-			errorMessage: 'proxy endpoint port is invalid',
+			errorMessage: "proxy endpoint port is invalid",
 		});
 		return this;
 	}
@@ -82,21 +92,30 @@ export class ProxyEndpointBuilder implements IProxyEndpointBuilder {
 		try {
 			if (this.faults.length < 1)
 				for (const key in this.proxyEndpointObject) {
-					if (key.length === 0) this.faults.push(`result string is missing ${key}`);
+					if (key.length === 0)
+						this.faults.push(`result string is missing ${key}`);
 				}
 			if (this.faults.length > 0) {
-				throw Error('[Proxy Endpoint Builder][build] faults : ' + this.faults.join(' | '));
+				throw new ServiceError({
+					logger: this.logger,
+					source: ErrorSource.Internal,
+					message: "Proxy Endpoint String is Invalid",
+					details: {
+						faults: this.faults.join(" | "),
+					},
+				});
 			}
-			const { address, password, port, protocol, username } = this.proxyEndpointObject;
+			const { address, password, port, protocol, username } =
+				this.proxyEndpointObject;
 			return `${protocol}://${username}:${password}@${address}:${port}`;
 		} finally {
 			this.faults = [];
 			this.proxyEndpointObject = {
-				username: '',
-				password: '',
-				protocol: '',
-				address: '',
-				port: '',
+				username: "",
+				password: "",
+				protocol: "",
+				address: "",
+				port: "",
 			};
 		}
 	}
@@ -120,7 +139,7 @@ export const buildUsingProxyFile: IEndpointsFileToArray = async (args: {
 	const proxyBuilder: IProxyEndpointBuilder = new ProxyEndpointBuilder();
 	const fileLines: string[][] = await readLocalFile({
 		filePath: args.proxyFilepath,
-		lineSplit: ':',
+		lineSplit: ":",
 	});
 	const username: string = readEnvironmentFile({
 		envFilePath: args.envFilepath,
@@ -132,7 +151,7 @@ export const buildUsingProxyFile: IEndpointsFileToArray = async (args: {
 	});
 	const endpoints = fileLines.map((lineArray) => {
 		return proxyBuilder
-			.useProtocol('http')
+			.useProtocol("http")
 			.useAddress(lineArray[0])
 			.usePort(lineArray[1])
 			.useUsername(username)

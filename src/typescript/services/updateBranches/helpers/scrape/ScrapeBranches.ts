@@ -10,8 +10,11 @@ import {
 	navigateToUrl,
 } from "./base/PuppeteerClient";
 import { ConstructLogMessage } from "../../../../shared/classes/ConstructLogMessage";
-import { URLs } from "../../../../common/urls";
-import { BRANCHES_XHR_RESPONSE_URL } from "../../../../shared/constants/ApiEndpoints";
+
+import {
+	BRANCHES_XHR_RESPONSE_URL,
+	URLs,
+} from "../../../../shared/constants/ApiEndpoints";
 
 const skip: RequestHandler = () => {
 	return Promise.resolve(false);

@@ -1,9 +1,12 @@
-import { MappingTypeMapping } from '@elastic/elasticsearch/lib/api/types';
-import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
-import * as https from 'https';
+import { MappingTypeMapping } from "@elastic/elasticsearch/lib/api/types";
+import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
+import * as https from "https";
 
-import { ELASTIC_BASE_URL } from '../../../shared/constants/ApiEndpoints';
-import { getAuthenticationData, omit } from './ElasticsearchUtils';
+import { ELASTIC_BASE_URL } from "../../../shared/constants/ApiEndpoints";
+import { getAuthenticationData, omit } from "./ElasticsearchUtils";
+import { ILogger, WinstonClient } from "../../../shared/classes/WinstonClient";
+import { PathStack } from "../../../shared/classes/PathStack";
+import { ErrorSource, ServiceError } from "../../../errors/ServiceError";
 
 // ###################################################################################################
 // ### Singleton ElasticsearchClient #################################################################
@@ -12,6 +15,8 @@ import { getAuthenticationData, omit } from './ElasticsearchUtils';
 export class ElasticsearchClient implements IElasticsearchClient {
 	private static instance: ElasticsearchClient;
 	private customRequestConfig: CustomRequestConfig;
+	private logger: ILogger;
+	private pathStack: PathStack;
 
 	// Private constructor to prevent direct instantiation
 	private constructor() {
@@ -27,6 +32,9 @@ export class ElasticsearchClient implements IElasticsearchClient {
 				})
 			)
 			.build();
+
+		this.pathStack = new PathStack().push("Elasticsearch Client");
+		this.logger = new WinstonClient({ pathStack: this.pathStack });
 	}
 
 	public static getInstance(): ElasticsearchClient {
@@ -42,7 +50,8 @@ export class ElasticsearchClient implements IElasticsearchClient {
 		indexName: string;
 		checkStatus?: boolean;
 	}) {
-		const { axiosRequestConfig, callerName, indexName, checkStatus = true } = requestData;
+		const { axiosRequestConfig } = requestData;
+		this.pathStack.push("Make Elastic Request");
 		try {
 			const axiosResponse = await axios.request<
 				AxiosRequestConfig,
@@ -50,27 +59,42 @@ export class ElasticsearchClient implements IElasticsearchClient {
 			>(axiosRequestConfig);
 			axiosResponse.request;
 
-			return omit(axiosResponse, 'request', 'config');
+			return omit(axiosResponse, "request", "config");
 		} catch (error) {
 			if (axios.isAxiosError(error)) {
-				if (error.code === 'ECONNREFUSED') {
-					throw new Error(
-						`[Elasticsearch Client][${requestData.callerName}] Connect ${error.code} ${error.config?.baseURL} ${error.config?.url}`
-					);
+				if (error.code === "ECONNREFUSED") {
+					throw new ServiceError({
+						logger: this.logger,
+						source: ErrorSource.Database,
+						message: `${requestData.callerName} ECONNREFUSED`,
+						details: {
+							errorCode: error.code,
+							baseUrl: error.config?.baseURL,
+							url: error.config?.url,
+						},
+					});
 				}
 			}
-			throw error;
+			throw new ServiceError({
+				logger: this.logger,
+				source: ErrorSource.Internal,
+				message: (error as Error).message,
+				details: {
+					name: (error as Error).name,
+					stack: (error as Error).stack,
+				},
+			});
 		}
 	}
 
 	async pingIndex(requestData: { indexName: string }) {
 		const axiosRequestConfig = this.customRequestConfig.getConfig();
-		axiosRequestConfig.method = 'HEAD';
+		axiosRequestConfig.method = "HEAD";
 		axiosRequestConfig.url = requestData.indexName;
 
 		const elasticResponse = await this.makeElasticRequest({
 			axiosRequestConfig,
-			callerName: 'Ping Index',
+			callerName: "Ping Index",
 			indexName: requestData.indexName,
 			checkStatus: false,
 		});
@@ -84,102 +108,109 @@ export class ElasticsearchClient implements IElasticsearchClient {
 	}) {
 		const axiosRequestConfig = this.customRequestConfig.getConfig();
 		axiosRequestConfig.url = `/${requestData.indexName}/_search`;
-		axiosRequestConfig.method = 'GET';
+		axiosRequestConfig.method = "GET";
 		axiosRequestConfig.data = requestData.request;
 
 		return await this.makeElasticRequest<R>({
 			axiosRequestConfig,
-			callerName: 'Search Index',
+			callerName: "Search Index",
 			indexName: requestData.indexName,
 		});
 	}
 
 	async deleteIndex(requestData: { indexName: string }) {
 		const axiosRequestConfig = this.customRequestConfig.getConfig();
-		axiosRequestConfig.method = 'DELETE';
+		axiosRequestConfig.method = "DELETE";
 		axiosRequestConfig.url = requestData.indexName;
 
 		return await this.makeElasticRequest<IElasticDeleteResponse>({
 			axiosRequestConfig,
-			callerName: 'Delete Index',
+			callerName: "Delete Index",
 			indexName: requestData.indexName,
 		});
 	}
 
-	async createIndex(requestData: { indexName: string; indexMapping: MappingTypeMapping }) {
+	async createIndex(requestData: {
+		indexName: string;
+		indexMapping: MappingTypeMapping;
+	}) {
 		const axiosRequestConfig = this.customRequestConfig.getConfig();
-		axiosRequestConfig.method = 'PUT';
+		axiosRequestConfig.method = "PUT";
 		axiosRequestConfig.url = requestData.indexName;
 		axiosRequestConfig.data = { mappings: requestData.indexMapping };
 
 		return await this.makeElasticRequest<IElasticCreateIndexResponse>({
 			axiosRequestConfig,
-			callerName: 'Create Index',
+			callerName: "Create Index",
 			indexName: requestData.indexName,
 		});
 	}
 
 	async getIndexMapping(requestData: { indexName: string }) {
 		const axiosRequestConfig = this.customRequestConfig.getConfig();
-		axiosRequestConfig.method = 'GET';
+		axiosRequestConfig.method = "GET";
 		axiosRequestConfig.url = `${requestData.indexName}/_mapping`;
 
 		return await this.makeElasticRequest<MappingTypeMapping>({
 			axiosRequestConfig,
-			callerName: 'Get Index Mapping',
+			callerName: "Get Index Mapping",
 			indexName: requestData.indexName,
 		});
 	}
 
-	async addUpdateRecord(requestData: { indexName: string; documentId: number; record: any }) {
+	async addUpdateRecord(requestData: {
+		indexName: string;
+		documentId: number;
+		record: any;
+	}) {
 		const axiosRequestConfig = this.customRequestConfig.getConfig();
-		axiosRequestConfig.method = 'POST';
+		axiosRequestConfig.method = "POST";
 		axiosRequestConfig.url = `/${requestData.indexName}/_doc/${requestData.documentId}`;
 		axiosRequestConfig.data = requestData.record;
 
 		return await this.makeElasticRequest<IElasticCrUpRecordResponse>({
 			axiosRequestConfig,
-			callerName: 'Add Update Record',
+			callerName: "Add Update Record",
 			indexName: requestData.indexName,
 		});
 	}
 
 	async bulkAdd(requestData: { indexName: string; bulkedDocuments: any }) {
 		const axiosRequestConfig = this.customRequestConfig.getConfig();
-		axiosRequestConfig.url = '_bulk';
-		axiosRequestConfig.method = 'POST';
+		axiosRequestConfig.url = "_bulk";
+		axiosRequestConfig.method = "POST";
 		axiosRequestConfig.data = requestData.bulkedDocuments;
-		axiosRequestConfig['headers'] = { 'Content-Type': 'application/x-ndjson' };
+		axiosRequestConfig["headers"] = { "Content-Type": "application/x-ndjson" };
 
 		return await this.makeElasticRequest<IElasticBulkResponse>({
 			axiosRequestConfig,
-			callerName: 'Bulk Add',
+			callerName: "Bulk Add",
 			indexName: requestData.indexName,
 		});
 	}
 
 	async deleteRecordsByQ(requestData: { indexName: string; request: any }) {
 		const axiosRequestConfig = this.customRequestConfig.getConfig();
-		axiosRequestConfig.method = 'POST';
+		axiosRequestConfig.method = "POST";
 		axiosRequestConfig.url = `/${requestData.indexName}/_delete_by_query`;
 		axiosRequestConfig.data = requestData.request;
 
 		return await this.makeElasticRequest<IElasticDeleteByQResponse>({
 			axiosRequestConfig,
-			callerName: 'Delete Records',
+			callerName: "Delete Records",
 			indexName: requestData.indexName,
 		});
 	}
 
 	async updateRecordByQ(requestData: { indexName: string; request: any }) {
 		const axiosRequestConfig = this.customRequestConfig.getConfig();
-		axiosRequestConfig.method = 'POST';
+		axiosRequestConfig.method = "POST";
 		axiosRequestConfig.url = `/${requestData.indexName}/_update_by_query`;
 		axiosRequestConfig.data = requestData.request;
 
 		return await this.makeElasticRequest<IElasticUpdateByQResponse>({
 			axiosRequestConfig,
-			callerName: 'Update Record By request',
+			callerName: "Update Record By request",
 			indexName: requestData.indexName,
 		});
 	}
@@ -192,46 +223,56 @@ export class ElasticsearchClient implements IElasticsearchClient {
 export interface IElasticsearchClient {
 	pingIndex(requestData: {
 		indexName: string;
-	}): Promise<Omit<AxiosResponse, 'request' | 'config'>>;
+	}): Promise<Omit<AxiosResponse, "request" | "config">>;
 
 	searchIndex<R extends IElasticSearchResponse>(requestData: {
 		indexName: string;
 		request: any;
-	}): Promise<Omit<AxiosResponse<R>, 'request' | 'config'>>;
+	}): Promise<Omit<AxiosResponse<R>, "request" | "config">>;
 
 	deleteIndex(requestData: {
 		indexName: string;
-	}): Promise<Omit<AxiosResponse<IElasticDeleteResponse>, 'request' | 'config'>>;
+	}): Promise<
+		Omit<AxiosResponse<IElasticDeleteResponse>, "request" | "config">
+	>;
 
 	createIndex(requestData: {
 		indexName: string;
 		indexMapping: MappingTypeMapping;
-	}): Promise<Omit<AxiosResponse<IElasticCreateIndexResponse>, 'request' | 'config'>>;
+	}): Promise<
+		Omit<AxiosResponse<IElasticCreateIndexResponse>, "request" | "config">
+	>;
 
 	getIndexMapping(requestData: {
 		indexName: string;
-	}): Promise<Omit<AxiosResponse<MappingTypeMapping>, 'request' | 'config'>>;
+	}): Promise<Omit<AxiosResponse<MappingTypeMapping>, "request" | "config">>;
 
 	addUpdateRecord(requestData: {
 		indexName: string;
 		documentId: number;
 		record: any;
-	}): Promise<Omit<AxiosResponse<IElasticCrUpRecordResponse>, 'request' | 'config'>>;
+	}): Promise<
+		Omit<AxiosResponse<IElasticCrUpRecordResponse>, "request" | "config">
+	>;
 
 	bulkAdd(requestData: {
 		indexName: string;
 		bulkedDocuments: any;
-	}): Promise<Omit<AxiosResponse<IElasticBulkResponse>, 'request' | 'config'>>;
+	}): Promise<Omit<AxiosResponse<IElasticBulkResponse>, "request" | "config">>;
 
 	deleteRecordsByQ(requestData: {
 		indexName: string;
 		request: any;
-	}): Promise<Omit<AxiosResponse<IElasticDeleteByQResponse>, 'request' | 'config'>>;
+	}): Promise<
+		Omit<AxiosResponse<IElasticDeleteByQResponse>, "request" | "config">
+	>;
 
 	updateRecordByQ(requestData: {
 		indexName: string;
 		request: any;
-	}): Promise<Omit<AxiosResponse<IElasticUpdateByQResponse>, 'request' | 'config'>>;
+	}): Promise<
+		Omit<AxiosResponse<IElasticUpdateByQResponse>, "request" | "config">
+	>;
 }
 
 // ##############################################
@@ -334,7 +375,7 @@ export interface IElasticCrUpRecordResponse {
 	_index: string;
 	_id: string;
 	_version: number;
-	result: 'created' | 'updated';
+	result: "created" | "updated";
 	_shards: {
 		total: number;
 		successful: number;

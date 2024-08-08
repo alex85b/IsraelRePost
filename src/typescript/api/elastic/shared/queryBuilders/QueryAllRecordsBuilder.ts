@@ -1,5 +1,8 @@
-import { QueryDslQueryContainer, SearchRequest } from '@elastic/elasticsearch/lib/api/types';
-import { SearchRequestBuilder } from '../requestBuilders/SearchRequestBuilder';
+import {
+	QueryDslQueryContainer,
+	SearchRequest,
+} from "@elastic/elasticsearch/lib/api/types";
+import { SearchRequestBuilder } from "../requestBuilders/SearchRequestBuilder";
 
 export interface IAllRecordsQuery extends QueryDslQueryContainer {
 	match_all: {};

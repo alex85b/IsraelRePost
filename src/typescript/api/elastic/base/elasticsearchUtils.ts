@@ -4,6 +4,9 @@ import dotenv from "dotenv";
 
 import { ERR_RESOURCE_MISSING } from "../../../shared/constants/ErrorCodes";
 import { isValidString } from "../../../data/models/shared/FieldValidation";
+import { ILogger, WinstonClient } from "../../../shared/classes/WinstonClient";
+import { PathStack } from "../../../shared/classes/PathStack";
+import { ServiceError, ErrorSource } from "../../../errors/ServiceError";
 
 const MODULE_NAME = "Elasticsearch Utils";
 
@@ -17,6 +20,11 @@ type ElasticAuthenticationProvider = () => ElasticAuthentication;
 
 export const getAuthenticationData: ElasticAuthenticationProvider = () => {
 	dotenv.config();
+	const logger: ILogger = new WinstonClient({
+		pathStack: new PathStack()
+			.push(MODULE_NAME)
+			.push("Get Authentication Data"),
+	});
 	const faults: string[] = [];
 	const certificatePath = path.join(
 		__dirname,
@@ -35,9 +43,14 @@ export const getAuthenticationData: ElasticAuthenticationProvider = () => {
 	if (!isValidString(username)) faults.push("Faulty Elastic Username");
 	if (!isValidString(password)) faults.push("Faulty Elastic Password");
 	if (faults.length) {
-		throw new Error(
-			`[${MODULE_NAME}][${ERR_RESOURCE_MISSING}] : ${faults.join(" | ")}`
-		);
+		throw new ServiceError({
+			logger,
+			source: ErrorSource.Internal,
+			message: ERR_RESOURCE_MISSING,
+			details: {
+				faults: faults.join(" | "),
+			},
+		});
 	}
 	return { username, password, certificates };
 };

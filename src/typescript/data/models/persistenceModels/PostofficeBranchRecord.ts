@@ -15,6 +15,9 @@ import {
 	IDocumentBranch,
 	ISingleBranchQueryResponse,
 } from "../../../api/elastic/branchServices/BranchServicesIndexing";
+import { IPathTracker, PathStack } from "../../../shared/classes/PathStack";
+import { ILogger, WinstonClient } from "../../../shared/classes/WinstonClient";
+import { ServiceError, ErrorSource } from "../../../errors/ServiceError";
 
 // ###########################################################################################
 // ### Builder and Builder-product Interfaces ################################################
@@ -99,6 +102,8 @@ export class PostofficeBranchRecordBuilder
 			return JSON.stringify(this.branchDocument, null, 3);
 		}
 	};
+	private logger: ILogger;
+	private pathStack: IPathTracker;
 
 	constructor() {
 		this.branchDocument = {
@@ -122,6 +127,8 @@ export class PostofficeBranchRecordBuilder
 			},
 			services: [],
 		};
+		this.pathStack = new PathStack().push("Postoffice Branch Record Builder");
+		this.logger = new WinstonClient({ pathStack: this.pathStack });
 	}
 
 	withBranchId(data: { id: number }) {
@@ -328,12 +335,20 @@ export class PostofficeBranchRecordBuilder
 
 	build() {
 		if (this.faults.length)
-			throw Error(
-				"[PostofficeBranchRecord] Errors : " +
-					JSON.stringify(this.branchDocument, null, 3) +
-					" " +
-					this.faults.join(" | ")
-			);
+			throw new ServiceError({
+				logger: this.logger,
+				source: ErrorSource.Internal,
+				message: "Proxy Endpoint String is Invalid",
+				details: {
+					faults: this.faults.join(" | "),
+				},
+			});
+		throw Error(
+			"[PostofficeBranchRecord] Errors : " +
+				JSON.stringify(this.branchDocument, null, 3) +
+				" " +
+				this.faults.join(" | ")
+		);
 		return new this.PostofficeBranchRecord({
 			branchDocument: this.branchDocument,
 		});

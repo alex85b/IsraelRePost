@@ -1,4 +1,7 @@
-import { isValidNumber } from '../shared/FieldValidation';
+import { ServiceError, ErrorSource } from "../../../errors/ServiceError";
+import { IPathTracker, PathStack } from "../../../shared/classes/PathStack";
+import { ILogger, WinstonClient } from "../../../shared/classes/WinstonClient";
+import { isValidNumber } from "../shared/FieldValidation";
 
 export type MemoryView = Uint8Array | Uint16Array | Uint32Array;
 
@@ -12,17 +15,22 @@ export class SharedMemoryBuilder implements ISharedMemoryBuilder {
 	private faults: string[];
 	private cellAmount: number | undefined;
 	private bytesPerCell: number | undefined;
+	private logger: ILogger;
+	private pathStack: IPathTracker;
 
 	constructor() {
 		this.faults = [];
 
 		this.cellAmount = undefined;
 		this.bytesPerCell = undefined;
+
+		this.pathStack = new PathStack().push("Shared Memory Builder");
+		this.logger = new WinstonClient({ pathStack: this.pathStack });
 	}
 
 	maxMemoryCellValue(maxCellValue: number) {
 		if (!isValidNumber(maxCellValue)) {
-			this.faults.push('maxCellValue is not a number');
+			this.faults.push("maxCellValue is not a number");
 			return this;
 		}
 
@@ -50,19 +58,26 @@ export class SharedMemoryBuilder implements ISharedMemoryBuilder {
 
 	neededCellAmount(cellAmount: number) {
 		if (!isValidNumber(cellAmount)) {
-			this.faults.push('cellAmount is not a number');
+			this.faults.push("cellAmount is not a number");
 		} else this.cellAmount = cellAmount;
 		return this;
 	}
 
 	build() {
 		try {
-			if (typeof this.bytesPerCell === 'undefined')
-				this.faults.push('maxMemoryCellValue has to be used');
-			if (typeof this.cellAmount === 'undefined')
-				this.faults.push('neededCellAmount has to be used');
+			if (typeof this.bytesPerCell === "undefined")
+				this.faults.push("maxMemoryCellValue has to be used");
+			if (typeof this.cellAmount === "undefined")
+				this.faults.push("neededCellAmount has to be used");
 			if (this.faults.length)
-				throw Error('[SharedMemoryBuilder] Build-errors : ' + this.faults.join(' | '));
+				throw new ServiceError({
+					logger: this.logger,
+					source: ErrorSource.Internal,
+					message: "Thread Shared Memory Build Failed",
+					details: {
+						faults: this.faults.join(" | "),
+					},
+				});
 
 			const sharedBuffer = new SharedArrayBuffer(
 				(this.bytesPerCell ?? 0) * (this.cellAmount ?? 0)
@@ -82,11 +97,23 @@ export interface IParseAsMemoryView {
 	(input: any): MemoryView;
 }
 
-export const parseAsMemoryView: IParseAsMemoryView = (input: any): MemoryView => {
+export const parseAsMemoryView: IParseAsMemoryView = (
+	input: any
+): MemoryView => {
+	const logger = new WinstonClient({
+		pathStack: new PathStack().push("Parse As Memory View"),
+	});
 	if (input instanceof Uint8Array) return input as Uint8Array;
 	if (input instanceof Uint16Array) return input as Uint16Array;
 	if (input instanceof Uint32Array) return input as Uint32Array;
-	throw Error('[parseAsMemoryView] input is not a MemoryView, cannot perform parsing');
+	throw new ServiceError({
+		logger,
+		source: ErrorSource.Internal,
+		message: "Input is not a MemoryView, cannot perform parsing",
+		details: {
+			input,
+		},
+	});
 };
 
 export interface IGetMemoryViewParameters {
@@ -97,7 +124,9 @@ export interface IGetMemoryViewParameters {
 	};
 }
 
-export const getMemoryViewParameters: IGetMemoryViewParameters = (memoryView: MemoryView) => {
+export const getMemoryViewParameters: IGetMemoryViewParameters = (
+	memoryView: MemoryView
+) => {
 	const bytesPerCell = memoryView?.BYTES_PER_ELEMENT ?? 0;
 	const maxCellValue = Math.pow(2, bytesPerCell * 8) - 1;
 	const cellCount = memoryView?.length ?? 0;

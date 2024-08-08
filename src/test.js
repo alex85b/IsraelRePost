@@ -1,9 +1,8 @@
-console.log('### Initiate Tests of IsraelRePost ###');
+console.log("### Initiate Tests of IsraelRePost ###");
 
 // ##############################################################################################
 // ### Elastic APIs #############################################################################
 // ##############################################################################################
-
 
 // Basic Elasticsearch 'Client' for communication using https
 // ##########################################################
@@ -39,7 +38,6 @@ bulkAdd();
 deleteRecordsByQ();
 updateRecordByQ();
 */
-
 
 // Queries that are specific to 'Branch' index
 // ###########################################
@@ -97,7 +95,6 @@ createErrorIndex();
 // ##############################################################################################
 // ### Redis Cloud APIs #########################################################################
 // ##############################################################################################
-
 
 // Redis Cloud Queue Utility Functions
 // ###################################
@@ -339,7 +336,6 @@ const {
 */
 // testScrapeBrowserResponses();
 
-
 // Scrape Filter Validate and Persist branches
 // ###########################################
 // ###########################################
@@ -520,11 +516,12 @@ testMultipleUpdaterThread();
 // Ip Management: message handaling
 // ################################
 // ################################
-
+/*
 const {
 	testHandleStartEndpoint,
 	testHandleStartThenEndEndpoint
 } = require('./js-build/services/updateAppointments/workerThreads/ipManager/Tests/MessageHandler');
+*/
 
 // testHandleStartEndpoint();
 // testHandleStartThenEndEndpoint();
@@ -563,6 +560,27 @@ testReadSmartProxyFile();
 testReadWebShareFile();
 */
 
+/*
+const {
+	testInfoLog,
+	testErrorLog,
+} = require("./js-build/shared/classes/Tests/WinstonClient");
+*/
+/*
+testInfoLog();
+testErrorLog();
+*/
+
+// ##############################################################################################
+// ### Errors  ##################################################################################
+// ##############################################################################################
+
+const { testThrowError } = require("./js-build/errors/Test/ServiceError");
+testThrowError();
+
 // ##############################################################################################
 // ### Concepts  ################################################################################
 // ##############################################################################################
+
+// Test Logger
+// require('./js-build/shared/classes/LoggerTest')

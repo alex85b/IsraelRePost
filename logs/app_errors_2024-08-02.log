@@ -1,0 +1,2 @@
+{"details":{"source":"INTERNAL"},"level":"error","message":"ServiceError: This is a simple test Service error","pathStack":"Errors/Tests/Test Throw Error","timestamp":"2024/08/02 12:50:48"}
+{"details":{"foo":"bar","source":"INTERNAL"},"level":"error","message":"ServiceError: This is a Complex test Service error","pathStack":"Errors/Tests/Test Throw Error","timestamp":"2024/08/02 12:50:48"}

@@ -1,0 +1,2 @@
+{"level":"info","message":"A simple Error was successfuly thrown","pathStack":"Errors/Tests/Test Throw Error","timestamp":"2024/08/02 12:50:48"}
+{"level":"info","message":"A Complex (including Details) Error was successfuly thrown","pathStack":"Errors/Tests/Test Throw Error","timestamp":"2024/08/02 12:50:48"}

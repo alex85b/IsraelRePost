@@ -1,6 +1,11 @@
-import { AxiosResponse } from 'axios';
-import { IPostofficeResponseData } from './shared/PostofficeResponseData';
-import { ConstructLogMessage } from '../../../../shared/classes/ConstructLogMessage';
+import { AxiosResponse } from "axios";
+import { IPostofficeResponseData } from "./shared/PostofficeResponseData";
+import { IPathTracker, PathStack } from "../../../../shared/classes/PathStack";
+import {
+	ILogger,
+	WinstonClient,
+} from "../../../../shared/classes/WinstonClient";
+import { ServiceError, ErrorSource } from "../../../../errors/ServiceError";
 
 export interface IServicesResponseData {
 	serviceId: number;
@@ -30,7 +35,9 @@ export interface IRequestServicesResponse {
 export class RequestServicesResponse implements IRequestServicesResponse {
 	private services: IServicesResponseData[];
 
-	private constructor(buildData: { postofficeBranchServices: IServicesResponseData[] }) {
+	private constructor(buildData: {
+		postofficeBranchServices: IServicesResponseData[];
+	}) {
 		this.services = buildData.postofficeBranchServices;
 	}
 
@@ -55,51 +62,87 @@ export class RequestServicesResponse implements IRequestServicesResponse {
 					`Has FIFO Service: ${service.HasFIFOService}`,
 					`Ext Ref: ${service.ExtRef}`,
 					`Location ID: ${service.LocationId}`,
-				].join('\n');
+				].join("\n");
 			})
-			.join('\n\n');
+			.join("\n\n");
 	}
 
 	static Builder = class {
 		private services: IServicesResponseData[] = [];
+		private logger: ILogger;
+		private pathStack: IPathTracker;
+
+		constructor() {
+			this.pathStack = new PathStack().push(
+				"Request Services Response Builder"
+			);
+			this.logger = new WinstonClient({ pathStack: this.pathStack });
+		}
 
 		useAxiosResponse(
-			rawResponse: Omit<AxiosResponse<IExpectedServiceResponse, any>, 'request' | 'config'>
+			rawResponse: Omit<
+				AxiosResponse<IExpectedServiceResponse, any>,
+				"request" | "config"
+			>
 		) {
 			const faults: string[] = [];
 			const success = rawResponse.data?.Success ?? false;
 			const services = rawResponse.data?.Results;
 
-			if (typeof success !== 'boolean' || (typeof success === 'boolean' && !success)) {
+			if (
+				typeof success !== "boolean" ||
+				(typeof success === "boolean" && !success)
+			) {
 				faults.push(
-					'services request has failed' +
-						(rawResponse.statusText ? ', ' + rawResponse.statusText : '')
+					"services request has failed" +
+						(rawResponse.statusText ? ", " + rawResponse.statusText : "")
 				);
 			}
 			if (!Array.isArray(services)) {
-				faults.push('services array is malformed or does not exist');
+				faults.push("services array is malformed or does not exist");
 			} else if (!services.length) {
-				faults.push('response contains no services');
+				faults.push("response contains no services");
 			}
 			if (faults.length) {
 				faults.push(`response status: ${rawResponse.status}`);
 				faults.push(`response statusText: ${rawResponse.statusText}`);
 				faults.push(`response ErrorMessage: ${rawResponse.data.ErrorMessage}`);
 				faults.push(`response ErrorNumber: ${rawResponse.data.ErrorNumber}`);
-				throw Error(faults.join(' | '));
+				throw new ServiceError({
+					logger: this.logger,
+					source: ErrorSource.ThirdPartyAPI,
+					message: "Extracted Response Data Is Invalid",
+					details: {
+						API: "Post office services request",
+						faults: faults.join(" | "),
+						response: rawResponse,
+					},
+				});
 			}
 
 			const demoService = services[0];
 			const serviceId = demoService.serviceId;
 
-			if (typeof serviceId !== 'number') throw Error('service id is invalid');
+			if (typeof serviceId !== "number") {
+				throw new ServiceError({
+					logger: this.logger,
+					source: ErrorSource.ThirdPartyAPI,
+					message: "Service ID is invalid",
+					details: {
+						API: "Post office services request",
+						response: rawResponse,
+					},
+				});
+			}
 
 			this.services = services;
 			return this;
 		}
 
 		build() {
-			return new RequestServicesResponse({ postofficeBranchServices: this.services });
+			return new RequestServicesResponse({
+				postofficeBranchServices: this.services,
+			});
 		}
 	};
 }

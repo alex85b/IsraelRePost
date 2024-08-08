@@ -3,7 +3,7 @@ import * as readline from "readline";
 import * as dotenv from "dotenv";
 dotenv.config();
 
-interface IFileReader {
+export interface IFileReader {
 	(args: { filePath: string; lineSplit?: string }): Promise<string[][]>;
 }
 

@@ -1,6 +1,12 @@
-import { AxiosResponse } from 'axios';
-import { IPostofficeResponseData } from './shared/PostofficeResponseData';
-import { ConstructLogMessage } from '../../../../shared/classes/ConstructLogMessage';
+import { AxiosResponse } from "axios";
+import { IPostofficeResponseData } from "./shared/PostofficeResponseData";
+import { ConstructLogMessage } from "../../../../shared/classes/ConstructLogMessage";
+import { IPathTracker, PathStack } from "../../../../shared/classes/PathStack";
+import {
+	ILogger,
+	WinstonClient,
+} from "../../../../shared/classes/WinstonClient";
+import { ServiceError, ErrorSource } from "../../../../errors/ServiceError";
 
 export interface ITimesResponseData {
 	Time: number;
@@ -17,54 +23,91 @@ export interface IRequestTimesResponse {
 
 export class RequestTimesResponse implements IRequestTimesResponse {
 	private times: ITimesResponseData[];
-	private constructor(buildData: { postofficeAppointmentTimes: ITimesResponseData[] }) {
+	private constructor(buildData: {
+		postofficeAppointmentTimes: ITimesResponseData[];
+	}) {
 		this.times = buildData.postofficeAppointmentTimes;
 	}
 
 	getTimes() {
-		return this.times.map((time) => String(time.Time ?? ''));
+		return this.times.map((time) => String(time.Time ?? ""));
 	}
 
 	toString() {
 		return this.times
 			.map((time) => {
-				return [`Appointment time : ${timeNumberToHourFormat(time.Time)}`].join('\n');
+				return [`Appointment time : ${timeNumberToHourFormat(time.Time)}`].join(
+					"\n"
+				);
 			})
-			.join('\n\n');
+			.join("\n\n");
 	}
 
 	static Builder = class {
 		private times: ITimesResponseData[] = [];
+		private logger: ILogger;
+		private pathStack: IPathTracker;
+
+		constructor() {
+			this.pathStack = new PathStack().push("Request Times Response Builder");
+			this.logger = new WinstonClient({ pathStack: this.pathStack });
+		}
 
 		useAxiosResponse(
-			rawResponse: Omit<AxiosResponse<IExpectedTimesResponse, any>, 'request' | 'config'>
+			rawResponse: Omit<
+				AxiosResponse<IExpectedTimesResponse, any>,
+				"request" | "config"
+			>
 		) {
 			const faults: string[] = [];
 			const success = rawResponse.data?.Success ?? false;
 			const times = rawResponse.data?.Results;
 			const errorMessage = rawResponse.data?.ErrorMessage;
 
-			if (typeof success !== 'boolean' || (typeof success === 'boolean' && !success)) {
+			if (
+				typeof success !== "boolean" ||
+				(typeof success === "boolean" && !success)
+			) {
 				faults.push(
-					`times response status is failed${errorMessage ? ' ' + errorMessage : ''}`
+					`times response status is failed${
+						errorMessage ? " " + errorMessage : ""
+					}`
 				);
 			}
 			if (!Array.isArray(times)) {
-				faults.push('times response array is malformed or does not exist');
+				faults.push("times response array is malformed or does not exist");
 			} else if (!times.length) {
-				faults.push('times response contains no appointment times');
+				faults.push("times response contains no appointment times");
 			}
 			if (faults.length) {
 				faults.push(`response status: ${rawResponse.status}`);
 				faults.push(`response statusText: ${rawResponse.statusText}`);
 				faults.push(`response ErrorMessage: ${rawResponse.data.ErrorMessage}`);
 				faults.push(`response ErrorNumber: ${rawResponse.data.ErrorNumber}`);
-				throw Error(faults.join(' | '));
+				throw new ServiceError({
+					logger: this.logger,
+					source: ErrorSource.ThirdPartyAPI,
+					message: "Extracted Response Times Is Invalid",
+					details: {
+						API: "Post office times request",
+						faults: faults.join(" | "),
+						response: rawResponse,
+					},
+				});
 			}
 
 			if (times.length) {
 				const time = times[0]?.Time;
-				if (typeof time !== 'number') throw Error('time is not a numerical value');
+				if (typeof time !== "number")
+					throw new ServiceError({
+						logger: this.logger,
+						source: ErrorSource.ThirdPartyAPI,
+						message: "Time field is invalid: not numerical value",
+						details: {
+							API: "Post office times request",
+							response: rawResponse,
+						},
+					});
 			}
 
 			this.times = times;
@@ -72,7 +115,9 @@ export class RequestTimesResponse implements IRequestTimesResponse {
 		}
 
 		build() {
-			return new RequestTimesResponse({ postofficeAppointmentTimes: this.times });
+			return new RequestTimesResponse({
+				postofficeAppointmentTimes: this.times,
+			});
 		}
 	};
 }
@@ -90,10 +135,10 @@ function timeNumberToHourFormat(timeValue: number): string {
 	const minutes = timeValue % 60;
 
 	// Convert the hours to a string and pad with leading zeros if necessary.
-	const formattedHours = hours.toString().padStart(2, '0');
+	const formattedHours = hours.toString().padStart(2, "0");
 
 	// Convert the minutes to a string and pad with leading zeros if necessary.
-	const formattedMinutes = minutes.toString().padStart(2, '0');
+	const formattedMinutes = minutes.toString().padStart(2, "0");
 
 	// Return the formatted time string in "HH:MM" format.
 	return `${formattedHours}:${formattedMinutes}`;
