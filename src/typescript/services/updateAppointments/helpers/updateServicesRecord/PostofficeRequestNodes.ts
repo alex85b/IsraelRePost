@@ -1,3 +1,4 @@
+import { AxiosError, isAxiosError } from "axios";
 import { omit } from "../../../../api/elastic/base/ElasticsearchUtils";
 import { postofficeApiCall } from "../../../../api/postOfficeCalls/base/PostofficeApiCall";
 import { IPostofficeRequestAxiosConfig } from "../../../../api/postOfficeCalls/base/PostofficeRequestConfig";
@@ -98,9 +99,18 @@ export class CreateUserNode implements IPostofficeRequestNode {
 				}),
 			];
 		} catch (error) {
-			const partialError = omit(error as Error, "stack");
+			let errorObj = isAxiosError(error)
+				? omit(
+						error as AxiosError,
+						"toJSON",
+						"isAxiosError",
+						"stack",
+						"request",
+						"config"
+				  )
+				: (error as Error).message;
 			this.errorModelBuilder.addUserError({
-				userError: JSON.stringify(partialError, null),
+				userError: JSON.stringify(errorObj, null),
 			});
 			return [];
 		}

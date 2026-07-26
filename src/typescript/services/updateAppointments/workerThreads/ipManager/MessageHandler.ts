@@ -1,8 +1,15 @@
+import { threadId } from "worker_threads";
 import { MemoryView } from "../../../../data/models/dataTransferModels/ThreadSharedMemory";
+import { ServiceError, ErrorSource } from "../../../../errors/ServiceError";
 import {
 	ConstructLogMessage,
 	ILogMessageConstructor,
 } from "../../../../shared/classes/ConstructLogMessage";
+import { PathStack } from "../../../../shared/classes/PathStack";
+import {
+	ILogger,
+	WinstonClient,
+} from "../../../../shared/classes/WinstonClient";
 import {
 	DepletedClaimsTracker,
 	ITrackDepletedClaims,
@@ -43,6 +50,7 @@ export interface IEndpointStarter {
 	parentCommunication: ICommunicationWrapper;
 	sharedMemory: MemoryView;
 	updaterScriptPath: string;
+	pathStack: PathStack;
 	proxyEndpoint?: string;
 }
 
@@ -60,8 +68,10 @@ export class HandleStartEndpoint
 		IConfigurable<MessageDataPair<typeof IpManagerUpdaterMessages>>,
 		IShutdownByKey<number>
 {
-	private logConstructor: ILogMessageConstructor;
+	// private logConstructor: ILogMessageConstructor;
+	private logger: ILogger;
 	private averageRequestsPerBranch = 8;
+
 	private workers: {
 		[threadId: number]: ICommunicationWrapper & IIdentifiable;
 	} = {};
@@ -71,16 +81,18 @@ export class HandleStartEndpoint
 
 	constructor(buildArguments: IEndpointStarter) {
 		super(buildArguments);
-		this.logConstructor = new ConstructLogMessage([
-			"HandleStartEndpoint",
-			`Thread ID ${this.data.threadId ?? -1}`,
-		]);
+		this.data.pathStack
+			.copy()
+			.push("Handle Start endpoint")
+			.push(`Thread ID ${this.data.threadId ?? -1}`);
+		this.logger = new WinstonClient({ pathStack: this.data.pathStack });
 	}
 
 	async handle(): Promise<void> {
 		const { allowedBatchSize, status } = await attemptNewRequestBatch({
 			batchTracker: this.data.batchTracker,
-			logConstructor: this.logConstructor,
+			logger: this.logger,
+			pathStack: this.data.pathStack,
 			requestsPerMinuteLimit: this.data.requestsPerMinuteLimit,
 		});
 		if (status === "depleted" || allowedBatchSize === undefined) {
@@ -107,16 +119,18 @@ export class HandleStartEndpoint
 				});
 			this.workers[communicationWrapper.getID()] = communicationWrapper;
 			if (this.childHandlers === undefined) {
-				throw Error(
-					this.logConstructor.createLogMessage({
-						subject: `Message handlers for the worker ${communicationWrapper.getID()} were not provided`,
-					})
-				);
+				throw new ServiceError({
+					message: "Message handlers were not provided",
+					source: ErrorSource.ThirdPartyAPI,
+					logger: this.logger,
+					details: { worker: communicationWrapper.getID() },
+				});
 			}
 			this.setupCommunicationWrapper({
 				communicationWrapper: this.workers[communicationWrapper.getID()],
 				ipManagerUpdaterHandlers: this.childHandlers,
-				logConstructor: this.logConstructor,
+				logger: this.logger,
+				pathStack: this.data.pathStack,
 				workers: this.workers,
 				workerRemoval: this.deleteWorker,
 			});
@@ -128,84 +142,81 @@ export class HandleStartEndpoint
 
 	private deleteWorker(args: {
 		workerId: number;
-		logConstructor: ILogMessageConstructor;
 		workers: { [threadId: number]: ICommunicationWrapper & IIdentifiable };
 	}): boolean {
 		if (Object.keys(args.workers).includes(String(args.workerId))) {
 			delete args.workers[args.workerId];
 			return true;
 		}
-		console.log(
-			args.logConstructor.createLogMessage({
-				subject: `worker targeted for deletion ${args.workerId}`,
-			})
-		);
-		console.log(
-			args.logConstructor.createLogMessage({
-				subject: "workers",
-				message: JSON.stringify(args.workers, null, 4),
-			})
-		);
+		this.logger.logInfo({
+			message: "worker targeted for deletion",
+			details: { worker: args.workerId },
+		});
 		return false;
 	}
 
 	private setupCommunicationWrapper(args: {
 		communicationWrapper: ICommunicationWrapper & IIdentifiable;
 		ipManagerUpdaterHandlers: MessageDataPair<typeof IpManagerUpdaterMessages>;
-		logConstructor: ILogMessageConstructor;
+		logger: ILogger;
+		pathStack: PathStack;
 		workers: { [threadId: number]: ICommunicationWrapper & IIdentifiable };
 		workerRemoval: (args: {
 			workerId: number;
-			logConstructor: ILogMessageConstructor;
+			pathStack: PathStack;
+			logger: ILogger;
 			workers: { [threadId: number]: ICommunicationWrapper & IIdentifiable };
 		}) => boolean;
 	}) {
+		const currentHandler = this;
 		args.communicationWrapper.setCallbacks({
 			onMessageCallback(message) {
-				console.log(
-					args.logConstructor.createLogMessage({
-						subject: `From ${args.communicationWrapper.getID()} On message`,
+				args.logger.logInfo({
+					message: "Incoming message",
+					details: {
+						fromWorker: args.communicationWrapper.getID(),
 						message,
-					})
-				);
+					},
+				});
 				if (isIpManagerUpdaterMessage(message)) {
 					args.ipManagerUpdaterHandlers[message].handle(
 						args.communicationWrapper
 					);
 				} else {
-					throw Error(
-						args.logConstructor.createLogMessage({
-							subject: `Unsupported thread ${args.communicationWrapper.getID()} message`,
-							message,
-						})
-					);
+					throw new ServiceError({
+						message: "Unsupported thread message",
+						logger: args.logger,
+						source: ErrorSource.Internal,
+						details: { fromWorker: args.communicationWrapper.getID(), message },
+					});
 				}
 			},
 
 			onErrorCallback(error) {
-				console.log(
-					args.logConstructor.createLogMessage({
-						subject: "On error",
-						message: error.message,
-					})
-				);
+				args.logger.logError({
+					message: "Incoming Error",
+					details: {
+						fromWorker: args.communicationWrapper.getID(),
+						error: error.message,
+					},
+				});
 				args.workerRemoval({
-					logConstructor: args.logConstructor,
 					workerId: args.communicationWrapper.getID(),
 					workers: args.workers,
+					logger: currentHandler.logger,
+					pathStack: currentHandler.data.pathStack,
 				});
 				if (!Object.keys(args.workers).length) process.exit(0);
 			},
 
 			onExitCallback(exitCode) {
-				console.log(
-					args.logConstructor.createLogMessage({
-						subject: "On exit code",
-						message: String(exitCode),
-					})
-				);
+				currentHandler.logger.logInfo({
+					message: "On exit code",
+					details: { fromWorker: args.communicationWrapper.getID(), exitCode },
+				});
 				args.workerRemoval({
-					logConstructor: args.logConstructor,
+					logger: currentHandler.logger,
+					pathStack: currentHandler.data.pathStack,
 					workerId: args.communicationWrapper.getID(),
 					workers: args.workers,
 				});
@@ -215,22 +226,32 @@ export class HandleStartEndpoint
 	}
 
 	stop(): void {
-		this.logConstructor.addLogHeader("Stop request");
-		console.log(
-			this.logConstructor.createLogMessage({ subject: "Endpoint stoppage" })
-		);
-		for (const workerID in this.workers) {
-			this.workers[workerID].sendMessage(
-				AppointmentsUpdatingMessages.EndUpdater
-			);
+		this.data.pathStack.push("Stop request");
+		try {
+			this.logger.logInfo({
+				message: "Stop request",
+				details: "Endpoint stoppage",
+			});
+			for (const workerID in this.workers) {
+				this.workers[workerID].sendMessage(
+					AppointmentsUpdatingMessages.EndUpdater
+				);
+			}
+		} finally {
+			this.data.pathStack.pop();
 		}
 	}
 
 	shutDown(key: number): void {
-		console.log(
-			this.logConstructor.createLogMessage({ subject: `Worker ${key} Closure` })
-		);
-		this.workers[key].sendMessage(AppointmentsUpdatingMessages.EndUpdater);
+		this.data.pathStack.push("Shut down Event");
+		try {
+			this.logger.logInfo({
+				message: `Worker ${key} Closure`,
+			});
+			this.workers[key].sendMessage(AppointmentsUpdatingMessages.EndUpdater);
+		} finally {
+			this.data.pathStack.pop();
+		}
 	}
 
 	configure(args: MessageDataPair<typeof IpManagerUpdaterMessages>): void {
@@ -254,28 +275,24 @@ export interface IEndpointEnder {
 	RuningEndpoint: IStoppable &
 		HandlerClass<any, IpManagerContinuesMessages.StartEndpoint>;
 	threadId: number;
+	pathStack: PathStack;
 }
 
 export class HandleEndEndpoint extends HandlerClass<
 	IEndpointEnder,
 	IpManagerContinuesMessages.EndEndpoint
 > {
-	private logConstructor: ILogMessageConstructor;
+	private logger: ILogger;
 
 	constructor(args: IEndpointEnder) {
 		super(args);
-		this.logConstructor = new ConstructLogMessage([
-			"HandleEndEndpoint",
-			`Thread ID ${this.data.threadId ?? -1}`,
-		]);
+		this.logger = new WinstonClient({
+			pathStack: this.data.pathStack.copy().push("Handle End Endpoint"),
+		});
 	}
 
 	handle(worker?: ICommunicationWrapper & IIdentifiable): Promise<void> | void {
-		console.log(
-			this.logConstructor.createLogMessage({
-				subject: "Endpoint requested to end activity.",
-			})
-		);
+		this.logger.logInfo({ message: "Endpoint requested to end activity" });
 		this.data.RuningEndpoint.stop();
 	}
 }
@@ -291,6 +308,7 @@ export interface IEndpointRestart {
 	batchTracker: IRequestsBatchTracker;
 	requestsPerMinuteLimit: number;
 	parentCommunication: ICommunicationWrapper;
+	pathStack: PathStack;
 }
 
 export class HandleUpdaterDepleted extends HandlerClass<
@@ -298,33 +316,27 @@ export class HandleUpdaterDepleted extends HandlerClass<
 	IpManagerUpdaterMessages.UpdaterDepleted
 > {
 	private capturedWorkers: ICommunicationWrapper[] = [];
-	private logConstructor: ILogMessageConstructor;
 	private depletedClaimsTracker: ITrackDepletedClaims;
+	private logger: ILogger;
 
-	constructor(args: {
-		//worker: ICommunicationWrapper & IIdentifiable;
-		threadId: number;
-		sharedTracking: IObserveSharedTracking & IResetSharedTracking;
-		batchTracker: IRequestsBatchTracker;
-		requestsPerMinuteLimit: number;
-		parentCommunication: ICommunicationWrapper;
-	}) {
+	constructor(args: IEndpointRestart) {
 		super(args);
-		this.logConstructor = new ConstructLogMessage([
-			"HandleUpdaterDepleted",
-			`Thread ID ${this.data.threadId ?? -1}`,
-		]);
+		this.data.pathStack
+			.copy()
+			.push("HandleUpdaterDepleted")
+			.push(`Thread ID ${this.data.threadId ?? -1}`);
+		this.logger = new WinstonClient({ pathStack: this.data.pathStack });
 		this.depletedClaimsTracker = new DepletedClaimsTracker();
 	}
 
 	async handle(worker?: ICommunicationWrapper & IIdentifiable): Promise<void> {
 		const instanceReference = this;
 		if (!worker) {
-			throw Error(
-				this.logConstructor.createLogMessage({
-					subject: "No ICommunicationWrapper has been provided",
-				})
-			);
+			throw new ServiceError({
+				logger: this.logger,
+				source: ErrorSource.Internal,
+				message: "No ICommunicationWrapper has been provided",
+			});
 		}
 
 		// If the Depleted claim is invalid.
@@ -340,8 +352,9 @@ export class HandleUpdaterDepleted extends HandlerClass<
 		if (this.depletedClaimsTracker.track().authorized) {
 			const { allowedBatchSize, status } = await attemptNewRequestBatch({
 				batchTracker: this.data.batchTracker,
-				logConstructor: this.logConstructor,
 				requestsPerMinuteLimit: this.data.requestsPerMinuteLimit,
+				logger: this.logger,
+				pathStack: this.data.pathStack,
 			});
 
 			if (status === "depleted" || allowedBatchSize === undefined) {
@@ -352,12 +365,10 @@ export class HandleUpdaterDepleted extends HandlerClass<
 			}
 			this.data.requestsPerMinuteLimit = allowedBatchSize;
 
-			console.log(
-				this.logConstructor.createLogMessage({
-					subject: "Entering a timout",
-					message: new Date().toISOString(),
-				})
-			);
+			this.logger.logInfo({
+				message: "Entering a timout",
+				threadId: threadId,
+			});
 
 			await new Promise<void>((resolve) => {
 				setTimeout(() => {
@@ -365,12 +376,10 @@ export class HandleUpdaterDepleted extends HandlerClass<
 				}, 61000);
 			});
 
-			console.log(
-				this.logConstructor.createLogMessage({
-					subject: "Perforemed a timout",
-					message: new Date().toISOString(),
-				})
-			);
+			this.logger.logInfo({
+				message: "Perforemed a timout",
+				threadId: threadId,
+			});
 
 			this.data.sharedTracking.resetTracking({
 				sharedLimit: allowedBatchSize,
@@ -392,12 +401,15 @@ export class HandleUpdaterDepleted extends HandlerClass<
 // ###############################################################################################
 
 export class HandleUpdaterDone extends HandlerClass<
-	{ workers: IShutdownByKey<number>; threadId: number },
+	{ shutDownTarget: IShutdownByKey<number>; threadId: number },
 	IpManagerUpdaterMessages.UpdaterDone
 > {
 	private logConstructor: ILogMessageConstructor;
 
-	constructor(args: { workers: IShutdownByKey<number>; threadId: number }) {
+	constructor(args: {
+		shutDownTarget: IShutdownByKey<number>;
+		threadId: number;
+	}) {
 		super(args);
 		this.logConstructor = new ConstructLogMessage([
 			"HandleUpdaterDone",
@@ -415,7 +427,7 @@ export class HandleUpdaterDone extends HandlerClass<
 				})
 			);
 		}
-		this.data.workers.shutDown(worker.getID());
+		this.data.shutDownTarget.shutDown(worker.getID());
 	}
 }
 
@@ -426,7 +438,8 @@ export class HandleUpdaterDone extends HandlerClass<
 const attemptNewRequestBatch = async (args: {
 	batchTracker: IRequestsBatchTracker;
 	requestsPerMinuteLimit: number;
-	logConstructor: ILogMessageConstructor;
+	logger: ILogger;
+	pathStack: PathStack;
 }): Promise<{
 	status: "depleted" | "allowed";
 	allowedBatchSize: number | undefined;
@@ -442,11 +455,9 @@ const attemptNewRequestBatch = async (args: {
 				allowedBatchSize: requestsLeft,
 			};
 		} else {
-			console.log(
-				args.logConstructor.createLogMessage({
-					subject: "No requests left in the total request pool",
-				})
-			);
+			args.logger.logInfo({
+				message: "No requests left in the total request pool",
+			});
 			return {
 				status: "depleted",
 				allowedBatchSize: undefined,

@@ -2,9 +2,11 @@
 
 export interface IPathTracker {
 	push(module: string): this;
-	pop(): string | undefined;
+	pop(): this;
 	toString(): string;
 	reset(): this;
+	set(stack: string[]): this;
+	copy(): IPathTracker;
 }
 
 export class PathStack implements IPathTracker {
@@ -15,16 +17,26 @@ export class PathStack implements IPathTracker {
 		return this;
 	}
 
-	pop(): string | undefined {
-		return this.stack.pop();
+	pop(): this {
+		this.stack.pop();
+		return this;
 	}
 
 	toString(): string {
-		return this.stack.join("/");
+		return `[${this.stack.join("][")}]`;
 	}
 
 	reset(): this {
 		this.stack = [];
 		return this;
+	}
+
+	set(stack: string[]): this {
+		this.stack = stack;
+		return this;
+	}
+
+	copy(): IPathTracker {
+		return new PathStack().set(this.stack.map((node) => node));
 	}
 }

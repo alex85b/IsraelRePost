@@ -4,10 +4,12 @@ import { IPostofficeUpdateErrorBuilder } from "../../../../data/models/persisten
 import { IPostofficeBranchesRepository } from "../../../../data/repositories/PostofficeBranchesRepository";
 import { IPostofficeCodeIdPairsRepository } from "../../../../data/repositories/PostofficeCodeIdPairsRepository";
 import { IUpdateErrorRecordsRepository } from "../../../../data/repositories/UpdateErrorRecordsRepository";
+import { ErrorSource, ServiceError } from "../../../../errors/ServiceError";
+import { PathStack } from "../../../../shared/classes/PathStack";
 import {
-	ConstructLogMessage,
-	ILogMessageConstructor,
-} from "../../../../shared/classes/ConstructLogMessage";
+	ILogger,
+	WinstonClient,
+} from "../../../../shared/classes/WinstonClient";
 import { IReseLocalTracking } from "../../helpers/consumptionTracker/RequestTracker";
 import { ICommunicationWrapper } from "../../helpers/threadCommunication/CommunicationWrappers";
 import { HandlerClass } from "../../helpers/threadCommunication/Handler";
@@ -30,6 +32,7 @@ export interface IUpdateStarter {
 	branchesRepository: IPostofficeBranchesRepository;
 	threadId: number;
 	parentId: number;
+	pathStack: PathStack;
 	endpointProxyString?: string;
 }
 
@@ -41,23 +44,23 @@ export class HandleStartUpdates
 	implements IStoppable
 {
 	private stopRequested: boolean;
-	private logConstructor: ILogMessageConstructor;
+	private logger: ILogger;
 
 	constructor(buildArguments: IUpdateStarter) {
 		super(buildArguments);
 		this.stopRequested = false;
-		this.logConstructor = new ConstructLogMessage([
-			"HandleStartUpdates",
-			`Parent ID ${this.data.parentId ?? -1}`,
-			`Thread ID ${this.data.threadId ?? -1}`,
-		]);
+		this.data.pathStack = new PathStack()
+			.push("Handle Start updates")
+			.push(`Parent ID ${this.data.parentId ?? -1}`)
+			.push(`Thread ID ${this.data.threadId ?? -1}`);
+		this.logger = new WinstonClient({ pathStack: this.data.pathStack });
 	}
 
 	stop(): void {
-		this.logConstructor.addLogHeader("Stop request");
-		console.log(
-			this.logConstructor.createLogMessage({ subject: "Update stoppage" })
-		);
+		this.logger.logInfo({
+			message: "Update stoppage",
+			details: "Stop request",
+		});
 		this.stopRequested = true;
 	}
 
@@ -68,8 +71,19 @@ export class HandleStartUpdates
 			const response = await newUpdate({
 				...this.data,
 				branchIdQnomycode: idQnomecodePair,
-				logConstructor: this.logConstructor,
+				pathStack: this.data.pathStack,
+				logger: this.logger,
 			});
+			switch (response) {
+				case IpManagerUpdaterMessages.UpdaterDepleted:
+					break;
+				case IpManagerUpdaterMessages.UpdaterDone:
+					break;
+				case "OK":
+					break;
+				default:
+					break;
+			}
 			if (response === IpManagerUpdaterMessages.UpdaterDepleted) {
 				this.data.parentCommunication.sendMessage(
 					IpManagerUpdaterMessages.UpdaterDepleted
@@ -154,23 +168,24 @@ export class HandleContinueUpdates
 	implements IStoppable
 {
 	private stopRequested: boolean;
-	private logConstructor: ILogMessageConstructor;
+	private pathStack: PathStack;
+	private logger: ILogger;
 
 	constructor(buildArguments: IUpdateContinuer) {
 		super(buildArguments);
 		this.stopRequested = false;
-		this.logConstructor = new ConstructLogMessage([
-			"HandleContinueUpdates",
-			`Parent ID ${this.data.parentId ?? -1}`,
-			`Thread ID ${this.data.threadId ?? -1}`,
-		]);
+		this.pathStack = new PathStack()
+			.push("Handle Continue updates")
+			.push(`Parent ID ${this.data.parentId ?? -1}`)
+			.push(`Thread ID ${this.data.threadId ?? -1}`);
+		this.logger = new WinstonClient({ pathStack: this.pathStack });
 	}
 
 	stop(): void {
-		this.logConstructor.addLogHeader("Stop request");
-		console.log(
-			this.logConstructor.createLogMessage({ subject: "Update stoppage" })
-		);
+		this.logger.logInfo({
+			message: "Update stoppage",
+			details: "Stop request",
+		});
 		this.stopRequested = true;
 	}
 
@@ -179,7 +194,8 @@ export class HandleContinueUpdates
 		this.data.resetTracking.resetLocally();
 		const { currentIdQnomycode, status } = await continuePausedUpdate({
 			...this.data,
-			logConstructor: this.logConstructor,
+			pathStack: this.pathStack,
+			logger: this.logger,
 		});
 		if (status === IpManagerUpdaterMessages.UpdaterDepleted) {
 			this.data.parentCommunication.sendMessage(
@@ -190,16 +206,15 @@ export class HandleContinueUpdates
 		if (status === "OK" && currentIdQnomycode) {
 			this.data.codeIdPairRepo.pushProcessedPair(currentIdQnomycode);
 		}
-		this.logConstructor.createLogMessage({
-			subject: "Paused update was handled",
-		});
+		this.logger.logInfo({ message: "Paused update was handled" });
 		do {
 			const idQnomecodePair =
 				await this.data.codeIdPairRepo.popUnprocessedPair();
 			const response = await newUpdate({
 				...this.data,
 				branchIdQnomycode: idQnomecodePair,
-				logConstructor: this.logConstructor,
+				logger: this.logger,
+				pathStack: this.pathStack,
 			});
 			if (response === IpManagerUpdaterMessages.UpdaterDepleted) {
 				this.data.parentCommunication.sendMessage(
@@ -229,7 +244,8 @@ export class HandleContinueUpdates
 const newUpdate = async (args: {
 	branchIdQnomycode: IBranchIdQnomyCodePair | null;
 	constructServices: IConstructServicesRecord;
-	logConstructor: ILogMessageConstructor;
+	pathStack: PathStack;
+	logger: ILogger;
 	errorRecordsRepository: IUpdateErrorRecordsRepository;
 	branchesRepository: IPostofficeBranchesRepository;
 	endpointProxyString?: string;
@@ -238,36 +254,42 @@ const newUpdate = async (args: {
 	| IpManagerUpdaterMessages.UpdaterDepleted
 	| "OK"
 > => {
-	if (!args.branchIdQnomycode) return IpManagerUpdaterMessages.UpdaterDone;
-	const { status, errorsBuilder, servicesBuilder } =
-		await args.constructServices.constructRecord({
-			serviceIdAndQnomycode: args.branchIdQnomycode,
-			endpointProxyString: args.endpointProxyString,
-		});
-	switch (status) {
-		case "OK":
-			await persistRecord({
-				...args,
-				errorsBuilder,
-				servicesBuilder,
-				currentIdQnomycode: args.branchIdQnomycode,
+	args.pathStack
+		.push("New update")
+		.push(args.branchIdQnomycode?.branchId ?? "-1");
+	try {
+		if (!args.branchIdQnomycode) return IpManagerUpdaterMessages.UpdaterDone;
+		const { status, errorsBuilder, servicesBuilder } =
+			await args.constructServices.constructRecord({
+				serviceIdAndQnomycode: args.branchIdQnomycode,
+				endpointProxyString: args.endpointProxyString,
 			});
-			return status;
-		case "overflow":
-		case "above limit":
-			console.log(
-				args.logConstructor.createLogMessage({
-					subject: `Branch ID ${args.branchIdQnomycode.branchId} Request tracker status`,
-					message: status,
-				})
-			);
-			return IpManagerUpdaterMessages.UpdaterDepleted;
-		default:
-			throw Error(
-				args.logConstructor.createLogMessage({
-					subject: `Unsupported update status ${status}`,
-				})
-			);
+		switch (status) {
+			case "OK":
+				await persistRecord({
+					...args,
+					errorsBuilder,
+					servicesBuilder,
+					currentIdQnomycode: args.branchIdQnomycode,
+				});
+				return status;
+			case "overflow":
+			case "above limit":
+				args.logger.logInfo({
+					message: "Request tracker status",
+					details: { status },
+				});
+				return IpManagerUpdaterMessages.UpdaterDepleted;
+			default:
+				throw new ServiceError({
+					message: "Unsupported update status",
+					source: ErrorSource.ThirdPartyAPI,
+					logger: args.logger,
+					details: { status },
+				});
+		}
+	} finally {
+		args.pathStack.pop().pop();
 	}
 };
 
@@ -278,7 +300,8 @@ const newUpdate = async (args: {
 const continuePausedUpdate = async (args: {
 	codeIdPairRepo: IPostofficeCodeIdPairsRepository;
 	constructServices: IConstructServicesRecord;
-	logConstructor: ILogMessageConstructor;
+	pathStack: PathStack;
+	logger: ILogger;
 	errorRecordsRepository: IUpdateErrorRecordsRepository;
 	branchesRepository: IPostofficeBranchesRepository;
 	endpointProxyString?: string;
@@ -286,51 +309,52 @@ const continuePausedUpdate = async (args: {
 	status: "empty queue" | "OK" | IpManagerUpdaterMessages.UpdaterDepleted;
 	currentIdQnomycode: IBranchIdQnomyCodePair | undefined;
 }> => {
-	const { errorsBuilder, servicesBuilder, status, currentIdQnomycode } =
-		await args.constructServices.continuePausedConstruction({
-			endpointProxyString: args.endpointProxyString,
-		});
-	if (!currentIdQnomycode)
-		throw Error(
-			args.logConstructor.createLogMessage({
-				subject: "No Branch ID Qnomycode",
-			})
-		);
-	switch (status) {
-		case "OK":
-			await persistRecord({
-				...args,
-				errorsBuilder,
-				servicesBuilder,
-				currentIdQnomycode,
+	args.pathStack.push("Continue Paused update");
+	try {
+		const { errorsBuilder, servicesBuilder, status, currentIdQnomycode } =
+			await args.constructServices.continuePausedConstruction({
+				endpointProxyString: args.endpointProxyString,
 			});
-			return { status, currentIdQnomycode };
-		case "empty queue":
-			console.log(
-				args.logConstructor.createLogMessage({
-					subject: `Update delayed due to ${status}`,
-					message: "Branch ID " + currentIdQnomycode.branchId,
-				})
-			);
-			return { status, currentIdQnomycode: currentIdQnomycode };
-		case "above limit":
-		case "overflow":
-			console.log(
-				args.logConstructor.createLogMessage({
-					subject: `Update delayed due to ${status}`,
-					message: "Branch ID " + currentIdQnomycode.branchId,
-				})
-			);
-			return {
-				status: IpManagerUpdaterMessages.UpdaterDepleted,
-				currentIdQnomycode,
-			};
-		default:
-			throw Error(
-				args.logConstructor.createLogMessage({
-					subject: `Unsupported update status ${status}`,
-				})
-			);
+		if (!currentIdQnomycode)
+			throw new ServiceError({
+				message: "No Branch ID Qnomycode",
+				source: ErrorSource.ThirdPartyAPI,
+				logger: args.logger,
+			});
+		args.pathStack.push(`Branch ID: ${currentIdQnomycode.branchId}`);
+		switch (status) {
+			case "OK":
+				await persistRecord({
+					...args,
+					errorsBuilder,
+					servicesBuilder,
+					currentIdQnomycode,
+				});
+				return { status, currentIdQnomycode };
+			case "empty queue":
+				args.logger.logInfo({
+					message: `Update delayed due to ${status}`,
+				});
+				return { status, currentIdQnomycode: currentIdQnomycode };
+			case "above limit":
+			case "overflow":
+				args.logger.logInfo({
+					message: `Update delayed due to ${status}`,
+				});
+				return {
+					status: IpManagerUpdaterMessages.UpdaterDepleted,
+					currentIdQnomycode,
+				};
+			default:
+				throw new ServiceError({
+					message: "Unsupported update status",
+					source: ErrorSource.ThirdPartyAPI,
+					logger: args.logger,
+					details: { status },
+				});
+		}
+	} finally {
+		args.pathStack.pop().pop();
 	}
 };
 
@@ -344,29 +368,26 @@ const persistRecord = async (args: {
 	errorsBuilder: IPostofficeUpdateErrorBuilder;
 	servicesBuilder: IPostofficeBranchServicesBuilder;
 	currentIdQnomycode: IBranchIdQnomyCodePair;
-	logConstructor: ILogMessageConstructor;
+	pathStack: PathStack;
+	logger: ILogger;
 }): Promise<void> => {
 	const errorModel = args.errorsBuilder.build(args.currentIdQnomycode.branchId);
 	const servicesModel = args.servicesBuilder.build(
 		args.currentIdQnomycode.branchId
 	);
 	if (errorModel.getErrorsCount() > 0) {
-		console.log(
-			args.logConstructor.createLogMessage({
-				subject: "Update faulted",
-				message: "Branch ID " + args.currentIdQnomycode.branchId,
-			})
-		);
+		args.logger.logInfo({
+			message: "Update faulted",
+			details: { branchId: args.currentIdQnomycode.branchId },
+		});
 		args.errorRecordsRepository.addUpdateErrorRecord({
 			errorModel,
 		});
 	} else
-		console.log(
-			args.logConstructor.createLogMessage({
-				subject: "Updated",
-				message: "Branch ID " + args.currentIdQnomycode.branchId,
-			})
-		);
+		args.logger.logInfo({
+			message: "Updated",
+			details: { branchId: args.currentIdQnomycode.branchId },
+		});
 	args.branchesRepository.updateBranchServices({
 		servicesModel,
 	});

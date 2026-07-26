@@ -7,8 +7,18 @@ import {
 	ConstructLogMessage,
 	ILogMessageConstructor,
 } from "../../../../../shared/classes/ConstructLogMessage";
+import {
+	IPathTracker,
+	PathStack,
+} from "../../../../../shared/classes/PathStack";
+import {
+	ILogger,
+	WinstonClient,
+} from "../../../../../shared/classes/WinstonClient";
 
 const MODULE_NAME = "Puppeteer Client";
+const pathStack: IPathTracker = new PathStack().push(MODULE_NAME);
+const logger: ILogger = new WinstonClient({ pathStack });
 
 // #############################################################################################
 // ### Basic Functions #########################################################################
@@ -42,25 +52,22 @@ export const buildPuppeteerPage = async (browser: Browser): Promise<Page> => {
 export const navigateToUrl = async (args: {
 	url: string;
 	page: Page;
-	logConstructor: ILogMessageConstructor;
 }): Promise<void> => {
-	args.logConstructor.addLogHeader("navigateToUrl");
-	console.log(args.logConstructor.createLogMessage({ subject: "Start" }));
+	pathStack.push("Navigate to URL");
+	logger.logInfo({ message: "Start" });
 	try {
 		await args.page.goto(args.url, {
 			timeout: 120000,
 			waitUntil: "networkidle0",
 		});
 		await args.page.waitForNetworkIdle({ timeout: 120000 }).catch(() => {
-			console.log(
-				args.logConstructor.createLogMessage({
-					subject: "waiting for network idel has failed",
-				})
-			);
+			logger.logError({
+				message: "Awaiting for a Network-idel event Timed out",
+			});
 		});
 	} finally {
-		console.log(args.logConstructor.createLogMessage({ subject: "End" }));
-		args.logConstructor.popLogHeader();
+		logger.logInfo({ message: "End" });
+		pathStack.pop();
 	}
 };
 
@@ -107,7 +114,8 @@ export class NetworkTrafficCapture {
 	private isCapturing: boolean = false;
 	private requestHandler: RequestHandler;
 	private responseHandler: ResponseHandler;
-	private logConstructor: ILogMessageConstructor;
+	private logger: ILogger;
+	private pathStack: IPathTracker;
 
 	constructor(args: {
 		page: Page;
@@ -115,11 +123,12 @@ export class NetworkTrafficCapture {
 		customResponseHandler?: ResponseHandler;
 	}) {
 		this.page = args.page;
-		this.logConstructor = new ConstructLogMessage(["NetworkTrafficCapture"]);
 		this.requestHandler =
 			args.customRequestHandler || this.defaultRequestHandler;
 		this.responseHandler =
 			args.customResponseHandler || this.defaultResponseHandler;
+		this.pathStack = new PathStack().push("Network traffic capture");
+		this.logger = new WinstonClient({ pathStack: this.pathStack });
 	}
 
 	private defaultRequestHandler: RequestHandler = (request: HTTPRequest) =>
@@ -135,9 +144,7 @@ export class NetworkTrafficCapture {
 			this.strinedResults = { requests: [], responses: [] };
 			this.page.on("request", this.handleRequest.bind(this));
 			this.page.on("response", this.handleResponse.bind(this));
-			console.log(
-				this.logConstructor.createLogMessage({ subject: "Capture started" })
-			);
+			this.logger.logInfo({ message: "Capture started" });
 		}
 	}
 
@@ -148,12 +155,10 @@ export class NetworkTrafficCapture {
 			try {
 				this.strinedResults.requests.push(this.stringifyRequest(request));
 			} catch (error) {}
-			console.log(
-				this.logConstructor.createLogMessage({
-					subject: "Request captured",
-					message: request.url(),
-				})
-			);
+			this.logger.logInfo({
+				message: "Request captured",
+				details: `Request URL: ${request.url()}`,
+			});
 		}
 	}
 
@@ -163,9 +168,9 @@ export class NetworkTrafficCapture {
 			try {
 				requestBody = JSON.parse(requestBody);
 			} catch (jsonError) {
-				this.logConstructor.createLogMessage({
-					subject: "Failed to parse request body as JSON",
-					message: (jsonError as Error).message,
+				this.logger.logInfo({
+					message: "Failed to parse Request body as JSON",
+					details: (jsonError as Error).message,
 				});
 			}
 		}
@@ -186,12 +191,10 @@ export class NetworkTrafficCapture {
 					await this.stringifyResponse(response)
 				);
 			} catch (error) {}
-			console.log(
-				this.logConstructor.createLogMessage({
-					subject: "Request captured",
-					message: response.url(),
-				})
-			);
+			this.logger.logInfo({
+				message: "Request captured",
+				details: response.url(),
+			});
 		}
 	}
 
@@ -202,9 +205,9 @@ export class NetworkTrafficCapture {
 			try {
 				responseBody = await response.json();
 			} catch (jsonError) {
-				this.logConstructor.createLogMessage({
-					subject: "Failed to parse JSON, falling back to text",
-					message: (jsonError as Error).message,
+				this.logger.logInfo({
+					message: "Failed to parse Response JSON, falling back to text",
+					details: (jsonError as Error).message,
 				});
 				responseBody = await response.text();
 			}
@@ -225,110 +228,11 @@ export class NetworkTrafficCapture {
 			this.isCapturing = false;
 			this.page.removeAllListeners("request");
 			this.page.removeAllListeners("response");
-			console.log(
-				this.logConstructor.createLogMessage({ subject: "Capture stopped" })
-			);
+			this.logger.logInfo({ message: "Capture stopped" });
 		}
 		return this.strinedResults;
 	}
 }
-// ####################################################################################################
-// ### Depricated #####################################################################################
-// ####################################################################################################
-
-// export interface IPuppeteerBrowser {
-// 	getDefaultPage(): Promise<Page>;
-// 	closeBrowserAndPages(): Promise<void>;
-// }
-
-// export interface IPuppeteerPage {
-// 	setCustomIntercept(
-// 		onRequest: (interceptRequest: HTTPRequest) => Promise<void>,
-// 		onResponse: (interceptResponse: HTTPResponse) => Promise<void>
-// 	): Promise<void>;
-// 	navigateToURL(ata: { url: URLs; retries: number }): Promise<void>;
-// }
-
-// export class PuppeteerBrowser implements IPuppeteerBrowser {
-// 	private static instance: PuppeteerBrowser;
-// 	private browser: Promise<Browser>;
-
-// 	private constructor(args: { headless: boolean | "shell" }) {
-// 		puppeteer.use(StealthPlugin());
-// 		this.browser = puppeteer.launch({
-// 			headless: args.headless,
-// 			args: [
-// 				"--no-sandbox",
-// 				"--disable-setuid-sandbox",
-// 				"--disable-infobars",
-// 				"--window-position=0,0",
-// 				"--ignore-certifcate-errors",
-// 				"--ignore-certifcate-errors-spki-list",
-// 				"--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-// 			],
-// 			defaultViewport: null,
-// 			ignoreHTTPSErrors: true,
-// 		});
-// 	}
-
-// 	public static getInstance(buildData: {
-// 		headless: boolean | "shell";
-// 	}): PuppeteerBrowser {
-// 		if (!PuppeteerBrowser.instance) {
-// 			PuppeteerBrowser.instance = new PuppeteerBrowser(buildData);
-// 		}
-// 		return PuppeteerBrowser.instance;
-// 	}
-
-// 	async getDefaultPage(): Promise<Page> {
-// 		const browser = await this.browser;
-// 		const pages = await browser.pages();
-// 		return pages[0];
-// 	}
-
-// 	async closeBrowserAndPages() {
-// 		const browser = await this.browser;
-// 		await browser.close();
-// 	}
-// }
-
-// export class PuppeteerPage implements IPuppeteerPage {
-// 	protected page: Page;
-
-// 	constructor(buildData: { browserPage: Page }) {
-// 		this.page = buildData.browserPage;
-// 	}
-
-// 	async setCustomIntercept(
-// 		onRequest: (interceptRequest: HTTPRequest) => Promise<void>,
-// 		onResponse: (interceptResponse: HTTPResponse) => Promise<void>
-// 	) {
-// 		await this.page.setRequestInterception(true);
-// 		this.page.on("request", onRequest);
-// 		this.page.on("response", onResponse);
-// 	}
-
-// 	async navigateToURL(args: {
-// 		url: URLs;
-// 		retries: number;
-// 		navigationTimeout: number;
-// 	}) {
-// 		for (let i = 0; i < args.retries; i++) {
-// 			try {
-// 				console.log(`[${MODULE_NAME}][navigateToURL] Start navigation`);
-// 				await this.page.goto(args.url, {
-// 					timeout: args.navigationTimeout,
-// 					waitUntil: "networkidle0",
-// 				});
-// 				console.log(`[${MODULE_NAME}][navigateToURL] Done navigation`);
-// 				break;
-// 			} catch (error) {
-// 				const e = error as Error;
-// 				console.log(`[${MODULE_NAME}][navigateToURL] Error : `, e.message);
-// 			}
-// 		}
-// 	}
-// }
 
 // #############################################################################################
 // ### Response Object Interfaces ##############################################################

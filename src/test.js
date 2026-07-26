@@ -422,10 +422,10 @@ const {
 /*
 const {
 	rePopulateUnprocessed,
-} = require('./js-build/services/updateAppointments/helpers/queueSetup/Tests/PopulateRedisQueue');
-*/
-// rePopulateUnprocessed();
+} = require("./js-build/services/updateAppointments/helpers/queueSetup/Tests/PopulateRedisQueue");
 
+rePopulateUnprocessed();
+*/
 // Test Post Office API Requests as Nodes
 // ######################################
 // ######################################
@@ -439,8 +439,9 @@ const {
 	testFetchServicesNodeUsingProxy,
 	testFetchDatesNodeUsingProxy,
 	testFetchTimesNodeUsingProxy,
-} = require('./js-build/services/updateAppointments/helpers/updateServicesRecord/Tests/PostofficeRequestNodes');
+} = require("./js-build/services/updateAppointments/helpers/updateServicesRecord/Tests/PostofficeRequestNodes");
 */
+
 /*
 testCreateUserNode();
 testFetchServicesNode();
@@ -533,13 +534,17 @@ const {
 /*
 const {
 	testSingleIpManagerThread,
-	testMultipleIpManagerThreads
-} = require('./js-build/services/updateAppointments/workerThreads/ipManager/Tests/IpManagerThreadScript')
+	testMultipleIpManagerThreads,
+} = require("./js-build/services/updateAppointments/workerThreads/ipManager/Tests/IpManagerThreadScript");
 */
-/*
-testSingleIpManagerThread();
-testMultipleIpManagerThreads();
-*/
+
+// testSingleIpManagerThread();
+// testMultipleIpManagerThreads();
+
+// Ip Management: Test Thread Script
+// #################################
+// #################################
+
 // ##############################################################################################
 // ### Shared  ##################################################################################
 // ##############################################################################################
@@ -560,23 +565,35 @@ testReadSmartProxyFile();
 testReadWebShareFile();
 */
 
-/*
+/**/
 const {
 	testInfoLog,
 	testErrorLog,
+	testInfoLogCustomPath,
 } = require("./js-build/shared/classes/Tests/WinstonClient");
-*/
+
 /*
 testInfoLog();
 testErrorLog();
+*/
+testInfoLogCustomPath();
+
+/*
+const {
+	testCreateLogsFolders,
+	testCreateNestedFolders,
+} = require("./js-build/shared/classes/Tests/SetupLoggingFolders");
+
+testCreateLogsFolders();
+testCreateNestedFolders();
 */
 
 // ##############################################################################################
 // ### Errors  ##################################################################################
 // ##############################################################################################
 
-const { testThrowError } = require("./js-build/errors/Test/ServiceError");
-testThrowError();
+// const { testThrowError } = require("./js-build/errors/Test/ServiceError");
+// testThrowError();
 
 // ##############################################################################################
 // ### Concepts  ################################################################################

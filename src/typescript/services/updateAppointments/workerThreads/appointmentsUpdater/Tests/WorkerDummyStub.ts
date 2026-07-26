@@ -15,36 +15,47 @@ import { ConstructServicesRecord } from "../../../helpers/updateServicesRecord/C
 import { RequestTracker } from "../../../helpers/consumptionTracker/RequestTracker";
 import { getMemoryViewParameters } from "../../../../../data/models/dataTransferModels/ThreadSharedMemory";
 import { AtomicArrayWriter } from "../../../helpers/concurrency/AtomicArrayWriter";
-import { ConstructLogMessage } from "../../../../../shared/classes/ConstructLogMessage";
 import { HandlerClass } from "../../../helpers/threadCommunication/Handler";
 import { IStoppable } from "../../shared/stoppable";
+import { PathStack } from "../../../../../shared/classes/PathStack";
+import {
+	ILogger,
+	WinstonClient,
+} from "../../../../../shared/classes/WinstonClient";
+import { ServiceError, ErrorSource } from "../../../../../errors/ServiceError";
 
-const logMessage = new ConstructLogMessage([`WorkerDummyStub ${threadId}`]);
+const MODULE_NAME = "Worker Dummy stub";
+const pathStack: PathStack = new PathStack().push(MODULE_NAME);
+const logger: ILogger = new WinstonClient({ pathStack });
 
 if (!parentPort)
-	throw Error(logMessage.createLogMessage({ subject: "Invalid parentPort" }));
+	throw new ServiceError({
+		message: "Invalid parentPort",
+		source: ErrorSource.Internal,
+		logger: logger,
+		threadId,
+	});
 if (!workerData)
-	throw Error(
-		logMessage.createLogMessage({ subject: "Invalid workerData - Undefined" })
-	);
-console.log(
-	logMessage.createLogMessage({
-		subject: "workerData",
-		message: JSON.stringify(workerData, null, 4),
-	})
-);
+	throw new ServiceError({
+		message: "Invalid workerData: Undefined",
+		source: ErrorSource.Internal,
+		logger: logger,
+		threadId,
+	});
 if (typeof workerData !== "object")
-	throw Error(
-		logMessage.createLogMessage({
-			subject: "Invalid workerData - Not an object",
-		})
-	);
+	throw new ServiceError({
+		message: "Invalid workerData: Not an object",
+		source: ErrorSource.Internal,
+		logger: logger,
+		threadId,
+	});
 if (!workerData.memoryView)
-	throw Error(
-		logMessage.createLogMessage({
-			subject: "Invalid workerData - No memoryView",
-		})
-	);
+	throw new ServiceError({
+		message: "Invalid workerData: No memoryView",
+		source: ErrorSource.Internal,
+		logger: logger,
+		threadId,
+	});
 
 const requestTracker = new RequestTracker({
 	atomicArrayWriter: new AtomicArrayWriter({
@@ -73,6 +84,7 @@ const updateStarter: IUpdateStarter = {
 	endpointProxyString: workerData.proxyEndpoint,
 	threadId,
 	parentId: 999,
+	pathStack,
 };
 
 const startUpdates: HandlerClass<
@@ -86,12 +98,9 @@ const continueUpdater = new HandleContinueUpdates({
 	resetTracking: requestTracker,
 });
 
-logMessage.addLogHeader("onMessageCallback");
 communicationWrapper.setCallbacks({
 	async onMessageCallback(message) {
-		console.log(
-			logMessage.createLogMessage({ subject: "Incoming Message", message })
-		);
+		logger.logInfo({ message: "Incoming Message", details: message });
 		switch (message) {
 			case AppointmentsUpdatingMessages.ContinueUpdates:
 				continueUpdater.handle();
@@ -113,9 +122,12 @@ communicationWrapper.setCallbacks({
 				endUpdater.handle();
 				break;
 			default:
-				throw Error(
-					logMessage.createLogMessage({ subject: "Unsupported message" })
-				);
+				throw new ServiceError({
+					message: "Unsupported message",
+					source: ErrorSource.Internal,
+					logger,
+					details: { message },
+				});
 		}
 	},
 });

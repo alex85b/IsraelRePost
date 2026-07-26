@@ -2,6 +2,12 @@ import {
 	MemoryView,
 	IGetMemoryViewParameters,
 } from "../../../../data/models/dataTransferModels/ThreadSharedMemory";
+import { ServiceError, ErrorSource } from "../../../../errors/ServiceError";
+import { IPathTracker, PathStack } from "../../../../shared/classes/PathStack";
+import {
+	ILogger,
+	WinstonClient,
+} from "../../../../shared/classes/WinstonClient";
 
 export type AtomicAddResponse = {
 	beforeAddition: number;
@@ -29,6 +35,8 @@ export class AtomicArrayWriter implements IAtomicArrayWriter {
 	private memoryCellCount: number;
 	private memoryMaxCellValue: number;
 	private memoryMinCellValue: number;
+	private logger: ILogger;
+	private pathStack: IPathTracker;
 
 	constructor(buildData: {
 		memoryView: MemoryView;
@@ -40,6 +48,8 @@ export class AtomicArrayWriter implements IAtomicArrayWriter {
 		this.memoryCellCount = cellCount;
 		this.memoryMaxCellValue = maxCellValue;
 		this.memoryMinCellValue = minCellValue;
+		this.pathStack = new PathStack().push("Atomic Array writer");
+		this.logger = new WinstonClient({ pathStack: this.pathStack });
 	}
 
 	getMemoryArrayData(): {
@@ -83,17 +93,29 @@ export class AtomicArrayWriter implements IAtomicArrayWriter {
 	}
 
 	setCellValue(data: { cell: number; value: number }): boolean {
-		const faults: string[] = [];
-		this.validateCellIndex({ index: data.cell, faults });
-		this.validateCellValue({ value: data.value, faults });
-		if (faults.length) {
-			throw Error(
-				"[AtomicArrayWriter][setCellValue] Faults : " + faults.join(" | ")
-			);
+		this.pathStack.push("Set Cell Value");
+		try {
+			const faults: string[] = [];
+			this.validateCellIndex({ index: data.cell, faults });
+			this.validateCellValue({ value: data.value, faults });
+			if (faults.length) {
+				throw new ServiceError({
+					logger: this.logger,
+					source: ErrorSource.Internal,
+					message: "Arguments are invalid",
+					details: {
+						faults: faults.join(" | "),
+						cell: data.cell,
+						value: data.value,
+					},
+				});
+			}
+			if (Atomics.store(this.memoryView, data.cell, data.value) === data.value)
+				return true;
+			return false;
+		} finally {
+			this.pathStack.pop();
 		}
-		if (Atomics.store(this.memoryView, data.cell, data.value) === data.value)
-			return true;
-		return false;
 	}
 
 	replaceExpectedValue(data: {
@@ -101,63 +123,92 @@ export class AtomicArrayWriter implements IAtomicArrayWriter {
 		expected: number;
 		replaceWith: number;
 	}): boolean {
-		const faults: string[] = [];
-		this.validateCellIndex({ index: data.cell, faults });
-		this.validateCellValue({
-			cellAlias: "expected",
-			value: data.expected,
-			faults,
-		});
-		this.validateCellValue({
-			cellAlias: "replaceWith",
-			value: data.replaceWith,
-			faults,
-		});
-		if (faults.length) {
-			throw Error(
-				"[AtomicArrayWriter][replaceExpectedValue] Faults : " +
-					faults.join(" | ")
+		this.pathStack.push("Replace Expected Value");
+		try {
+			const faults: string[] = [];
+			this.validateCellIndex({ index: data.cell, faults });
+			this.validateCellValue({
+				cellAlias: "expected",
+				value: data.expected,
+				faults,
+			});
+			this.validateCellValue({
+				cellAlias: "replaceWith",
+				value: data.replaceWith,
+				faults,
+			});
+			if (faults.length) {
+				throw new ServiceError({
+					logger: this.logger,
+					source: ErrorSource.Internal,
+					message: "Arguments are invalid",
+					details: {
+						faults: faults.join(" | "),
+						cell: data.cell,
+						expected: data.expected,
+						replaceWith: data.replaceWith,
+					},
+				});
+			}
+			const result = Atomics.compareExchange(
+				this.memoryView,
+				data.cell,
+				data.expected,
+				data.replaceWith
 			);
+
+			if (result === data.expected) return true;
+
+			this.logger.logInfo({
+				message: "Replace Value Performed",
+				details: result,
+			});
+
+			return false;
+		} finally {
+			this.pathStack.pop();
 		}
-		const result = Atomics.compareExchange(
-			this.memoryView,
-			data.cell,
-			data.expected,
-			data.replaceWith
-		);
-
-		if (result === data.expected) return true;
-
-		console.log(
-			`[AtomicArrayWriter][replaceExpectedValue] Result-${result} memory view : `,
-			this.memoryView
-		);
-
-		return false;
 	}
 
 	peakCellValue(data: { cell: number }): number {
+		this.pathStack.push("Peak Cell Value");
 		const faults: string[] = [];
 		this.validateCellIndex({ index: data.cell, faults });
 		if (faults.length) {
-			throw Error(
-				"[AtomicArrayWriter][peakCellValue] Faults : " + faults.join(" | ")
-			);
+			throw new ServiceError({
+				logger: this.logger,
+				source: ErrorSource.Internal,
+				message: "Arguments are invalid",
+				details: {
+					cell: data.cell,
+					faults: faults.join(" | "),
+				},
+			});
 		}
+		this.pathStack.pop();
 		return Atomics.load(this.memoryView, data.cell);
 	}
 
 	addToCellValue(data: { cell: number; value: number }): AtomicAddResponse {
 		// This is not protected from overflow !
+		this.pathStack.push("Add To Cell Value");
 		const faults: string[] = [];
 		this.validateCellIndex({ index: data.cell, faults });
 		this.validateCellValue({ value: data.value, faults });
 		if (faults.length) {
-			throw Error(
-				"[AtomicArrayWriter][addToCellValue] Faults : " + faults.join(" | ")
-			);
+			throw new ServiceError({
+				logger: this.logger,
+				source: ErrorSource.Internal,
+				message: "Arguments are invalid",
+				details: {
+					cell: data.cell,
+					value: data.value,
+					faults: faults.join(" | "),
+				},
+			});
 		}
 		const valueBeforeAdd = Atomics.add(this.memoryView, data.cell, data.value);
+		this.pathStack.pop();
 		return {
 			beforeAddition: valueBeforeAdd,
 			expectedAfterAddition: valueBeforeAdd + data.value,

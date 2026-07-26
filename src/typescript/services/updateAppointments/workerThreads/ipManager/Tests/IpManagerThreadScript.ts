@@ -6,13 +6,17 @@ import {
 	ThreadMessage,
 } from "../../../helpers/threadCommunication/Messages";
 import { buildUsingProxyFile } from "../../../../../data/models/dataTransferModels/ProxyEndpointString";
+import { PathStack } from "../../../../../shared/classes/PathStack";
+import { WinstonClient } from "../../../../../shared/classes/WinstonClient";
 
-console.log("** Test Ip Manager Thread Script **");
+const MODULE_NAME = "Ip manager Thread script";
+const pathStack = new PathStack().push("Tests").push(MODULE_NAME);
+const logger = new WinstonClient({ pathStack });
 
 export const testSingleIpManagerThread = async () => {
-	console.log(
-		"** (1) Test Ip Manager Thread Script | Test Single Ip Manager Thread **"
-	);
+	pathStack.push("Test Single ip manager Thread");
+	logger.logInfo({ message: "Start" });
+
 	/**
 	 * This will pretend to be an "Continues Update Class",
 	 * and will launc a sinlge web_worker that points to ip-manager thread script.
@@ -26,18 +30,18 @@ export const testSingleIpManagerThread = async () => {
 
 	communicationWrapper.setCallbacks({
 		onMessageCallback(message) {
-			console.log("[testSingleUpdaterThread] Incoming Message : ", message);
+			logger.logInfo({ message: "Incoming Message", details: message });
 			communicationWrapper.sendMessage(AppointmentsUpdatingMessages.EndUpdater);
 			communicationWrapper.terminate();
 		},
 
 		onErrorCallback(error) {
-			console.log("[testSingleUpdaterThread] Error : ", error.message);
+			logger.logInfo({ message: "Error", details: error.message });
 			communicationWrapper.terminate();
 		},
 
 		onExitCallback(exitCode) {
-			console.log("[testSingleUpdaterThread] Exit Code : ", exitCode);
+			logger.logInfo({ message: "Exit Code", details: exitCode });
 			communicationWrapper.terminate();
 		},
 	});
@@ -47,9 +51,8 @@ export const testSingleIpManagerThread = async () => {
 };
 
 export const testMultipleIpManagerThreads = async () => {
-	console.log(
-		"** (1) Test Ip Manager Thread Script | Test Multiple Ip Manager Threads **"
-	);
+	pathStack.reset().push("Test Multiple ip manager Threads");
+	logger.logInfo({ message: "Start" });
 	/**
 	 * This will pretend to be an "Continues Update Class",
 	 * and will launc a sinlge web_worker that points to ip-manager thread script.
@@ -63,7 +66,7 @@ export const testMultipleIpManagerThreads = async () => {
 
 		communicationWrapper.setCallbacks({
 			onMessageCallback(message) {
-				console.log("[testSingleUpdaterThread] Incoming Message : ", message);
+				logger.logInfo({ message: "Incoming Message", details: message });
 				communicationWrapper.sendMessage(
 					AppointmentsUpdatingMessages.EndUpdater
 				);
@@ -71,12 +74,12 @@ export const testMultipleIpManagerThreads = async () => {
 			},
 
 			onErrorCallback(error) {
-				console.log("[testSingleUpdaterThread] Error : ", error.message);
+				logger.logInfo({ message: "Error", details: error.message });
 				communicationWrapper.terminate();
 			},
 
 			onExitCallback(exitCode) {
-				console.log("[testSingleUpdaterThread] Exit Code : ", exitCode);
+				logger.logInfo({ message: "Exit Code", details: exitCode });
 				communicationWrapper.terminate();
 			},
 		});

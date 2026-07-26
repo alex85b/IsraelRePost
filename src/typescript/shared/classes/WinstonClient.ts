@@ -2,6 +2,7 @@ import winston from "winston";
 import fs from "fs";
 import path from "path";
 import { IPathTracker } from "./PathStack";
+import { numericDate } from "../functions/GetDateAndOrTime";
 
 export interface ILogMessage {
 	message: string;
@@ -19,25 +20,34 @@ export class WinstonClient implements ILogger {
 	private localLogDirPath: string;
 	private logger: winston.Logger;
 	private pathStack: IPathTracker;
+	private static instance: WinstonClient | null = null;
 
-	constructor(args: { localLogDirPath?: string; pathStack: IPathTracker }) {
+	private constructor(args: {
+		localLogDirPath?: string;
+		fileSuffix?: string;
+		pathStack: IPathTracker;
+	}) {
 		if (args.localLogDirPath) this.localLogDirPath = args.localLogDirPath;
 		else {
-			this.localLogDirPath = path.join(
-				__dirname,
-				"..",
-				"..",
-				"..",
-				"..",
-				"logs"
-			);
+			this.localLogDirPath = path.join(__dirname, "logs");
 		}
 		if (!fs.existsSync(this.localLogDirPath)) {
 			fs.mkdirSync(this.localLogDirPath);
 		}
 
-		this.logger = this.getWinstonLogger("YYYY/MM/DD HH:mm:ss");
+		this.logger = this.getWinstonLogger("YYYY/MM/DD HH:mm:ss", args.fileSuffix);
 		this.pathStack = args.pathStack;
+	}
+
+	public static getInstance(args: {
+		localLogDirPath?: string;
+		fileSuffix?: string;
+		pathStack: IPathTracker;
+	}): WinstonClient {
+		if (!WinstonClient.instance) {
+			WinstonClient.instance = new WinstonClient(args);
+		}
+		return WinstonClient.instance;
 	}
 
 	private get consoleFormat(): winston.Logform.Format {
@@ -56,7 +66,8 @@ export class WinstonClient implements ILogger {
 		);
 	}
 
-	private getLogerTransporters(timeStampFormat: string) {
+	private getLogerTransporters(timeStampFormat: string, fileSuffix?: string) {
+		const today = numericDate();
 		const transporters: winston.LoggerOptions["transports"] = [
 			new winston.transports.Console({
 				format: winston.format.combine(
@@ -70,7 +81,7 @@ export class WinstonClient implements ILogger {
 				level: "error",
 				filename: path.join(
 					this.localLogDirPath,
-					`app_errors_${new Date().toISOString().split("T")[0]}.log`
+					`${fileSuffix ? fileSuffix + "_" : ""}app_errors_${today}.log`
 				),
 				format: winston.format.combine(
 					winston.format.timestamp({ format: timeStampFormat }),
@@ -81,7 +92,7 @@ export class WinstonClient implements ILogger {
 				level: "info",
 				filename: path.join(
 					this.localLogDirPath,
-					`app_info_${new Date().toISOString().split("T")[0]}.log`
+					`${fileSuffix ? fileSuffix + "_" : ""}app_info_${today}.log`
 				),
 				format: winston.format.combine(
 					winston.format.timestamp({ format: timeStampFormat }),
@@ -93,9 +104,9 @@ export class WinstonClient implements ILogger {
 		return transporters;
 	}
 
-	private getWinstonLogger(timeStampFormat: string) {
+	private getWinstonLogger(timeStampFormat: string, fileSuffix?: string) {
 		return winston.createLogger({
-			transports: this.getLogerTransporters(timeStampFormat),
+			transports: this.getLogerTransporters(timeStampFormat, fileSuffix),
 		});
 	}
 

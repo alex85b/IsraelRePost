@@ -9,10 +9,12 @@ import {
 } from "../../../../data/models/persistenceModels/UpdateErrorRecord";
 import { IPostofficeBranchesRepository } from "../../../../data/repositories/PostofficeBranchesRepository";
 import { IUpdateErrorRecordsRepository } from "../../../../data/repositories/UpdateErrorRecordsRepository";
+import { ServiceError, ErrorSource } from "../../../../errors/ServiceError";
+import { IPathTracker, PathStack } from "../../../../shared/classes/PathStack";
 import {
-	ILogMessageConstructor,
-	ConstructLogMessage,
-} from "../../../../shared/classes/ConstructLogMessage";
+	ILogger,
+	WinstonClient,
+} from "../../../../shared/classes/WinstonClient";
 import {
 	IRequestTracker,
 	RequestTrackerReason,
@@ -45,19 +47,21 @@ export class ConstructServicesRecord implements IConstructServicesRecord {
 	private buildErrors: IPostofficeUpdateErrorBuilder;
 	private buildServices: IPostofficeBranchServicesBuilder;
 	private requestTracker: IRequestTracker;
-	private messageBuilder: ILogMessageConstructor;
 	private serviceIdAndQnomycode: IBranchIdQnomyCodePair | undefined;
+	private logger: ILogger;
+	private pathStack: IPathTracker;
 
 	constructor(setupArguments: {
 		branchesRepository: IPostofficeBranchesRepository;
 		errorRepository: IUpdateErrorRecordsRepository;
 		requestTracker: IRequestTracker;
 	}) {
+		this.pathStack = new PathStack().push("Construct Services record");
+		this.logger = new WinstonClient({ pathStack: this.pathStack });
 		this.requestTracker = setupArguments.requestTracker;
 		this.requestNodesQueue = [];
 		this.buildErrors = new PostofficeUpdateErrorBuilder();
 		this.buildServices = new PostofficeBranchServicesBuilder();
-		this.messageBuilder = new ConstructLogMessage(["ConstructServicesRecord"]);
 	}
 
 	async constructRecord(args: {
@@ -68,19 +72,14 @@ export class ConstructServicesRecord implements IConstructServicesRecord {
 		servicesBuilder: IPostofficeBranchServicesBuilder;
 		errorsBuilder: IPostofficeUpdateErrorBuilder;
 	}> {
-		this.messageBuilder.addLogHeader("constructRecord");
-		try {
-			this.serviceIdAndQnomycode = args.serviceIdAndQnomycode;
-			this.setupQueue(args);
-			const response = await this.runBfs();
-			return {
-				status: response,
-				servicesBuilder: this.buildServices,
-				errorsBuilder: this.buildErrors,
-			};
-		} finally {
-			this.messageBuilder.popLogHeader();
-		}
+		this.serviceIdAndQnomycode = args.serviceIdAndQnomycode;
+		this.setupQueue(args);
+		const response = await this.runBfs();
+		return {
+			status: response,
+			servicesBuilder: this.buildServices,
+			errorsBuilder: this.buildErrors,
+		};
 	}
 
 	async continuePausedConstruction(args: {
@@ -91,26 +90,21 @@ export class ConstructServicesRecord implements IConstructServicesRecord {
 		servicesBuilder: IPostofficeBranchServicesBuilder;
 		errorsBuilder: IPostofficeUpdateErrorBuilder;
 	}> {
-		this.messageBuilder.addLogHeader("continuePausedConstruction");
-		try {
-			if (this.requestNodesQueue.length == 0) {
-				return {
-					status: "empty queue",
-					currentIdQnomycode: this.serviceIdAndQnomycode,
-					servicesBuilder: this.buildServices,
-					errorsBuilder: this.buildErrors,
-				};
-			}
-			const response = await this.runBfs();
+		if (this.requestNodesQueue.length == 0) {
 			return {
-				status: response,
+				status: "empty queue",
 				currentIdQnomycode: this.serviceIdAndQnomycode,
 				servicesBuilder: this.buildServices,
 				errorsBuilder: this.buildErrors,
 			};
-		} finally {
-			this.messageBuilder.popLogHeader();
 		}
+		const response = await this.runBfs();
+		return {
+			status: response,
+			currentIdQnomycode: this.serviceIdAndQnomycode,
+			servicesBuilder: this.buildServices,
+			errorsBuilder: this.buildErrors,
+		};
 	}
 
 	private setupQueue(args: {
@@ -118,24 +112,32 @@ export class ConstructServicesRecord implements IConstructServicesRecord {
 		serviceIdAndQnomycode: IBranchIdQnomyCodePair;
 		endpointProxyString?: string;
 	}): void {
-		const queueHasItems = this.requestNodesQueue.length > 0 ? true : false;
-		// If overwrite isn't truthful, while queue has items, setup can't be performed.
-		if (args.overwrite) this.requestNodesQueue = [];
-		else if (queueHasItems)
-			throw Error(
-				this.messageBuilder.createLogMessage({
-					subject: `Queue is full, cannot reset without data loss`,
-					message: `Queue has ${this.requestNodesQueue.length} remaining requests`,
+		this.pathStack.push("Setup queue");
+		try {
+			const queueHasItems = this.requestNodesQueue.length > 0 ? true : false;
+			// If overwrite isn't truthful, while queue has items, setup can't be performed.
+			if (args.overwrite) this.requestNodesQueue = [];
+			else if (queueHasItems)
+				throw new ServiceError({
+					logger: this.logger,
+					source: ErrorSource.Internal,
+					message: "Queue is full, cannot reset without data loss",
+					details: {
+						remainingRequests: this.requestNodesQueue.length,
+					},
+				});
+			this.requestNodesQueue.push(
+				new CreateUserNode({
+					servicesModelBuilder: this.buildServices,
+					errorModelBuilder: this.buildErrors,
+					qnomyCodeLocationId:
+						String(args.serviceIdAndQnomycode.qnomycode) ?? "",
+					endpointProxyString: args.endpointProxyString,
 				})
 			);
-		this.requestNodesQueue.push(
-			new CreateUserNode({
-				servicesModelBuilder: this.buildServices,
-				errorModelBuilder: this.buildErrors,
-				qnomyCodeLocationId: String(args.serviceIdAndQnomycode.qnomycode) ?? "",
-				endpointProxyString: args.endpointProxyString,
-			})
-		);
+		} finally {
+			this.pathStack.pop();
+		}
 	}
 
 	private async runBfs(): Promise<RequestTrackerReason> {

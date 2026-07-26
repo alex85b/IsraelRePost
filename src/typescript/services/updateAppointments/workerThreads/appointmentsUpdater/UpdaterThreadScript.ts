@@ -1,10 +1,8 @@
 import { parentPort, workerData, threadId } from "worker_threads";
-
 import { getMemoryViewParameters } from "../../../../data/models/dataTransferModels/ThreadSharedMemory";
 import { PostofficeBranchesRepository } from "../../../../data/repositories/PostofficeBranchesRepository";
 import { PostofficeCodeIdPairsRepository } from "../../../../data/repositories/PostofficeCodeIdPairsRepository";
 import { UpdateErrorRecordsRepository } from "../../../../data/repositories/UpdateErrorRecordsRepository";
-import { ConstructLogMessage } from "../../../../shared/classes/ConstructLogMessage";
 import { AtomicArrayWriter } from "../../helpers/concurrency/AtomicArrayWriter";
 import { RequestTracker } from "../../helpers/consumptionTracker/RequestTracker";
 import { ParentPortWrapper } from "../../helpers/threadCommunication/CommunicationWrappers";
@@ -19,35 +17,56 @@ import {
 	HandleStopUpdates,
 	HandleEndUpdater,
 } from "./MessageHandlers";
+import { PathStack } from "../../../../shared/classes/PathStack";
+import {
+	ILogger,
+	WinstonClient,
+} from "../../../../shared/classes/WinstonClient";
+import { ServiceError, ErrorSource } from "../../../../errors/ServiceError";
 
-const logMessage = new ConstructLogMessage([`UpdaterThreadScript ${threadId}`]);
+const MODULE_NAME = "Updater Thread script";
+const pathStack: PathStack = new PathStack().push(MODULE_NAME);
+const logger: ILogger = new WinstonClient({ pathStack });
 
 if (!parentPort)
-	throw Error(logMessage.createLogMessage({ subject: "Invalid parentPort" }));
+	throw new ServiceError({
+		message: "Invalid parentPort",
+		source: ErrorSource.Internal,
+		logger: logger,
+		threadId,
+	});
 if (!workerData)
-	throw Error(
-		logMessage.createLogMessage({ subject: "Invalid workerData - Undefined" })
-	);
+	throw new ServiceError({
+		message: "Invalid workerData: Undefined",
+		source: ErrorSource.Internal,
+		logger: logger,
+		threadId,
+	});
 if (typeof workerData !== "object")
-	throw Error(
-		logMessage.createLogMessage({
-			subject: "Invalid workerData - Not an object",
-		})
-	);
+	throw new ServiceError({
+		message: "Invalid workerData: Not an object",
+		source: ErrorSource.Internal,
+		logger: logger,
+		threadId,
+	});
 if (!workerData.memoryView)
-	throw Error(
-		logMessage.createLogMessage({
-			subject: "Invalid workerData - No memoryView",
-		})
-	);
+	throw new ServiceError({
+		message: "Invalid workerData: No memoryView",
+		source: ErrorSource.Internal,
+		logger: logger,
+		threadId,
+	});
 if (!workerData.parentId)
-	throw Error(
-		logMessage.createLogMessage({
-			subject: "Invalid workerData - No parentId",
-		})
-	);
+	throw new ServiceError({
+		message: "Invalid workerData: No parentId",
+		source: ErrorSource.Internal,
+		logger: logger,
+		threadId,
+	});
 
-logMessage.addLogHeader(`Parent ID ${workerData.parentId}`);
+pathStack
+	.push(`Parent ID ${workerData.parentId}`)
+	.push(`Thread ID ${threadId}`);
 
 const requestTracker = new RequestTracker({
 	atomicArrayWriter: new AtomicArrayWriter({
@@ -76,6 +95,7 @@ const updateStarter: IUpdateStarter = {
 	endpointProxyString: workerData.proxyEndpoint,
 	threadId,
 	parentId: workerData.parentId,
+	pathStack,
 };
 
 const startUpdates: HandlerClass<
@@ -97,12 +117,9 @@ const endUpdater = new HandleEndUpdater({
 	processTerminator: process.exit,
 });
 
-logMessage.addLogHeader("Messages Callback");
 communicationWrapper.setCallbacks({
 	async onMessageCallback(message) {
-		console.log(
-			logMessage.createLogMessage({ subject: "Incoming Message", message })
-		);
+		logger.logInfo({ message: "Incoming Message", details: message });
 		switch (message) {
 			case AppointmentsUpdatingMessages.ContinueUpdates:
 				continueUpdater.handle();
@@ -117,9 +134,12 @@ communicationWrapper.setCallbacks({
 				endUpdater.handle();
 				break;
 			default:
-				throw Error(
-					logMessage.createLogMessage({ subject: "Unsupported message" })
-				);
+				throw new ServiceError({
+					message: "Unsupported message",
+					source: ErrorSource.Internal,
+					logger,
+					details: { message },
+				});
 		}
 	},
 });

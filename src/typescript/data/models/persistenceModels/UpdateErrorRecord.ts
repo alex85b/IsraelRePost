@@ -4,6 +4,9 @@ import {
 	IServiceError,
 	ISingleErrorQueryResponse,
 } from "../../../api/elastic/updateErrors/UpdateErrorsIndexing";
+import { ServiceError, ErrorSource } from "../../../errors/ServiceError";
+import { IPathTracker, PathStack } from "../../../shared/classes/PathStack";
+import { ILogger, WinstonClient } from "../../../shared/classes/WinstonClient";
 import { isValidString, validateAndAssign } from "../shared/FieldValidation";
 
 // ############################################################################################
@@ -93,6 +96,8 @@ export class PostofficeUpdateErrorBuilder
 	private updateErrorObject: IUpdateErrorObject;
 	private faults: string[];
 	private errorCounter: number;
+	private logger: ILogger;
+	private pathStack: IPathTracker;
 
 	// This is a demo.
 	private demoErrorObject: IUpdateErrorObject = {
@@ -117,6 +122,8 @@ export class PostofficeUpdateErrorBuilder
 		};
 		this.faults = [];
 		this.errorCounter = 0;
+		this.pathStack = new PathStack().push("Postoffice Update Error record");
+		this.logger = new WinstonClient({ pathStack: this.pathStack });
 	}
 
 	addUserError(data: { userError: string }) {
@@ -250,12 +257,16 @@ export class PostofficeUpdateErrorBuilder
 	build(branchId: string) {
 		if (!isValidString(branchId)) this.faults.push(`invalid branchId`);
 		if (this.faults.length)
-			throw Error(
-				`[UpdateErrorRecord] ErrorRecord-${branchId ?? "Faulty ID"} Faults : ` +
-					JSON.stringify(this.updateErrorObject, null, 3) +
-					" " +
-					this.faults.join(" | ")
-			);
+			throw new ServiceError({
+				logger: this.logger,
+				source: ErrorSource.Database,
+				message: "PO Branch Error Record is faulty",
+				details: {
+					branchID: branchId,
+					faults: this.faults.join(" | "),
+					recortd: this.updateErrorObject,
+				},
+			});
 		const errorRecord: IErrorMapping = this.convertToIErrorMapping();
 		return new this.PostofficeUpdateError({
 			branchId: branchId,

@@ -21,6 +21,8 @@ import {
 import {} from "../updateAppointments/workerThreads/ipManager/IpManagerThreadScript";
 import { ContinuesUpdateMessages } from "./helpers/threadCommunication/Messages";
 import { IpManagerContinuesMessages } from "./helpers/threadCommunication/Messages";
+import { IPathTracker, PathStack } from "../../shared/classes/PathStack";
+import { ILogger, WinstonClient } from "../../shared/classes/WinstonClient";
 
 /**
  * Represents the first level of depth in the continuous update tree.
@@ -30,12 +32,14 @@ export class UpdateAppointmentsRoot {
 	private IpManagers: { [key: number]: WorkerWrapper | null } = {};
 	private branchesRepository: IPostofficeBranchesRepository;
 	private idCodePairRepository: IPostofficeCodeIdPairsRepository;
-	private messageConstructor: ILogMessageConstructor;
+	// private messageConstructor: ILogMessageConstructor;
 	private proxyEndpointsBuilder: IEndpointsFileToArray;
 
 	private proxyFilePath: string;
 	private envFilePath: string;
 	private ipManagerScriptPath: string;
+	private logger: ILogger;
+	private pathStack: IPathTracker;
 
 	/**
 	 * Constructor to initialize the ContinuesUpdate instance.
@@ -48,13 +52,15 @@ export class UpdateAppointmentsRoot {
 		messageConstructor?: ILogMessageConstructor;
 		proxyEndpointsBuilder?: IEndpointsFileToArray;
 	}) {
+		this.pathStack = new PathStack().push("Update Appointments root");
+		this.logger = new WinstonClient({ pathStack: this.pathStack });
 		this.branchesRepository =
 			args.branchesRepository ?? new PostofficeBranchesRepository();
 		this.idCodePairRepository =
 			args.idCodePairRepository ?? new PostofficeCodeIdPairsRepository();
-		this.messageConstructor = new ConstructLogMessage([
-			"Update Appointments Root",
-		]);
+		// this.messageConstructor = new ConstructLogMessage([
+		// 	"Update Appointments Root",
+		// ]);
 		this.proxyEndpointsBuilder = buildUsingProxyFile;
 		this.proxyFilePath = path.join(
 			__dirname,
@@ -84,87 +90,94 @@ export class UpdateAppointmentsRoot {
 		branchesRepository: IPostofficeBranchesRepository;
 		idCodePairRepository: IPostofficeCodeIdPairsRepository;
 	}) {
-		const resultStatus = await repopulateUnprocessedBranchesQueue({
-			branchesRepository: args.branchesRepository,
-			idCodePairRepository: args.idCodePairRepository,
-		});
-		this.messageConstructor.addLogHeader("setupQueues");
-		console.log(
-			this.messageConstructor.createLogMessage({
-				subject: "resultStatus itemsInQueue",
-				message: String(resultStatus.itemsInQueue ?? ""),
-			})
-		);
-		console.log(
-			this.messageConstructor.createLogMessage({
-				subject: "resultStatus replacedAmount",
-				message: String(resultStatus.replacedAmount ?? ""),
-			})
-		);
+		this.pathStack.push("Setup queues");
+		try {
+			const resultStatus = await repopulateUnprocessedBranchesQueue({
+				branchesRepository: args.branchesRepository,
+				idCodePairRepository: args.idCodePairRepository,
+			});
+			this.logger.logInfo({
+				message: "resultStatus itemsInQueue",
+				details: String(resultStatus.itemsInQueue ?? ""),
+			});
+			this.logger.logInfo({
+				message: "resultStatus replacedAmount",
+				details: String(resultStatus.replacedAmount ?? ""),
+			});
+		} finally {
+			this.pathStack.pop();
+		}
 	}
 
 	private async setupWorkers() {
-		const proxieEndpoints = await this.proxyEndpointsBuilder({
-			envFilepath: this.envFilePath,
-			proxyFilepath: this.proxyFilePath,
-			envPasswordKey: "PROX_WBSHA_PAS",
-			envUsernameKey: "PROX_WBSHA_USR",
-		});
-
-		this.messageConstructor.createLogMessage({
-			subject: "Proxy endpoints amount",
-			message: String(proxieEndpoints.length),
-		});
-
-		for (const proxyEndpoint of proxieEndpoints) {
-			const ipManager = new WorkerWrapper({
-				workerScript: this.ipManagerScriptPath,
-				workerData: proxyEndpoint,
+		this.pathStack.push("Setup workers");
+		try {
+			const proxieEndpoints = await this.proxyEndpointsBuilder({
+				envFilepath: this.envFilePath,
+				proxyFilepath: this.proxyFilePath,
+				envPasswordKey: "PROX_WBSHA_PAS",
+				envUsernameKey: "PROX_WBSHA_USR",
 			});
 
-			this.setupCallbacks(ipManager, ipManager.getID());
-			this.IpManagers[ipManager.getID()] = ipManager;
-			ipManager.sendMessage(IpManagerContinuesMessages.StartEndpoint);
+			this.logger.logInfo({
+				message: "Proxy endpoints amount",
+				details: String(proxieEndpoints.length ?? ""),
+			});
+
+			for (const proxyEndpoint of proxieEndpoints) {
+				const ipManager = new WorkerWrapper({
+					workerScript: this.ipManagerScriptPath,
+					workerData: proxyEndpoint,
+				});
+
+				this.setupCallbacks(ipManager, ipManager.getID());
+				this.IpManagers[ipManager.getID()] = ipManager;
+				ipManager.sendMessage(IpManagerContinuesMessages.StartEndpoint);
+			}
+		} finally {
+			this.pathStack.pop();
 		}
 	}
 
 	private async setupCallbacks(ipManager: WorkerWrapper, threadId: number) {
 		const instance = this;
-		ipManager.setCallbacks({
-			onMessageCallback(message) {
-				switch (message) {
-					case ContinuesUpdateMessages.ManagerDepleted:
-						console.log(
-							instance.messageConstructor.createLogMessage({
-								subject: `Ip Manager ${threadId} has no more requests left`,
-							})
-						);
-						break;
-					case ContinuesUpdateMessages.ManagerDone:
-						console.log(
-							instance.messageConstructor.createLogMessage({
-								subject: `Ip Manager ${threadId} found no more branches to update`,
-							})
-						);
-						break;
-				}
-			},
-			onErrorCallback(error) {
-				console.log(
-					instance.messageConstructor.createLogMessage({
-						subject: `Ip Manager ${threadId} Encountered an Error`,
-						message: error.message,
-					})
-				);
-			},
-			onExitCallback(exitCode) {
-				console.log(
-					instance.messageConstructor.createLogMessage({
-						subject: `Ip Manager ${threadId} Exited: ${exitCode}`,
-					})
-				);
-			},
-		});
+		this.pathStack.push("Setup callbacks");
+		try {
+			ipManager.setCallbacks({
+				onMessageCallback(message) {
+					switch (message) {
+						case ContinuesUpdateMessages.ManagerDepleted:
+							instance.logger.logInfo({
+								message: "IP Manager has no more requests left",
+								threadId,
+							});
+							break;
+						case ContinuesUpdateMessages.ManagerDone:
+							instance.logger.logInfo({
+								message: "IP Manager found no more branches to update",
+								threadId,
+							});
+							break;
+					}
+				},
+				onErrorCallback(error) {
+					instance.logger.logInfo({
+						message: "IP Manager Encountered an Error",
+						threadId,
+						details: error.message,
+					});
+				},
+				onExitCallback(exitCode) {
+					instance.logger.logInfo({
+						message: "IP Manager Child thread has Exited/Terminated",
+						threadId,
+						details: exitCode,
+					});
+				},
+			});
+		} finally {
+			this.pathStack.pop();
+		}
 	}
 
 	// ########################################################

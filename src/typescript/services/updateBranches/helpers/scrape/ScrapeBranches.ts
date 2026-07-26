@@ -9,12 +9,17 @@ import {
 	buildPuppeteerPage,
 	navigateToUrl,
 } from "./base/PuppeteerClient";
-import { ConstructLogMessage } from "../../../../shared/classes/ConstructLogMessage";
 
 import {
 	BRANCHES_XHR_RESPONSE_URL,
 	URLs,
 } from "../../../../shared/constants/ApiEndpoints";
+import { IPathTracker, PathStack } from "../../../../shared/classes/PathStack";
+import {
+	ILogger,
+	WinstonClient,
+} from "../../../../shared/classes/WinstonClient";
+import { ServiceError, ErrorSource } from "../../../../errors/ServiceError";
 
 const skip: RequestHandler = () => {
 	return Promise.resolve(false);
@@ -32,7 +37,10 @@ const rHandler: ResponseHandler = async (response: HTTPResponse) => {
 
 export const scrapeBrowserResponses =
 	async (): Promise<StringedInterceptorResults> => {
-		const logConstructor = new ConstructLogMessage(["scrapeBrowserResponses"]);
+		const pathStack: IPathTracker = new PathStack().push(
+			"Scrape Browser responses"
+		);
+		const logger: ILogger = new WinstonClient({ pathStack });
 		const browser = await buildPuppeteerBrowser(true);
 		const page = await buildPuppeteerPage(browser);
 		const capture = new NetworkTrafficCapture({
@@ -44,15 +52,14 @@ export const scrapeBrowserResponses =
 		await navigateToUrl({
 			page,
 			url: URLs.IsraelPostBranches,
-			logConstructor: logConstructor,
 		});
 		const results = capture.stop();
 		if (!results || !results.responses.length) {
-			throw Error(
-				logConstructor.createLogMessage({
-					subject: "failed to capture xhr responses",
-				})
-			);
+			throw new ServiceError({
+				logger: logger,
+				source: ErrorSource.Internal,
+				message: "Failed to capture XHR responses",
+			});
 		}
 		await browser.close();
 		return results;

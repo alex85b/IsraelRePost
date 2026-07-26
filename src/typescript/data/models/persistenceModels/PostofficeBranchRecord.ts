@@ -8,7 +8,6 @@ import {
 	isValidString,
 	validateAndAssign,
 } from "../shared/FieldValidation";
-import { ILogMessageConstructor } from "../../../shared/classes/ConstructLogMessage";
 import { BRANCHES_XHR_RESPONSE_URL } from "../../../shared/constants/ApiEndpoints";
 import {
 	INewServiceRecord,
@@ -127,7 +126,7 @@ export class PostofficeBranchRecordBuilder
 			},
 			services: [],
 		};
-		this.pathStack = new PathStack().push("Postoffice Branch Record Builder");
+		this.pathStack = new PathStack().push("Postoffice Branch Record builder");
 		this.logger = new WinstonClient({ pathStack: this.pathStack });
 	}
 
@@ -338,17 +337,12 @@ export class PostofficeBranchRecordBuilder
 			throw new ServiceError({
 				logger: this.logger,
 				source: ErrorSource.Internal,
-				message: "Proxy Endpoint String is Invalid",
+				message: "PO Branch Record is Invalid",
 				details: {
 					faults: this.faults.join(" | "),
+					document: this.branchDocument,
 				},
 			});
-		throw Error(
-			"[PostofficeBranchRecord] Errors : " +
-				JSON.stringify(this.branchDocument, null, 3) +
-				" " +
-				this.faults.join(" | ")
-		);
 		return new this.PostofficeBranchRecord({
 			branchDocument: this.branchDocument,
 		});
@@ -442,10 +436,9 @@ Creates PostofficeBranchRecordBuilder using IXhrBranch*/
 // ####################################################
 
 export interface IUseInterceptorResults {
-	(args: {
-		intercepted: StringedInterceptorResults;
-		logConstructor: ILogMessageConstructor;
-	}): Promise<IPostofficeBranchRecord[]>;
+	(args: { intercepted: StringedInterceptorResults }): Promise<
+		IPostofficeBranchRecord[]
+	>;
 }
 
 export interface IUrlAndBody {
@@ -455,14 +448,9 @@ export interface IUrlAndBody {
 
 export const useInterceptorResults: IUseInterceptorResults = async (args: {
 	intercepted: StringedInterceptorResults;
-	logConstructor: ILogMessageConstructor;
 }): Promise<IPostofficeBranchRecord[]> => {
-	args.logConstructor.addLogHeader("useInterceptorResults");
-	args.logConstructor.createLogMessage({ subject: "Start" });
-
 	const branches = await stringedResultsToBranches({
 		intercepted: args.intercepted,
-		logConstructor: args.logConstructor,
 	});
 
 	const branchRecords = branches.map((branch) => {
@@ -496,24 +484,30 @@ export const useInterceptorResults: IUseInterceptorResults = async (args: {
 				.withServices({ services: [] });
 		return builder.build();
 	});
-	args.logConstructor.createLogMessage({ subject: "End" });
-	args.logConstructor.popLogHeader();
 	return branchRecords;
 };
 
 const stringedResultsToBranches = async (args: {
 	intercepted: StringedInterceptorResults;
-	logConstructor: ILogMessageConstructor;
+	logger?: ILogger;
 }) => {
-	args.logConstructor.addLogHeader("stringedResultsToBranches");
-	args.logConstructor.createLogMessage({ subject: "Start" });
+	let logger: ILogger;
+	if (args.logger) logger = args.logger;
+	else
+		logger = new WinstonClient({
+			pathStack: new PathStack().push("Stringed Results To Branches"),
+		});
+	logger.logInfo({ message: "Start" });
 	const responses = args.intercepted.responses;
 	if (!responses || !Array.isArray(responses))
-		throw Error(
-			args.logConstructor.createLogMessage({
-				subject: "intercepted Object has no responses to parse",
-			})
-		);
+		throw new ServiceError({
+			logger,
+			source: ErrorSource.Database,
+			message: "Intercepted Object has no Responses to parse",
+			details: {
+				intercepted: args.intercepted,
+			},
+		});
 
 	const responseDataArray = await Promise.all(
 		responses.map((response) => JSON.parse(response))
@@ -535,21 +529,26 @@ const stringedResultsToBranches = async (args: {
 	);
 
 	if (!filteredResponses.length)
-		throw Error(
-			args.logConstructor.createLogMessage({
-				subject: "there are no valid responses",
-			})
-		);
+		throw new ServiceError({
+			logger,
+			source: ErrorSource.Database,
+			message: "Intercepted Object has no Valid responses",
+			details: {
+				intercepted: args.intercepted,
+			},
+		});
 
 	const branches = filteredResponses[0].body.branches;
 	if (!branches || !Array.isArray(branches))
-		throw Error(
-			args.logConstructor.createLogMessage({
-				subject: "branches array is malformed",
-			})
-		);
+		throw new ServiceError({
+			logger,
+			source: ErrorSource.Database,
+			message: "Intercepted Objects' branches array is malformed",
+			details: {
+				intercepted: args.intercepted,
+			},
+		});
 
-	args.logConstructor.createLogMessage({ subject: "End" });
-	args.logConstructor.popLogHeader();
+	logger.logInfo({ message: "End" });
 	return branches;
 };

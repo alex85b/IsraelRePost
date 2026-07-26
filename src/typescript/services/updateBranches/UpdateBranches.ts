@@ -3,13 +3,18 @@ import {
 	IPostofficeBranchesRepository,
 	PostofficeBranchesRepository,
 } from "../../data/repositories/PostofficeBranchesRepository";
-import { ConstructLogMessage } from "../../shared/classes/ConstructLogMessage";
+import { IPathTracker, PathStack } from "../../shared/classes/PathStack";
+import { ILogger, WinstonClient } from "../../shared/classes/WinstonClient";
 import { filterByMakeAppointments } from "./helpers/scrape/FilterBranches";
 import { scrapeBrowserResponses } from "./helpers/scrape/ScrapeBranches";
 
-export const addUpdateBranches = async () => {
-	const filteredBranches = await fetchNewBranches();
+const MODULE_NAME = "Update Branches";
+const pathStack: IPathTracker = new PathStack().push(MODULE_NAME);
+const logger: ILogger = new WinstonClient({ pathStack });
 
+export const addUpdateBranches = async () => {
+	pathStack.push("Add update Branches");
+	const filteredBranches = await fetchNewBranches();
 	const branchRepo: IPostofficeBranchesRepository =
 		new PostofficeBranchesRepository();
 
@@ -17,10 +22,11 @@ export const addUpdateBranches = async () => {
 		filteredBranches
 	);
 
-	console.log(
-		"[addUpdateBranches] bulkAddResponse : ",
-		bulkAddResponse.countResponseItems()
-	);
+	logger.logInfo({
+		message: "Performed, Response is",
+		details: bulkAddResponse.countResponseItems(),
+	});
+	pathStack.pop();
 	return {
 		successful: bulkAddResponse.getSuccessful(),
 		failed: bulkAddResponse.getFailed(),
@@ -28,8 +34,8 @@ export const addUpdateBranches = async () => {
 };
 
 export const deleteAddBranches = async () => {
+	pathStack.push("Delete add Branches");
 	const branchesWithoutAppointments = await fetchNewBranches();
-
 	const branchRepo: IPostofficeBranchesRepository =
 		new PostofficeBranchesRepository();
 
@@ -37,10 +43,11 @@ export const deleteAddBranches = async () => {
 		branchesWithoutAppointments
 	);
 
-	console.log(
-		"[deleteAddBranches] bulkAddResponse : ",
-		bulkAddResponse.countResponseItems()
-	);
+	logger.logInfo({
+		message: "Performed, Response is",
+		details: bulkAddResponse.countResponseItems(),
+	});
+
 	return {
 		successful: bulkAddResponse.getSuccessful(),
 		failed: bulkAddResponse.getFailed(),
@@ -51,7 +58,6 @@ const fetchNewBranches = async () => {
 	const responses = await scrapeBrowserResponses();
 	const branchRecords = await useInterceptorResults({
 		intercepted: responses,
-		logConstructor: new ConstructLogMessage(["fetchNewBranches"]),
 	});
 	return filterByMakeAppointments({ branchRecords });
 };

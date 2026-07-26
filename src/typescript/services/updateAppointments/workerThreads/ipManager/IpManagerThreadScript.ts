@@ -11,12 +11,16 @@ import { buildMutexRequestsBatchTracker } from "../../helpers/consumptionTracker
 import { RequestTracker } from "../../helpers/consumptionTracker/RequestTracker";
 import { ParentPortWrapper } from "../../helpers/threadCommunication/CommunicationWrappers";
 import { IpManagerContinuesMessages } from "../../helpers/threadCommunication/Messages";
+
+import { PathStack } from "../../../../shared/classes/PathStack";
+import { WinstonClient } from "../../../../shared/classes/WinstonClient";
+import { ServiceError, ErrorSource } from "../../../../errors/ServiceError";
 import {
 	IEndpointStarter,
 	HandleStartEndpoint,
+	IEndpointEnder,
 	HandleUpdaterDepleted,
 	HandleUpdaterDone,
-	IEndpointEnder,
 	HandleEndEndpoint,
 } from "./MessageHandler";
 
@@ -24,30 +28,40 @@ const logMessage = new ConstructLogMessage([
 	`IpManagerThreadScript ${threadId}`,
 ]);
 
+const MODULE_NAME = "Ip manager Thread script";
+const pathStack = new PathStack().push(MODULE_NAME);
+const logger = new WinstonClient({ pathStack });
+
 if (!parentPort)
-	throw Error(logMessage.createLogMessage({ subject: "Invalid parentPort" }));
+	throw new ServiceError({
+		message: "Invalid parentPort",
+		source: ErrorSource.Internal,
+		logger: logger,
+		threadId,
+	});
 if (!workerData)
-	throw Error(
-		logMessage.createLogMessage({ subject: "Invalid workerData - Undefined" })
-	);
-console.log(
-	logMessage.createLogMessage({
-		subject: "workerData",
-		message: JSON.stringify(workerData, null, 4),
-	})
-);
+	throw new ServiceError({
+		message: "Invalid workerData: Undefined",
+		source: ErrorSource.Internal,
+		logger: logger,
+		threadId,
+	});
 if (typeof workerData !== "object")
-	throw Error(
-		logMessage.createLogMessage({
-			subject: "Invalid workerData - Not an object",
-		})
-	);
+	throw new ServiceError({
+		message: "Invalid workerData: Not an object",
+		source: ErrorSource.Internal,
+		logger: logger,
+		threadId,
+	});
 if (!workerData.proxyEndpoint)
-	throw Error(
-		logMessage.createLogMessage({
-			subject: "Invalid workerData - No proxyEndpoint",
-		})
-	);
+	throw new ServiceError({
+		message: "Invalid workerData: No proxyEndpoint",
+		source: ErrorSource.Internal,
+		logger: logger,
+		threadId,
+	});
+
+pathStack.push(`Thread ID ${threadId}`);
 
 const parentCommunication = new ParentPortWrapper({ parentPort });
 const sharedMemory: MemoryView = new SharedMemoryBuilder()
@@ -55,7 +69,7 @@ const sharedMemory: MemoryView = new SharedMemoryBuilder()
 	.neededCellAmount(2)
 	.build();
 
-sharedMemory[0] = threadId;
+// sharedMemory[0] = 0;
 
 // Israel Post Limits Requests per-minute, and per-hour.
 const requestsPerHourLimit = 285; // 300 is the actual maximum.
@@ -76,6 +90,7 @@ const endpointStarter: IEndpointStarter = {
 	parentCommunication,
 	requestsPerMinuteLimit,
 	threadId,
+	pathStack,
 	updaterScriptPath: path.join(
 		__dirname,
 		"..",
@@ -90,6 +105,7 @@ const handleStartEndpoint = new HandleStartEndpoint(endpointStarter);
 const endpointEnder: IEndpointEnder = {
 	RuningEndpoint: handleStartEndpoint,
 	threadId: threadId,
+	pathStack,
 };
 
 handleStartEndpoint.configure({
@@ -99,9 +115,10 @@ handleStartEndpoint.configure({
 		requestsPerMinuteLimit,
 		sharedTracking,
 		threadId,
+		pathStack,
 	}),
 	"updater-done": new HandleUpdaterDone({
-		workers: handleStartEndpoint,
+		shutDownTarget: handleStartEndpoint,
 		threadId,
 	}),
 });

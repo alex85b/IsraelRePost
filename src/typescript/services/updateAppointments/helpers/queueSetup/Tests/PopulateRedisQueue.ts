@@ -15,11 +15,13 @@ export const rePopulateUnprocessed = async () => {
 
 	const branchesRepository: IPostofficeBranchesRepository =
 		new PostofficeBranchesRepository();
+
 	const idCodePairRepository: IPostofficeCodeIdPairsRepository =
 		new PostofficeCodeIdPairsRepository();
 
 	const { processed: bProcessed, unprocessed: bUnprocessed } =
 		await idCodePairRepository.popAllPairs();
+
 	console.log("[rePopulateUnprocessed] idCodePairRepository - Pop :", {
 		bProcessed: bProcessed.length,
 		bUnprocessed: bUnprocessed.length,

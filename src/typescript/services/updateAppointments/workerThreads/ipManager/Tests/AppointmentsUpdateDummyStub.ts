@@ -11,32 +11,55 @@ import {
 } from "../../../helpers/threadCommunication/Messages";
 import { ConstructServicesRecord } from "../../../helpers/updateServicesRecord/ConstructServicesRecord";
 import { IUpdateStarter } from "../../appointmentsUpdater/MessageHandlers";
-import { ConstructLogMessage } from "../../../../../shared/classes/ConstructLogMessage";
 import { parentPort, workerData, threadId } from "worker_threads";
+import { PathStack } from "../../../../../shared/classes/PathStack";
+import {
+	ILogger,
+	WinstonClient,
+} from "../../../../../shared/classes/WinstonClient";
+import { ServiceError, ErrorSource } from "../../../../../errors/ServiceError";
 
-const logMessage = new ConstructLogMessage([
-	`AppointmentsUpdateDummyStub ${threadId}`,
-]);
+const MODULE_NAME = "Appointments update Dummy stub";
+const pathStack: PathStack = new PathStack()
+	.push(MODULE_NAME)
+	.push(String(threadId));
+const logger: ILogger = new WinstonClient({ pathStack });
 
 if (!parentPort)
-	throw Error(logMessage.createLogMessage({ subject: "Invalid parentPort" }));
+	throw new ServiceError({
+		message: "Invalid parentPort",
+		source: ErrorSource.Internal,
+		logger: logger,
+		threadId,
+	});
 if (!workerData)
-	throw Error(
-		logMessage.createLogMessage({ subject: "Invalid workerData - Undefined" })
-	);
+	throw new ServiceError({
+		message: "Invalid workerData: Undefined",
+		source: ErrorSource.Internal,
+		logger: logger,
+		threadId,
+	});
+if (typeof workerData !== "object")
+	throw new ServiceError({
+		message: "Invalid workerData: Not an object",
+		source: ErrorSource.Internal,
+		logger: logger,
+		threadId,
+	});
 if (!workerData.memoryView)
-	throw Error(
-		logMessage.createLogMessage({
-			subject: "Invalid workerData - No memoryView",
-		})
-	);
-
-console.log(
-	logMessage.createLogMessage({
-		subject: "workerData",
-		message: JSON.stringify(workerData, null, 4),
-	})
-);
+	throw new ServiceError({
+		message: "Invalid workerData: No memoryView",
+		source: ErrorSource.Internal,
+		logger: logger,
+		threadId,
+	});
+if (!workerData.parentId)
+	throw new ServiceError({
+		message: "Invalid workerData: No parentId",
+		source: ErrorSource.Internal,
+		logger: logger,
+		threadId,
+	});
 
 const requestTracker = new RequestTracker({
 	atomicArrayWriter: new AtomicArrayWriter({
@@ -68,17 +91,12 @@ const updateStarter: IUpdateStarter = {
 	endpointProxyString: workerData.proxyEndpoint,
 	threadId,
 	parentId: 999,
+	pathStack,
 };
 
-logMessage.addLogHeader("onMessageCallback");
 communicationWrapper.setCallbacks({
 	async onMessageCallback(message) {
-		console.log(
-			logMessage.createLogMessage({
-				subject: "Incoming message",
-				message: message,
-			})
-		);
+		logger.logInfo({ message: "Incoming Message", details: message });
 
 		if (message === AppointmentsUpdatingMessages.StartUpdates) {
 			let response;
@@ -91,12 +109,10 @@ communicationWrapper.setCallbacks({
 						}, 1500);
 					});
 				}
-				console.log(
-					logMessage.createLogMessage({
-						subject: "Post office API request",
-						message: JSON.stringify(response, null, 4),
-					})
-				);
+				logger.logInfo({
+					message: "Post office API request",
+					details: response,
+				});
 			} while (response && response.authorized);
 			communicationWrapper.sendMessage(
 				IpManagerUpdaterMessages.UpdaterDepleted
@@ -108,12 +124,10 @@ communicationWrapper.setCallbacks({
 			let response;
 			do {
 				response = requestTracker.trackRequest();
-				console.log(
-					logMessage.createLogMessage({
-						subject: "Post office API request",
-						message: JSON.stringify(response, null, 4),
-					})
-				);
+				logger.logInfo({
+					message: "Post office API request",
+					details: response,
+				});
 			} while (response && response.authorized);
 			communicationWrapper.sendMessage(IpManagerUpdaterMessages.UpdaterDone);
 		}

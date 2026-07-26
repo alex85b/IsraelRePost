@@ -9,18 +9,17 @@ import {
 	HandleUpdaterDepleted,
 	HandleUpdaterDone,
 	IEndpointEnder,
-	IEndpointRestart,
 	IEndpointStarter,
 } from "../MessageHandler";
 import { ConstructLogMessage } from "../../../../../shared/classes/ConstructLogMessage";
 import { parentPort, workerData, threadId } from "worker_threads";
 import {
-	ISharedMemoryBuilder,
 	MemoryView,
 	SharedMemoryBuilder,
 	getMemoryViewParameters,
 } from "../../../../../data/models/dataTransferModels/ThreadSharedMemory";
 import { AtomicArrayWriter } from "../../../helpers/concurrency/AtomicArrayWriter";
+import { PathStack } from "../../../../../shared/classes/PathStack";
 
 const logMessage = new ConstructLogMessage([`IpManagerDummyStub ${threadId}`]);
 
@@ -72,6 +71,7 @@ const endpointStarter: IEndpointStarter = {
 	threadId,
 	updaterScriptPath: path.join(__dirname, "AppointmentsUpdateDummyStub.js"),
 	proxyEndpoint: workerData.proxyEndpoint,
+	pathStack: new PathStack(),
 };
 
 const handleStartEndpoint = new HandleStartEndpoint(endpointStarter);
@@ -79,6 +79,7 @@ const handleStartEndpoint = new HandleStartEndpoint(endpointStarter);
 const endpointEnder: IEndpointEnder = {
 	RuningEndpoint: handleStartEndpoint,
 	threadId: threadId,
+	pathStack: new PathStack(),
 };
 
 handleStartEndpoint.configure({
@@ -88,9 +89,10 @@ handleStartEndpoint.configure({
 		requestsPerMinuteLimit,
 		sharedTracking,
 		threadId,
+		pathStack: new PathStack(),
 	}),
 	"updater-done": new HandleUpdaterDone({
-		workers: handleStartEndpoint,
+		shutDownTarget: handleStartEndpoint,
 		threadId,
 	}),
 });
